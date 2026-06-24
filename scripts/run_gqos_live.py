@@ -175,22 +175,32 @@ def main():
             probability=0.0 # Will be populated if AlphaWorker injects metadata
         )
         
+    last_closed_dir = {}
+    
     def on_position_closed(env: MessageEnvelope):
         cmd = env.payload
-        # Calculate approximate profit from event (if available) or zero
+        last_closed_dir[cmd.symbol] = cmd.direction.name if hasattr(cmd.direction, 'name') else str(cmd.direction)
+        
+    def on_realized_pnl(env: MessageEnvelope):
+        cmd = env.payload
+        acc = mt5.account_info()
+        balance = acc.balance if acc else 0.0
+        direction = last_closed_dir.get(cmd.symbol, "UNKNOWN")
         notify_trade_closed(
             ticket="UNKNOWN",
             symbol=cmd.symbol,
-            direction=cmd.direction.name if hasattr(cmd.direction, 'name') else str(cmd.direction),
-            profit=0.0, # Profit is in RealizedPnLEmittedEvent
-            rr=0.0
+            direction=direction,
+            profit=float(cmd.realized_pnl),
+            rr=0.0,
+            balance=float(balance)
         )
         
     from gqos.risk.events import TradeExecutedEvent
-    from gqos.accounting.events import PositionClosedEvent
+    from gqos.accounting.events import PositionClosedEvent, RealizedPnLEmittedEvent
     
     evt_bus.subscribe(TradeExecutedEvent, on_trade_executed)
     evt_bus.subscribe(PositionClosedEvent, on_position_closed)
+    evt_bus.subscribe(RealizedPnLEmittedEvent, on_realized_pnl)
     
     # Notify boot
     notify_bot_started()
