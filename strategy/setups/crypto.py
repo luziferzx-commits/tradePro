@@ -73,9 +73,9 @@ class CryptoEvaluator(BaseSetupEvaluator):
         
         # Apply Macro Sentiment
         if direction == "BUY" and sentiment == "BEARISH":
-            score -= 20
+            score -= 10
         elif direction == "SELL" and sentiment == "BULLISH":
-            score -= 20
+            score -= 10
             
         if direction == "BUY" and sentiment == "BULLISH":
             score = min(score + 10, 100)
@@ -113,9 +113,9 @@ class CryptoEvaluator(BaseSetupEvaluator):
             
         # Apply Macro Sentiment
         if direction == "BUY" and sentiment == "BEARISH":
-            score -= 20
+            score -= 10
         elif direction == "SELL" and sentiment == "BULLISH":
-            score -= 20
+            score -= 10
             
         if direction == "BUY" and sentiment == "BULLISH":
             score = min(score + 10, 100)
