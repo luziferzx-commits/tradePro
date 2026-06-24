@@ -1,0 +1,11 @@
+config_idx,window,kill_switch,avg_pf,med_pf,max_dd_r,pct_gt_1,pct_gt_13,avg_trades,config
+38,9,0,11.907,0.694,28.0,33.3,33.3,11.8,"{'max_depth': 2, 'learning_rate': 0.01, 'n_estimators': 100, 'subsample': 0.7, 'colsample_bytree': 0.7, 'reg_alpha': 1, 'reg_lambda': 1}"
+38,9,8,11.83,0.357,7.0,33.3,33.3,7.8,"{'max_depth': 2, 'learning_rate': 0.01, 'n_estimators': 100, 'subsample': 0.7, 'colsample_bytree': 0.7, 'reg_alpha': 1, 'reg_lambda': 1}"
+38,9,10,11.83,0.357,9.0,33.3,33.3,8.2,"{'max_depth': 2, 'learning_rate': 0.01, 'n_estimators': 100, 'subsample': 0.7, 'colsample_bytree': 0.7, 'reg_alpha': 1, 'reg_lambda': 1}"
+38,9,5,11.603,0.0,4.0,22.2,22.2,5.2,"{'max_depth': 2, 'learning_rate': 0.01, 'n_estimators': 100, 'subsample': 0.7, 'colsample_bytree': 0.7, 'reg_alpha': 1, 'reg_lambda': 1}"
+38,6,10,9.384,1.166,13.0,50.0,50.0,20.2,"{'max_depth': 2, 'learning_rate': 0.01, 'n_estimators': 100, 'subsample': 0.7, 'colsample_bytree': 0.7, 'reg_alpha': 1, 'reg_lambda': 1}"
+38,6,0,9.384,1.166,24.0,50.0,50.0,21.4,"{'max_depth': 2, 'learning_rate': 0.01, 'n_estimators': 100, 'subsample': 0.7, 'colsample_bytree': 0.7, 'reg_alpha': 1, 'reg_lambda': 1}"
+38,6,5,9.315,1.0,13.0,50.0,50.0,17.1,"{'max_depth': 2, 'learning_rate': 0.01, 'n_estimators': 100, 'subsample': 0.7, 'colsample_bytree': 0.7, 'reg_alpha': 1, 'reg_lambda': 1}"
+38,6,8,9.315,1.0,13.0,50.0,50.0,17.8,"{'max_depth': 2, 'learning_rate': 0.01, 'n_estimators': 100, 'subsample': 0.7, 'colsample_bytree': 0.7, 'reg_alpha': 1, 'reg_lambda': 1}"
+17,12,0,8.056,1.875,14.5,66.7,50.0,12.8,"{'max_depth': 2, 'learning_rate': 0.01, 'n_estimators': 100, 'subsample': 0.9, 'colsample_bytree': 0.9, 'reg_alpha': 0.1, 'reg_lambda': 10}"
+17,12,10,7.917,1.875,9.0,66.7,50.0,9.8,"{'max_depth': 2, 'learning_rate': 0.01, 'n_estimators': 100, 'subsample': 0.9, 'colsample_bytree': 0.9, 'reg_alpha': 0.1, 'reg_lambda': 10}"

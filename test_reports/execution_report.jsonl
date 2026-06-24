@@ -1,0 +1,1 @@
+{"order_id": "ORD-1", "symbol": "AAPL", "direction": 1, "target_quantity": 10.0, "filled_quantity": 10.0, "arrival_price": 100.0, "fill_vwap": 101.5, "slippage_bps": 150.0}

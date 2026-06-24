@@ -1,0 +1,9 @@
+{
+    "cpu": 12.4,
+    "ram_mb": 9437.58984375,
+    "disk_free_gb": 660.3664169311523,
+    "sqlite_size_mb": 0.03,
+    "logs_size_mb": 0.05,
+    "feature_rows": 0,
+    "shadow_trades": 0
+}

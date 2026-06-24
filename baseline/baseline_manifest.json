@@ -1,0 +1,15 @@
+{
+  "version": "V6.1",
+  "build": 1,
+  "git_commit": "unknown_local",
+  "started_at": "2026-06-23T16:55:00Z",
+  "ended_at": "TBD",
+  "shadow_mode": true,
+  "dry_run": true,
+  "model_version": "production_v36",
+  "dataset_version": "dataset_v32",
+  "feature_hash": "a4d8c9e",
+  "settings_hash": "e7b9f3a",
+  "python_version": "3.10",
+  "mt5_version": "5.0.0"
+}

@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+rule_files:
+  - 'alert_rules.yml'
+
+scrape_configs:
+  - job_name: 'gqos_engine'
+    # Assuming GQOS is running on the host machine mapping to 8000
+    # For Docker for Mac/Windows use host.docker.internal
+    static_configs:
+      - targets: ['host.docker.internal:8000']

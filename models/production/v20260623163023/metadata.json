@@ -1,0 +1,38 @@
+{
+    "description": "V3.25 Robust Model (Stable Zone)",
+    "dataset": "ml_volatility_expansion_atr_2_0.csv",
+    "features": [
+        "final_score",
+        "trend_score",
+        "breakout_score",
+        "reversal_score",
+        "session_score",
+        "atr",
+        "adx",
+        "ema50_slope",
+        "rsi",
+        "macd",
+        "hour_utc",
+        "is_high_volatility",
+        "is_buy",
+        "recent_high_20_distance",
+        "recent_low_20_distance"
+    ],
+    "config": {
+        "max_depth": 2,
+        "learning_rate": 0.01,
+        "n_estimators": 100,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.1,
+        "reg_lambda": 10
+    },
+    "walk_forward_score": "PASS (Med PF: 2.123)",
+    "monte_carlo_score": "PASS",
+    "bootstrap_score": "PASS",
+    "expected_rr": 2.5,
+    "expected_holding_time_hrs": 4.0,
+    "expected_max_dd_r": 9.99,
+    "model_version": "v20260623163023",
+    "registered_at": "2026-06-23T16:30:23.216771"
+}

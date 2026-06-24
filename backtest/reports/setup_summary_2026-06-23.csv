@@ -1,0 +1,7 @@
+setup_name,best_threshold,best_atr_multiplier,best_rr,total_trades,win_rate,profit_factor,expectancy,max_drawdown_r,sharpe
+London Breakout,60,2.5,2.5,256,26.56,0.904,-0.07,43.0,-0.045
+NY Breakout,60,2.5,2.5,307,31.92,1.172,0.117,22.5,0.072
+EMA Pullback Continuation,0,0.0,0.0,0,0.0,0.0,0.0,0.0,0.0
+RSI Exhaustion Reversal,60,2.5,2.5,52,28.85,1.014,0.01,12.0,0.006
+Range Boundary Bounce,0,0.0,0.0,0,0.0,0.0,0.0,0.0,0.0
+Volatility Expansion Breakout,60,2.0,2.5,354,34.75,1.331,0.216,24.5,0.129

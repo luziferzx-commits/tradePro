@@ -1,0 +1,36 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    # Require tests to pass before building the artifact
+    # Note: normally we'd separate this into a workflow_call
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    # We mock the login step since this is an example
+    # - name: Login to DockerHub
+    #   uses: docker/login-action@v2
+    #   with:
+    #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+    #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build Docker Image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: false # Set to true when registry is configured
+        tags: gqos/live-engine:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max

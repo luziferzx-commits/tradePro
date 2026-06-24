@@ -1,0 +1,27 @@
+groups:
+  - name: gqos_safety_alerts
+    rules:
+      - alert: KillSwitchTriggered
+        expr: increase(gqos_kill_switch_triggers_total[1m]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kill Switch Triggered!"
+          description: "The Global Kill Switch has been triggered. Trading is halted."
+          
+      - alert: HighOrderRejectRate
+        expr: rate(gqos_rejects_total[5m]) / rate(gqos_orders_total[5m]) > 0.05
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Order Reject Rate"
+          description: "More than 5% of orders are being rejected in the last 5 minutes."
+          
+      - alert: FeatureDriftDetected
+        expr: increase(gqos_drift_warnings_total[5m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Feature Drift Detected"
+          description: "Live data features are breaching expected backtest boundaries."

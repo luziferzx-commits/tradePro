@@ -1,0 +1,24 @@
+{
+  "title": "GQOS Live Operations",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Live Equity",
+      "targets": [
+        {
+          "expr": "gqos_live_equity",
+          "legendFormat": "{{portfolio_id}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Kill Switch Triggers",
+      "targets": [
+        {
+          "expr": "gqos_kill_switch_triggers_total"
+        }
+      ]
+    }
+  ]
+}
