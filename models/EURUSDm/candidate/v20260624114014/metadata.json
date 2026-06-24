@@ -1,0 +1,82 @@
+{
+    "description": "Multi-Market EURUSDm Model",
+    "dataset": "datasets/EURUSDm/EURUSDm_dataset_atr_2_0_v001.csv",
+    "features": [
+        "final_score",
+        "trend_score",
+        "breakout_score",
+        "reversal_score",
+        "session_score",
+        "atr_pct",
+        "adx",
+        "ema50_slope",
+        "rsi",
+        "macd",
+        "hour_utc",
+        "is_high_volatility",
+        "is_buy",
+        "recent_high_20_distance_pct",
+        "recent_low_20_distance_pct"
+    ],
+    "config": {
+        "max_depth": 2,
+        "learning_rate": 0.01,
+        "n_estimators": 100,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.1,
+        "reg_lambda": 10
+    },
+    "drift_stats": {
+        "final_score": {
+            "mean": 85.0,
+            "std": 0.0
+        },
+        "trend_score": {
+            "mean": 2.319376026272578,
+            "std": 94.63270034185129
+        },
+        "breakout_score": {
+            "mean": 0.0,
+            "std": 0.0
+        },
+        "reversal_score": {
+            "mean": -0.16874976437333128,
+            "std": 34.22964553735224
+        },
+        "session_score": {
+            "mean": 55.36945812807882,
+            "std": 28.464332353428933
+        },
+        "atr_pct": {
+            "mean": 0.037516380612437665,
+            "std": 0.021062141693111578
+        },
+        "adx": {
+            "mean": 38.825417303604404,
+            "std": 7.569372449411511
+        },
+        "ema50_slope": {
+            "mean": 0.1674305562697373,
+            "std": 7.468993927652307
+        },
+        "rsi": {
+            "mean": 50.646994046827,
+            "std": 24.51296121387279
+        },
+        "macd": {
+            "mean": 1.5622388520560407e-05,
+            "std": 0.0006185060951951905
+        },
+        "recent_high_20_distance_pct": {
+            "mean": 0.10176608744569908,
+            "std": 0.16943740742033284
+        },
+        "recent_low_20_distance_pct": {
+            "mean": 0.1113466474162164,
+            "std": 0.1760107378354416
+        }
+    },
+    "model_version": "v20260624114014",
+    "registered_at": "2026-06-24T11:40:14.226795"
+}
