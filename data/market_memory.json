@@ -1,84 +1,128 @@
 {
     "metadata": {
         "source_file": "results/context_preds.csv",
-        "built_at": "2026-06-24T14:15:14.943109Z",
+        "built_at": "2026-06-24T14:21:18.690080Z",
         "threshold": 0.55,
         "memory_type": "historical_oos",
-        "row_count": 1458,
-        "signal_count": 856
+        "total_signals": 1458,
+        "memory_signals": 856,
+        "matches": 856,
+        "wins": 433,
+        "losses": 423,
+        "win_rate": 0.5058411214953271,
+        "pf": 1.5354609929078014,
+        "expectancy": 0.26460280373831774,
+        "confidence": 0.6016298720560749,
+        "memory_coverage": 0.5871056241426612
     },
     "memory": {
         "Asia|CHOPPY_TREND|LOW|SELL": {
             "matches": 68,
+            "wins": 36,
+            "losses": 32,
             "win_rate": 0.5294117647058824,
             "pf": 1.6875,
-            "expectancy": 0.3235294117647059
+            "expectancy": 0.3235294117647059,
+            "confidence": 0.5858038929411764
         },
         "Asia|CONTRACTING|LOW|SELL": {
             "matches": 30,
+            "wins": 13,
+            "losses": 17,
             "win_rate": 0.43333333333333335,
             "pf": 1.1470588235294117,
-            "expectancy": 0.08333333333333333
+            "expectancy": 0.08333333333333333,
+            "confidence": 0.6113111883333333
         },
         "Asia|EXPANDING|LOW|SELL": {
             "matches": 11,
+            "wins": 6,
+            "losses": 5,
             "win_rate": 0.5454545454545454,
             "pf": 1.8,
-            "expectancy": 0.36363636363636365
+            "expectancy": 0.36363636363636365,
+            "confidence": 0.6087498536363637
         },
         "Asia|NORMAL|LOW|SELL": {
             "matches": 110,
+            "wins": 64,
+            "losses": 46,
             "win_rate": 0.5818181818181818,
             "pf": 2.0869565217391304,
-            "expectancy": 0.45454545454545453
+            "expectancy": 0.45454545454545453,
+            "confidence": 0.6160852398181816
         },
         "London|CHOPPY_TREND|LOW|SELL": {
             "matches": 184,
+            "wins": 86,
+            "losses": 98,
             "win_rate": 0.4673913043478261,
             "pf": 1.316326530612245,
-            "expectancy": 0.16847826086956522
+            "expectancy": 0.16847826086956522,
+            "confidence": 0.590990417173913
         },
         "London|CONTRACTING|LOW|SELL": {
             "matches": 1,
+            "wins": 1,
+            "losses": 0,
             "win_rate": 1.0,
             "pf": 150.0,
-            "expectancy": 1.5
+            "expectancy": 1.5,
+            "confidence": 0.6465942
         },
         "London|EXPANDING|LOW|SELL": {
             "matches": 59,
+            "wins": 33,
+            "losses": 26,
             "win_rate": 0.559322033898305,
             "pf": 1.9038461538461537,
-            "expectancy": 0.3983050847457627
+            "expectancy": 0.3983050847457627,
+            "confidence": 0.609061046440678
         },
         "London|NORMAL|LOW|SELL": {
             "matches": 218,
+            "wins": 112,
+            "losses": 106,
             "win_rate": 0.5137614678899083,
             "pf": 1.5849056603773586,
-            "expectancy": 0.28440366972477066
+            "expectancy": 0.28440366972477066,
+            "confidence": 0.6041709634862386
         },
         "NY|CHOPPY_TREND|LOW|SELL": {
             "matches": 54,
+            "wins": 19,
+            "losses": 35,
             "win_rate": 0.35185185185185186,
             "pf": 0.8142857142857143,
-            "expectancy": -0.12037037037037036
+            "expectancy": -0.12037037037037036,
+            "confidence": 0.5859606637037038
         },
         "NY|CONTRACTING|LOW|SELL": {
             "matches": 40,
+            "wins": 22,
+            "losses": 18,
             "win_rate": 0.55,
             "pf": 1.8333333333333333,
-            "expectancy": 0.375
+            "expectancy": 0.375,
+            "confidence": 0.61810575825
         },
         "NY|EXPANDING|LOW|SELL": {
             "matches": 21,
+            "wins": 14,
+            "losses": 7,
             "win_rate": 0.6666666666666666,
             "pf": 3.0,
-            "expectancy": 0.6666666666666666
+            "expectancy": 0.6666666666666666,
+            "confidence": 0.5803325133333334
         },
         "NY|NORMAL|LOW|SELL": {
             "matches": 60,
+            "wins": 27,
+            "losses": 33,
             "win_rate": 0.45,
             "pf": 1.2272727272727273,
-            "expectancy": 0.125
+            "expectancy": 0.125,
+            "confidence": 0.6128292275
         }
     }
 }

@@ -75,13 +75,33 @@ def main():
         # Expectancy
         expectancy = group['r_multiple'].mean()
         
+        # Confidence
+        confidence = group['xgb_prob'].mean()
+        
         key = f"{name[0]}|{name[1]}|{name[2]}|{name[3]}"
         memory_dict[key] = {
             "matches": int(matches),
+            "wins": int(wins),
+            "losses": int(losses),
             "win_rate": float(win_rate),
             "pf": float(pf),
-            "expectancy": float(expectancy)
+            "expectancy": float(expectancy),
+            "confidence": float(confidence)
         }
+        
+    # Calculate overall metrics for metadata
+    overall_matches = int(signal_count)
+    overall_wins = int(df['is_win'].sum())
+    overall_losses = overall_matches - overall_wins
+    overall_win_rate = overall_wins / overall_matches if overall_matches > 0 else 0
+    
+    overall_gross_profit = df[df['r_multiple'] > 0]['r_multiple'].sum()
+    overall_gross_loss = abs(df[df['r_multiple'] < 0]['r_multiple'].sum())
+    overall_pf = overall_gross_profit / overall_gross_loss if overall_gross_loss > 0 else (overall_gross_profit / 0.01)
+    
+    overall_expectancy = df['r_multiple'].mean() if overall_matches > 0 else 0
+    overall_confidence = df['xgb_prob'].mean() if overall_matches > 0 else 0
+    memory_coverage = overall_matches / total_rows if total_rows > 0 else 0
         
     # Build Final JSON Structure
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
@@ -92,8 +112,16 @@ def main():
             "built_at": datetime.utcnow().isoformat() + "Z",
             "threshold": THRESHOLD,
             "memory_type": "historical_oos",
-            "row_count": total_rows,
-            "signal_count": signal_count
+            "total_signals": total_rows,
+            "memory_signals": overall_matches,
+            "matches": overall_matches,
+            "wins": overall_wins,
+            "losses": overall_losses,
+            "win_rate": float(overall_win_rate),
+            "pf": float(overall_pf),
+            "expectancy": float(overall_expectancy),
+            "confidence": float(overall_confidence),
+            "memory_coverage": float(memory_coverage)
         },
         "memory": memory_dict
     }
@@ -101,6 +129,9 @@ def main():
     with open(OUT_PATH, 'w') as f:
         json.dump(output, f, indent=4)
         
+    print(f"Total Signals: {total_rows}")
+    print(f"Memory Signals: {overall_matches}")
+    print(f"Coverage: {memory_coverage * 100:.1f}%\n")
     print(f"Memory built! Created {len(memory_dict)} context keys.")
 
 if __name__ == "__main__":
