@@ -2,7 +2,7 @@ XAUUSDm:
   enabled: true
   market_type: metal
   timeframe: M5
-  min_confidence: 0.55
+  min_confidence: 0.515 # candidate for forward dry run
   max_spread: 350
   atr_multiplier_sl: 1.5
   atr_multiplier_tp: 2.0

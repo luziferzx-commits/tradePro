@@ -86,4 +86,28 @@ class ModelRegistry:
             
         return model, metadata
 
+    def get_candidate_model(self, symbol=None):
+        cand_dir = os.path.join(self.base_dir, symbol, "candidate") if symbol else self.candidate_dir
+        if not os.path.exists(cand_dir):
+            return None, None
+            
+        models = os.listdir(cand_dir)
+        if not models:
+            return None, None
+            
+        latest_version = sorted(models)[-1]
+        model_dir = os.path.join(cand_dir, latest_version)
+        
+        model_path = os.path.join(model_dir, "xgb.pkl")
+        meta_path = os.path.join(model_dir, "metadata.json")
+        
+        if not os.path.exists(model_path) or not os.path.exists(meta_path):
+            return None, None
+            
+        model = joblib.load(model_path)
+        with open(meta_path, "r") as f:
+            metadata = json.load(f)
+            
+        return model, metadata
+
 registry = ModelRegistry()
