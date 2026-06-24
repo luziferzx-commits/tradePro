@@ -38,7 +38,7 @@ class CategoryHealthTracker:
         # Hysteresis tracking
         self.disabled_until_trade_num = 0
 
-    def evaluate_health(self) -> HealthState:
+    def evaluate_health(self, disabled_threshold: float = 0.75) -> HealthState:
         # If we haven't reached enough trades, assume healthy to let it build up
         if self.total_trades < 10:
             return HealthState.HEALTHY
@@ -66,7 +66,7 @@ class CategoryHealthTracker:
         if len(recent_20) >= 10:
             new_state = self.state
             
-            if pf_20 < 0.8 or self.consecutive_losses >= 7:
+            if pf_20 < disabled_threshold or self.consecutive_losses >= 7:
                 new_state = HealthState.DISABLED
             elif pf_20 < 1.0 or self.consecutive_losses >= 5:
                 new_state = HealthState.DEGRADED
@@ -113,7 +113,7 @@ class AdaptiveSessionHealth:
             self.trackers[key] = CategoryHealthTracker(name, category_type)
         return self.trackers[key]
 
-    def get_risk_multiplier(self, features: dict) -> float:
+    def get_risk_multiplier(self, features: dict, disabled_threshold: float = 0.75) -> float:
         """
         Evaluate health BEFORE applying the trade.
         Returns the risk multiplier (0.0 to 1.0) based on the most pessimistic state.
@@ -134,18 +134,18 @@ class AdaptiveSessionHealth:
         for category_type, name in dimensions.items():
             if name:
                 tracker = self._get_tracker(str(name), category_type)
-                state = tracker.evaluate_health()
+                state = tracker.evaluate_health(disabled_threshold)
                 
                 mult = 1.0
                 if state == HealthState.WARNING:
-                    mult = 0.75
+                    mult = 0.85
                 elif state == HealthState.DEGRADED:
-                    mult = 0.50
+                    mult = 0.60
                 elif state == HealthState.DISABLED:
                     if category_type in ['session_regime', 'session']:
                         mult = 0.0
                     else:
-                        mult = 0.50 # Soft cap for non-session contexts
+                        mult = 0.60 # Soft cap for non-session contexts
                 
                 # Apply rules: symbol and direction are diagnostic only
                 if category_type not in ['symbol', 'direction']:
