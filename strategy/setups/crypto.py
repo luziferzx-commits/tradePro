@@ -1,6 +1,7 @@
 import pandas as pd
 from datetime import datetime
 from strategy.setups.base import BaseSetupEvaluator
+from news.crypto_rss import CryptoSentimentAnalyzer
 
 class CryptoEvaluator(BaseSetupEvaluator):
     def evaluate_all(self, df: pd.DataFrame, regime: dict, h4_trend: str = "NEUTRAL") -> list:
@@ -27,19 +28,23 @@ class CryptoEvaluator(BaseSetupEvaluator):
         bb_upper = latest.get('bb_upper', 0)
         bb_lower = latest.get('bb_lower', 0)
         
+        # Get live Sentiment
+        sentiment_data = CryptoSentimentAnalyzer.get_current_sentiment()
+        sentiment = sentiment_data['sentiment']
+        
         # 1. Crypto Momentum Breakout
         setups.append(self._evaluate_momentum_breakout(
-            close, prev['close'], recent_high, recent_low, adx, ema50, h4_trend
+            close, prev['close'], recent_high, recent_low, adx, ema50, h4_trend, sentiment
         ))
         
         # 2. Bollinger Squeeze Breakout
         setups.append(self._evaluate_bollinger_squeeze(
-            close, prev['close'], bb_upper, bb_lower, adx, regime
+            close, prev['close'], bb_upper, bb_lower, adx, regime, sentiment
         ))
         
         return setups
 
-    def _evaluate_momentum_breakout(self, close, prev_close, recent_high, recent_low, adx, ema50, h4_trend):
+    def _evaluate_momentum_breakout(self, close, prev_close, recent_high, recent_low, adx, ema50, h4_trend, sentiment):
         direction = "NEUTRAL"
         
         if close > recent_high and prev_close <= recent_high and close > ema50:
@@ -64,9 +69,21 @@ class CryptoEvaluator(BaseSetupEvaluator):
             score += 10
             
         score = min(score, 95)
+        
+        # Apply Macro Sentiment Filter
+        if direction == "BUY" and sentiment == "BEARISH":
+            return {"setup_name": "Crypto Momentum Breakout", "direction": "NEUTRAL", "score": 0, "reason": "Blocked by BEARISH Crypto News"}
+        elif direction == "SELL" and sentiment == "BULLISH":
+            return {"setup_name": "Crypto Momentum Breakout", "direction": "NEUTRAL", "score": 0, "reason": "Blocked by BULLISH Crypto News"}
+            
+        if direction == "BUY" and sentiment == "BULLISH":
+            score = min(score + 15, 100)
+        elif direction == "SELL" and sentiment == "BEARISH":
+            score = min(score + 15, 100)
+            
         return {"setup_name": "Crypto Momentum Breakout", "direction": direction, "score": score, "reason": f"Momentum score {score}"}
 
-    def _evaluate_bollinger_squeeze(self, close, prev_close, bb_upper, bb_lower, adx, regime):
+    def _evaluate_bollinger_squeeze(self, close, prev_close, bb_upper, bb_lower, adx, regime, sentiment):
         if bb_upper == 0 or bb_lower == 0:
             return {"setup_name": "Bollinger Squeeze", "direction": "NEUTRAL", "score": 0, "reason": "No BB data"}
             
@@ -88,5 +105,16 @@ class CryptoEvaluator(BaseSetupEvaluator):
         score = 80
         if adx > 25:
             score += 10
+            
+        # Apply Macro Sentiment Filter
+        if direction == "BUY" and sentiment == "BEARISH":
+            return {"setup_name": "Bollinger Squeeze", "direction": "NEUTRAL", "score": 0, "reason": "Blocked by BEARISH Crypto News"}
+        elif direction == "SELL" and sentiment == "BULLISH":
+            return {"setup_name": "Bollinger Squeeze", "direction": "NEUTRAL", "score": 0, "reason": "Blocked by BULLISH Crypto News"}
+            
+        if direction == "BUY" and sentiment == "BULLISH":
+            score = min(score + 15, 100)
+        elif direction == "SELL" and sentiment == "BEARISH":
+            score = min(score + 15, 100)
             
         return {"setup_name": "Bollinger Squeeze", "direction": direction, "score": score, "reason": "BB Squeeze Explosion"}
