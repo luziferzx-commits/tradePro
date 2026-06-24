@@ -84,7 +84,7 @@ class MarketScanner:
             ex_session_health = "HEALTHY" # Because of A1 default
             ex_risk_mult = 1.0
             
-            def log_explainability(decision, reasons):
+            def log_explainability(decision, decision_stage, reasons):
                 explainability_logger.log_signal(
                     symbol=symbol,
                     session=ex_session,
@@ -97,6 +97,7 @@ class MarketScanner:
                     health_source="initialized_default",
                     health_note="PnL feedback loop not implemented in A1",
                     decision=decision,
+                    decision_stage=decision_stage,
                     reasons=reasons
                 )
             
@@ -104,7 +105,7 @@ class MarketScanner:
             symbol_info = mt5.symbol_info(symbol)
             if not symbol_info:
                 logger.error(f"[Scanner] Failed to get symbol info for {symbol}")
-                log_explainability("REJECT", ["missing_data"])
+                log_explainability("REJECT", "missing_data", ["missing_data"])
                 continue
                 
             if not symbol_info.visible:
@@ -116,14 +117,14 @@ class MarketScanner:
             if spread > max_spread:
                 pipeline_stats.log_reject("spread_too_high", symbol)
                 logger.warning(f"[Scanner] {symbol} skipped: spread too high ({spread} > {max_spread})")
-                log_explainability("REJECT", [f"spread_filter ({spread} > {max_spread})"])
+                log_explainability("REJECT", "spread_filter", [f"spread_filter ({spread} > {max_spread})"])
                 continue
                 
             timeframe = cfg.get("timeframe", "M5")
             df = mt5_client.get_historical_data(symbol, timeframe, 500)
             if df is None or df.empty:
                 logger.warning(f"[Scanner] Failed to get data for {symbol}")
-                log_explainability("REJECT", ["missing_data"])
+                log_explainability("REJECT", "missing_data", ["missing_data"])
                 continue
                 
             current_candle_time = df['time'].iloc[-1]
@@ -163,7 +164,7 @@ class MarketScanner:
             
             if final_dir == "NEUTRAL":
                 pipeline_stats.log_reject("quant_neutral", symbol)
-                log_explainability("REJECT", ["market_score_neutral"])
+                log_explainability("REJECT", "market_score_filter", ["market_score_neutral"])
                 continue
                 
             pipeline_stats.log_pass("quant_pass")
@@ -205,10 +206,10 @@ class MarketScanner:
                 
                 if "No production model" in reason or "skipped" in reason:
                     pipeline_stats.log_reject("ml_model_not_found", symbol)
-                    log_explainability("REJECT", ["ml_model_not_found"])
+                    log_explainability("REJECT", "ml_filter", ["ml_model_not_found"])
                 else:
                     pipeline_stats.log_reject("ml_probability_too_low", symbol)
-                    log_explainability("REJECT", [f"ml_threshold ({prob:.3f})"])
+                    log_explainability("REJECT", "ml_filter", [f"ml_threshold ({prob:.3f})"])
                 
                 logger.info(f"[Scanner] {symbol} rejected by ML: {reason}")
                 
@@ -224,7 +225,7 @@ class MarketScanner:
             if prob < min_conf:
                 pipeline_stats.log_reject("ml_probability_too_low", symbol)
                 logger.info(f"[Scanner] {symbol} rejected: probability {prob:.3f} < {min_conf}")
-                log_explainability("REJECT", [f"ml_threshold ({prob:.3f} < {min_conf})"])
+                log_explainability("REJECT", "ml_filter", [f"ml_threshold ({prob:.3f} < {min_conf})"])
                 continue
                 
             pipeline_stats.log_pass("ml_pass")
@@ -249,11 +250,11 @@ class MarketScanner:
                 ex_session_health = tracker.state.name
             
             if ex_risk_mult == 0.0:
-                log_explainability("REJECT", ["session_health (DISABLED)"])
+                log_explainability("REJECT", "session_health", ["session_health (DISABLED)"])
                 continue
                 
             # If we reach here, the signal is accepted
-            log_explainability("ACCEPT", [])
+            log_explainability("ACCEPT", "accepted", [])
             
             valid_signals.append({
                 "symbol": symbol,

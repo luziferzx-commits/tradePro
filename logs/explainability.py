@@ -2,6 +2,7 @@ import os
 import csv
 import logging
 from datetime import datetime
+from logs.telemetry import telemetry_db
 
 logger = logging.getLogger("GoldBot.Explainability")
 
@@ -12,7 +13,7 @@ class ExplainabilityLogger:
             "timestamp", "symbol", "session", "regime", 
             "market_score", "ml_probability", "session_health", 
             "risk_multiplier", "health_dynamic", "health_source", "health_note",
-            "decision", "reasons"
+            "decision", "decision_stage", "reasons"
         ]
         self._ensure_file_exists()
 
@@ -35,6 +36,7 @@ class ExplainabilityLogger:
                    health_source: str = "initialized_default",
                    health_note: str = "PnL feedback loop not implemented in A1",
                    decision: str = "REJECT", 
+                   decision_stage: str = "UNKNOWN",
                    reasons: list = None):
         
         if reasons is None:
@@ -51,20 +53,27 @@ class ExplainabilityLogger:
             "ml_probability": ml_probability,
             "session_health": session_health,
             "risk_multiplier": risk_multiplier,
-            "health_dynamic": str(health_dynamic).lower(),
+            "health_dynamic": health_dynamic,
             "health_source": health_source,
             "health_note": health_note,
             "decision": decision,
-            "reasons": " | ".join(reasons) if reasons else "None"
+            "decision_stage": decision_stage,
+            "reasons": reasons
         }
+        
+        # Write to Telemetry Database
+        telemetry_db.insert_signal(row)
         
         # Write to CSV
         try:
+            csv_row = row.copy()
+            csv_row["health_dynamic"] = str(health_dynamic).lower()
+            csv_row["reasons"] = " | ".join(reasons) if reasons else "None"
             with open(self.output_file, mode='a', newline='') as f:
                 writer = csv.DictWriter(f, fieldnames=self.fieldnames)
-                writer.writerow(row)
+                writer.writerow(csv_row)
         except Exception as e:
-            logger.error(f"Failed to write explainability log: {e}")
+            logger.error(f"Failed to write explainability CSV log: {e}")
 
         # Pretty print to console
         self._pretty_print(row, reasons)
@@ -81,6 +90,7 @@ class ExplainabilityLogger:
         reset_color = "\033[0m"
         
         print(f"\nDecision: {decision_color}{row['decision']}{reset_color}")
+        print(f"Stage: {row['decision_stage']}")
         print("Reasons:")
         if not reasons:
             print("- Passed all filters")
