@@ -81,6 +81,10 @@ class MarketScanner:
             ex_regime = "UNKNOWN"
             ex_market_score = 0.0
             ex_ml_prob = 0.0
+            ex_prod_prob = 0.0
+            ex_cand_prob = 0.0
+            ex_gap_abs = 0.0
+            ex_gap_signed = 0.0
             ex_session_health = "HEALTHY" # Because of A1 default
             ex_risk_mult = 1.0
             
@@ -91,6 +95,10 @@ class MarketScanner:
                     regime=ex_regime,
                     market_score=ex_market_score,
                     ml_probability=ex_ml_prob,
+                    prod_probability=ex_prod_prob,
+                    candidate_probability=ex_cand_prob,
+                    probability_gap_abs=ex_gap_abs,
+                    probability_gap_signed=ex_gap_signed,
                     session_health=ex_session_health,
                     risk_multiplier=ex_risk_mult,
                     health_dynamic=False,
@@ -197,6 +205,11 @@ class MarketScanner:
             
             # Use dynamic predictor
             ml_result = ml_predictor.predict(symbol, ml_features)
+            
+            ex_prod_prob = ml_result.get("prod_probability", 0.0)
+            ex_cand_prob = ml_result.get("candidate_probability", 0.0)
+            ex_gap_abs = abs(ex_prod_prob - ex_cand_prob)
+            ex_gap_signed = ex_cand_prob - ex_prod_prob
             
             if not ml_result['approved']:
                 reason = ml_result['reason']

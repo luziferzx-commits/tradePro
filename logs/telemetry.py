@@ -37,6 +37,10 @@ class TelemetryDatabase:
                         regime TEXT NOT NULL,
                         market_score REAL NOT NULL,
                         ml_probability REAL NOT NULL,
+                        prod_probability REAL DEFAULT 0.0,
+                        candidate_probability REAL DEFAULT 0.0,
+                        probability_gap_abs REAL DEFAULT 0.0,
+                        probability_gap_signed REAL DEFAULT 0.0,
                         session_health TEXT NOT NULL,
                         risk_multiplier REAL NOT NULL,
                         decision TEXT NOT NULL,
@@ -48,6 +52,16 @@ class TelemetryDatabase:
                         shadow_pnl REAL DEFAULT 0.0
                     )
                 """)
+                
+                # Perform auto-migration for existing database
+                try:
+                    cursor.execute("ALTER TABLE signals ADD COLUMN prod_probability REAL DEFAULT 0.0")
+                    cursor.execute("ALTER TABLE signals ADD COLUMN candidate_probability REAL DEFAULT 0.0")
+                    cursor.execute("ALTER TABLE signals ADD COLUMN probability_gap_abs REAL DEFAULT 0.0")
+                    cursor.execute("ALTER TABLE signals ADD COLUMN probability_gap_signed REAL DEFAULT 0.0")
+                except sqlite3.OperationalError:
+                    # Columns already exist
+                    pass
                 
                 # Indexes for query speed
                 cursor.execute("CREATE INDEX IF NOT EXISTS idx_sig_timestamp ON signals(timestamp)")
@@ -77,10 +91,12 @@ class TelemetryDatabase:
                 cursor.execute("""
                     INSERT INTO signals (
                         timestamp, inserted_at, symbol, session, regime, 
-                        market_score, ml_probability, session_health, risk_multiplier,
+                        market_score, ml_probability, prod_probability, candidate_probability,
+                        probability_gap_abs, probability_gap_signed,
+                        session_health, risk_multiplier,
                         decision, decision_stage, reasons, health_dynamic, health_source, health_note
                     ) VALUES (
-                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                     )
                 """, (
                     row.get("timestamp"),
@@ -90,6 +106,10 @@ class TelemetryDatabase:
                     row.get("regime"),
                     row.get("market_score"),
                     row.get("ml_probability"),
+                    row.get("prod_probability", 0.0),
+                    row.get("candidate_probability", 0.0),
+                    row.get("probability_gap_abs", 0.0),
+                    row.get("probability_gap_signed", 0.0),
                     row.get("session_health"),
                     row.get("risk_multiplier"),
                     row.get("decision"),

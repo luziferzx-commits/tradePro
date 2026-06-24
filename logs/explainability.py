@@ -11,8 +11,9 @@ class ExplainabilityLogger:
         self.output_file = output_file
         self.fieldnames = [
             "timestamp", "symbol", "session", "regime", 
-            "market_score", "ml_probability", "session_health", 
-            "risk_multiplier", "health_dynamic", "health_source", "health_note",
+            "market_score", "ml_probability", "prod_probability", "candidate_probability",
+            "probability_gap_abs", "probability_gap_signed",
+            "session_health", "risk_multiplier", "health_dynamic", "health_source", "health_note",
             "decision", "decision_stage", "reasons"
         ]
         self._ensure_file_exists()
@@ -30,6 +31,10 @@ class ExplainabilityLogger:
                    regime: str = "UNKNOWN",
                    market_score: float = 0.0, 
                    ml_probability: float = 0.0,
+                   prod_probability: float = 0.0,
+                   candidate_probability: float = 0.0,
+                   probability_gap_abs: float = 0.0,
+                   probability_gap_signed: float = 0.0,
                    session_health: str = "HEALTHY", 
                    risk_multiplier: float = 1.0,
                    health_dynamic: bool = False,
@@ -51,6 +56,10 @@ class ExplainabilityLogger:
             "regime": regime,
             "market_score": market_score,
             "ml_probability": ml_probability,
+            "prod_probability": prod_probability,
+            "candidate_probability": candidate_probability,
+            "probability_gap_abs": probability_gap_abs,
+            "probability_gap_signed": probability_gap_signed,
             "session_health": session_health,
             "risk_multiplier": risk_multiplier,
             "health_dynamic": health_dynamic,
@@ -83,7 +92,7 @@ class ExplainabilityLogger:
         print(f"Session: {row['session']}")
         print(f"Regime: {row['regime']}")
         print(f"Market Score: {row['market_score']:.1f}")
-        print(f"ML Probability: {row['ml_probability']:.2f}")
+        print(f"ML Prob: {row['ml_probability']:.2f} | Prod: {row['prod_probability']:.3f} | Cand: {row['candidate_probability']:.3f} | Gap: {row['probability_gap_signed']:.3f}")
         print(f"Session Health: {row['session_health']} (Dynamic: {row['health_dynamic']})")
         
         decision_color = "\033[92m" if row['decision'] == "ACCEPT" else "\033[91m"

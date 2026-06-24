@@ -82,5 +82,38 @@ def main():
         ORDER BY count DESC
     """, "Signals by Regime")
 
+    # 7. ML Probability Histogram
+    run_query("""
+        SELECT 
+            CASE 
+                WHEN ml_probability < 0.1 THEN '0.00 - 0.10'
+                WHEN ml_probability < 0.2 THEN '0.10 - 0.20'
+                WHEN ml_probability < 0.3 THEN '0.20 - 0.30'
+                WHEN ml_probability < 0.4 THEN '0.30 - 0.40'
+                WHEN ml_probability < 0.5 THEN '0.40 - 0.50'
+                WHEN ml_probability < 0.6 THEN '0.50 - 0.60'
+                WHEN ml_probability < 0.7 THEN '0.60 - 0.70'
+                WHEN ml_probability < 0.8 THEN '0.70 - 0.80'
+                WHEN ml_probability < 0.9 THEN '0.80 - 0.90'
+                ELSE '0.90 - 1.00'
+            END as prob_bucket,
+            COUNT(*) as count
+        FROM signals
+        WHERE decision_stage != 'missing_data'
+        GROUP BY prob_bucket
+        ORDER BY prob_bucket
+    """, "ML Probability Distribution")
+
+    # 8. Probability Gap (Cand vs Prod)
+    run_query("""
+        SELECT 
+            AVG(probability_gap_abs) as avg_abs_gap,
+            AVG(probability_gap_signed) as avg_signed_gap,
+            MIN(probability_gap_signed) as min_signed_gap,
+            MAX(probability_gap_signed) as max_signed_gap
+        FROM signals
+        WHERE decision_stage != 'missing_data'
+    """, "Probability Gap (Candidate vs Prod)")
+
 if __name__ == "__main__":
     main()

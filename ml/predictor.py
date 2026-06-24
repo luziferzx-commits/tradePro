@@ -116,12 +116,16 @@ class MLPredictor:
                 "approved": False,
                 "reason": "Model inference failed or no model available.",
                 "probability": 0.0,
+                "prod_probability": prod_prob if prod_prob is not None else 0.0,
+                "candidate_probability": cand_prob if cand_prob is not None else 0.0,
                 "feature_hash": "N/A"
             }
             
         return {
             "approved": active_approved,
             "probability": active_prob,
+            "prod_probability": prod_prob if prod_prob is not None else 0.0,
+            "candidate_probability": cand_prob if cand_prob is not None else 0.0,
             "feature_hash": feature_hash,
             "model_version": active_meta.get("model_version", "unknown") if active_meta else "unknown",
             "expected_rr": active_meta.get("expected_rr", 2.5) if active_meta else 2.5,

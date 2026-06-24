@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoldBot Telemetry | Control Room</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h1>GoldBot Observability</h1>
+            </div>
+            <div class="health-badge" id="healthBadge">
+                <span class="pulse"></span>
+                <span id="healthText">Loading Health...</span>
+            </div>
+        </header>
+
+        <div class="grid-stats">
+            <div class="card stat-card">
+                <h3>Coverage</h3>
+                <div class="stat-value" id="valCoverage">--%</div>
+                <div class="stat-sub" id="valTotalSignals">Total Scans: --</div>
+            </div>
+            <div class="card stat-card">
+                <h3>Acceptance</h3>
+                <div class="stat-value" id="valAcceptance">--%</div>
+                <div class="stat-sub">From covered signals</div>
+            </div>
+            <div class="card stat-card">
+                <h3>Days Since Last Change</h3>
+                <div class="stat-value" id="valDaysChange">--</div>
+                <div class="stat-sub">System stability</div>
+            </div>
+        </div>
+
+        <div class="grid-main">
+            <div class="card">
+                <h2>ML Probability Distribution</h2>
+                <div class="chart-container">
+                    <canvas id="chartMlDist"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Probability Gap (Cand vs Prod)</h2>
+                <div class="gap-stats">
+                    <div class="gap-item">
+                        <span class="label">Avg Absolute Gap</span>
+                        <span class="value" id="valGapAbs">--</span>
+                    </div>
+                    <div class="gap-item">
+                        <span class="label">Avg Signed Gap</span>
+                        <span class="value" id="valGapSigned">--</span>
+                    </div>
+                    <div class="gap-item">
+                        <span class="label">Min Signed Gap</span>
+                        <span class="value" id="valGapMin">--</span>
+                    </div>
+                    <div class="gap-item">
+                        <span class="label">Max Signed Gap</span>
+                        <span class="value" id="valGapMax">--</span>
+                    </div>
+                </div>
+                <p class="gap-note">*Positive signed gap means Candidate is MORE confident than Production.</p>
+            </div>
+        </div>
+
+        <div class="grid-3col">
+            <div class="card">
+                <h2>Signals by Session</h2>
+                <div class="chart-container-pie">
+                    <canvas id="chartSessions"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Top Reject Stages</h2>
+                <div class="chart-container-pie">
+                    <canvas id="chartRejectStages"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Top Reject Reasons</h2>
+                <ul class="reason-list" id="listRejectReasons">
+                    <li>Loading...</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card table-card">
+            <h2>Latest Decisions (Last 20)</h2>
+            <div class="table-wrapper">
+                <table id="tableSignals">
+                    <thead>
+                        <tr>
+                            <th>Time (UTC)</th>
+                            <th>Symbol</th>
+                            <th>Session</th>
+                            <th>Regime</th>
+                            <th>Prob</th>
+                            <th>Stage</th>
+                            <th>Decision</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
