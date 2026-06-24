@@ -1,9 +1,10 @@
 import pandas as pd
 from datetime import datetime
 from strategy.setups.base import BaseSetupEvaluator
+from news.market_rss import MarketSentimentAnalyzer
 
 class ForexMetalsEvaluator(BaseSetupEvaluator):
-    def evaluate_all(self, df: pd.DataFrame, regime: dict, h4_trend: str = "NEUTRAL") -> list:
+    def evaluate_all(self, df: pd.DataFrame, regime: dict, h4_trend: str = "NEUTRAL", asset_class: str = "FOREX") -> list:
         """
         Evaluates all setups and returns a list of diagnostic dictionaries.
         """
@@ -29,16 +30,21 @@ class ForexMetalsEvaluator(BaseSetupEvaluator):
         recent_high = prev.get('recent_high_20', high)
         recent_low = prev.get('recent_low_20', low)
         
+        # Get macro sentiment (Temporarily disabled during backtest by hardcoding to NEUTRAL)
+        # sentiment_data = MarketSentimentAnalyzer.get_current_sentiment(asset_class)
+        # sentiment = sentiment_data['sentiment']
+        sentiment = "NEUTRAL"
+        
         # 1. London Breakout
         setups.append(self._evaluate_breakout(
             "London Breakout", hour in [7, 8, 9, 10], open_price, close, prev['close'], 
-            recent_high, recent_low, adx, atr, high, low, h4_trend, regime
+            recent_high, recent_low, adx, atr, high, low, h4_trend, regime, sentiment
         ))
         
         # 2. NY Breakout
         setups.append(self._evaluate_breakout(
             "NY Breakout", hour in [13, 14, 15, 16], open_price, close, prev['close'], 
-            recent_high, recent_low, adx, atr, high, low, h4_trend, regime
+            recent_high, recent_low, adx, atr, high, low, h4_trend, regime, sentiment
         ))
         
         # 3. RSI Exhaustion Reversal
@@ -54,7 +60,7 @@ class ForexMetalsEvaluator(BaseSetupEvaluator):
         return setups
 
     
-    def _evaluate_breakout(self, name, time_cond, open_price, close, prev_close, recent_high, recent_low, adx, atr, high, low, h4_trend, regime):
+    def _evaluate_breakout(self, name, time_cond, open_price, close, prev_close, recent_high, recent_low, adx, atr, high, low, h4_trend, regime, sentiment="NEUTRAL"):
         trend_state = regime.get('trend_state', 'UNKNOWN')
         if trend_state == "RANGING":
             return {
@@ -100,6 +106,18 @@ class ForexMetalsEvaluator(BaseSetupEvaluator):
                 score -= 20
                 
         score = min(max(score, 0), 95)
+        
+        # Apply Macro Sentiment
+        if direction == "BUY" and sentiment == "BEARISH":
+            return {"setup_name": name, "direction": "NEUTRAL", "score": 0, "reason": "Blocked by BEARISH Macro News"}
+        elif direction == "SELL" and sentiment == "BULLISH":
+            return {"setup_name": name, "direction": "NEUTRAL", "score": 0, "reason": "Blocked by BULLISH Macro News"}
+        
+        if direction == "BUY" and sentiment == "BULLISH":
+            score = min(score + 10, 100)
+        elif direction == "SELL" and sentiment == "BEARISH":
+            score = min(score + 10, 100)
+            
         return {"setup_name": name, "direction": direction, "score": score, "reason": f"Breakout score {score}"}
 
     

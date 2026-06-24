@@ -5,7 +5,7 @@ class BaseSetupEvaluator(ABC):
     """Base interface for all market-specific strategy evaluators."""
     
     @abstractmethod
-    def evaluate_all(self, df: pd.DataFrame, regime: dict, h4_trend: str = "NEUTRAL") -> list[dict]:
+    def evaluate_all(self, df: pd.DataFrame, regime: dict, h4_trend: str = "NEUTRAL", asset_class: str = "FOREX") -> list[dict]:
         """
         Evaluates data and returns a list of setup diagnostic dictionaries.
         Each dictionary should contain:

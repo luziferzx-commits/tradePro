@@ -12,7 +12,7 @@ class MarketScoreCalculator:
             }
             
         evaluator = StrategyFactory.get_evaluator(asset_class)
-        setups = evaluator.evaluate_all(df, regime, h4_trend=h4_trend)
+        setups = evaluator.evaluate_all(df, regime, h4_trend=h4_trend, asset_class=asset_class)
         
         if not setups:
             return {
