@@ -7,13 +7,14 @@ from strategy.scorer import MultiScorer
 from strategy.setups import SetupEvaluator
 from config.settings import settings
 
-def build_dataset(atr_multiplier=2.0):
+def build_dataset(symbol="XAUUSDm", timeframe="M5", atr_multiplier=2.0):
     import glob
     atr_str = str(atr_multiplier).replace('.', '_')
-    base_file = f"ml_volatility_expansion_atr_{atr_str}"
+    base_file = f"{symbol}_dataset_atr_{atr_str}"
     
-    os.makedirs("datasets", exist_ok=True)
-    existing = glob.glob(f"datasets/{base_file}_v*.csv")
+    out_dir = f"datasets/{symbol}"
+    os.makedirs(out_dir, exist_ok=True)
+    existing = glob.glob(f"{out_dir}/{base_file}_v*.csv")
     
     max_v = 0
     for f in existing:
@@ -23,16 +24,16 @@ def build_dataset(atr_multiplier=2.0):
     
     v_num = max_v + 1
     version_str = f"v{v_num:03d}"
-    out_file = f"datasets/{base_file}_{version_str}.csv"
+    out_file = f"{out_dir}/{base_file}_{version_str}.csv"
     
-    print(f"Building Dataset Version: {version_str}")
+    print(f"Building Dataset for {symbol} Version: {version_str}")
         
     if not mt5_client.connect():
         print("Failed to connect to MT5.")
         return
         
-    print(f"Fetching 200,000 candles for ATR {atr_multiplier}...")
-    df = mt5_client.get_historical_data(settings.SYMBOL, settings.TIMEFRAME, 200000)
+    print(f"Fetching candles for {symbol} (ATR {atr_multiplier})...")
+    df = mt5_client.get_historical_data(symbol, timeframe, 200000)
     if df is None or df.empty:
         print("No data fetched.")
         return
@@ -122,10 +123,21 @@ def build_dataset(atr_multiplier=2.0):
         dt_time = pd.to_datetime(candle['time'])
         
         # Re-enable MultiScorer for feature extraction
+        
+        # We need market_type for session score
+        import yaml
+        market_type = "metal"
+        try:
+            with open("config/symbols.yaml", "r") as f:
+                sym_cfg = yaml.safe_load(f)
+                market_type = sym_cfg.get(symbol, {}).get("market_type", "metal")
+        except:
+            pass
+            
         trend_score = MultiScorer.get_trend_score(df_slice, regime)
         breakout_score = MultiScorer.get_breakout_score(df_slice)
         reversal_score = MultiScorer.get_reversal_score(df_slice)
-        session_score = MultiScorer.get_session_score(dt_time)
+        session_score = MultiScorer.get_session_score(dt_time, market_type)
         
         # Distances
         recent_high = df_slice.iloc[-2]['recent_high_20'] if i > 0 else candle['high']
@@ -133,6 +145,12 @@ def build_dataset(atr_multiplier=2.0):
         
         rh_dist = (recent_high - candle['close']) / candle['atr'] if candle['atr'] > 0 else 0
         rl_dist = (candle['close'] - recent_low) / candle['atr'] if candle['atr'] > 0 else 0
+        
+        # Normalized Features
+        close_p = candle['close']
+        atr_pct = (candle['atr'] / close_p) * 100 if close_p > 0 else 0
+        rh_dist_pct = ((recent_high - close_p) / close_p) * 100 if close_p > 0 else 0
+        rl_dist_pct = ((close_p - recent_low) / close_p) * 100 if close_p > 0 else 0
         
         row = {
             "timestamp": candle['time'],
@@ -142,6 +160,7 @@ def build_dataset(atr_multiplier=2.0):
             "reversal_score": reversal_score,
             "session_score": session_score,
             "atr": candle['atr'],
+            "atr_pct": atr_pct,
             "adx": candle['adx'],
             "ema50_slope": candle['ema50_slope'],
             "rsi": candle['rsi'],
@@ -154,6 +173,8 @@ def build_dataset(atr_multiplier=2.0):
             "is_buy": 1 if direction == "BUY" else 0,
             "recent_high_20_distance": rh_dist,
             "recent_low_20_distance": rl_dist,
+            "recent_high_20_distance_pct": rh_dist_pct,
+            "recent_low_20_distance_pct": rl_dist_pct,
             "result_r": result_r,
             "label": 1 if result_r > 0 else 0
         }
@@ -165,11 +186,14 @@ def build_dataset(atr_multiplier=2.0):
     res_df = pd.DataFrame(dataset_rows)
     print(f"Dataset build complete! Total candidates: {len(res_df)}")
     
-    os.makedirs("datasets", exist_ok=True)
+    os.makedirs(out_dir, exist_ok=True)
     res_df.to_csv(out_file, index=False)
     print(f"Saved to {out_file}")
+    return out_file
 
 if __name__ == "__main__":
     import sys
-    atr_mult = float(sys.argv[1]) if len(sys.argv) > 1 else 2.0
-    build_dataset(atr_mult)
+    symbol = sys.argv[1] if len(sys.argv) > 1 else "XAUUSDm"
+    timeframe = sys.argv[2] if len(sys.argv) > 2 else "M5"
+    atr_mult = float(sys.argv[3]) if len(sys.argv) > 3 else 2.0
+    build_dataset(symbol, timeframe, atr_mult)

@@ -7,6 +7,7 @@ from data.mt5_client import mt5_client
 from strategy.indicators import IndicatorCalculator
 from strategy.market_score import MarketScoreCalculator
 from market.regime_detector import RegimeDetector
+from strategy.scorer import MultiScorer
 from features.feature_store import feature_store
 from ml.predictor import ml_predictor
 from ml.market_memory import market_memory
@@ -91,6 +92,9 @@ class MarketScanner:
             regime = RegimeDetector.detect(df)
             pipeline_stats.log_pass("regime_pass")
             
+            # We need market_type for session score
+            market_type = cfg.get("market_type", "metal")
+            
             market_score = MarketScoreCalculator.calculate(df, regime)
             final_dir = market_score['final_direction']
             
@@ -105,13 +109,17 @@ class MarketScanner:
             rh_dist = (recent_high - df['close'].iloc[-1]) / df['atr'].iloc[-1] if df['atr'].iloc[-1] > 0 else 0
             rl_dist = (df['close'].iloc[-1] - recent_low) / df['atr'].iloc[-1] if df['atr'].iloc[-1] > 0 else 0
             
+            # We need market_type for session score
+            market_type = cfg.get("market_type", "metal")
+            
             ml_features = {
                 "final_score": market_score['final_score'],
-                "trend_score": market_score.get('trend_score', 0),
-                "breakout_score": market_score.get('breakout_score', 0),
-                "reversal_score": market_score.get('reversal_score', 0),
-                "session_score": market_score.get('session_score', 0),
+                "trend_score": MultiScorer.get_trend_score(df, regime),
+                "breakout_score": MultiScorer.get_breakout_score(df),
+                "reversal_score": MultiScorer.get_reversal_score(df),
+                "session_score": MultiScorer.get_session_score(current_candle_time, market_type),
                 "atr": indicators['atr'],
+                "atr_pct": (indicators['atr'] / df['close'].iloc[-1] * 100) if df['close'].iloc[-1] > 0 else 0,
                 "adx": indicators['adx'],
                 "ema50_slope": indicators['ema50_slope'],
                 "rsi": indicators['rsi'],
@@ -120,7 +128,9 @@ class MarketScanner:
                 "is_high_volatility": 1 if regime.get('volatility_state') == "HIGH_VOLATILITY" else 0,
                 "is_buy": 1 if final_dir == "BUY" else 0,
                 "recent_high_20_distance": rh_dist,
-                "recent_low_20_distance": rl_dist
+                "recent_low_20_distance": rl_dist,
+                "recent_high_20_distance_pct": (recent_high - df['close'].iloc[-1]) / df['close'].iloc[-1] * 100 if df['close'].iloc[-1] > 0 else 0,
+                "recent_low_20_distance_pct": (df['close'].iloc[-1] - recent_low) / df['close'].iloc[-1] * 100 if df['close'].iloc[-1] > 0 else 0
             }
             
             # Use dynamic predictor

@@ -60,14 +60,33 @@ class MultiScorer:
         return 0.0
 
     @staticmethod
-    def get_session_score(current_time: datetime) -> float:
+    def get_session_score(current_time: datetime, market_type: str = "metal") -> float:
         """ Higher absolute score means better liquidity. [0, 100] """
         if not isinstance(current_time, datetime):
             return 50.0
         hour = current_time.hour
-        # London/NY Overlap: 13-16 UTC
-        if 13 <= hour <= 16:
-            return 100.0
-        elif 7 <= hour <= 22:
-            return 60.0
-        return 20.0
+        
+        if market_type == "crypto":
+            # Crypto is 24/7, liquidity is relatively flat but maybe slightly higher during US/Asia days
+            return 80.0
+            
+        elif market_type == "indices":
+            # US Indices peak during US session (13:30 - 20:00 UTC)
+            if 13 <= hour <= 20:
+                return 100.0
+            elif 7 <= hour <= 12: # Pre-market / EU
+                return 60.0
+            return 20.0
+            
+        elif market_type == "forex" or market_type == "metal":
+            # London/NY Overlap: 13-16 UTC
+            if 13 <= hour <= 16:
+                return 100.0
+            elif 7 <= hour <= 22:
+                return 60.0
+            return 20.0
+            
+        else: # Oil and others
+            if 13 <= hour <= 19:
+                return 100.0
+            return 50.0
