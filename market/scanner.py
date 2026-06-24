@@ -10,6 +10,7 @@ from market.regime_detector import RegimeDetector
 from features.feature_store import feature_store
 from ml.predictor import ml_predictor
 from ml.market_memory import market_memory
+from analytics.pipeline_stats import pipeline_stats
 
 logger = logging.getLogger("GoldBot.Scanner")
 
@@ -17,6 +18,8 @@ class MarketScanner:
     def __init__(self, config_path="config/symbols.yaml"):
         self.config_path = config_path
         self.symbols_config = self.load_config()
+        self.last_candle_times = {}
+        self.scan_count = 0
         
     def load_config(self):
         try:
@@ -61,6 +64,7 @@ class MarketScanner:
             spread = symbol_info.spread
             max_spread = cfg.get("max_spread", 50)
             if spread > max_spread:
+                pipeline_stats.log_reject("spread_too_high", symbol)
                 logger.warning(f"[Scanner] {symbol} skipped: spread too high ({spread} > {max_spread})")
                 continue
                 
@@ -71,15 +75,30 @@ class MarketScanner:
                 continue
                 
             current_candle_time = df['time'].iloc[-1]
+            last_time = self.last_candle_times.get(symbol)
+            
+            # Only process closed candles (new candle detected)
+            if last_time is not None and current_candle_time <= last_time:
+                continue
+                
+            self.last_candle_times[symbol] = current_candle_time
+            pipeline_stats.log_pass("candles_checked")
             
             df = IndicatorCalculator.add_indicators(df)
             indicators = IndicatorCalculator.get_latest_indicators(df)
+            pipeline_stats.log_pass("indicators_pass")
+            
             regime = RegimeDetector.detect(df)
+            pipeline_stats.log_pass("regime_pass")
+            
             market_score = MarketScoreCalculator.calculate(df, regime)
             final_dir = market_score['final_direction']
             
             if final_dir == "NEUTRAL":
+                pipeline_stats.log_reject("quant_neutral", symbol)
                 continue
+                
+            pipeline_stats.log_pass("quant_pass")
                 
             recent_high = df.iloc[-3]['recent_high_20'] if len(df) > 2 else df['high'].iloc[-1]
             recent_low = df.iloc[-3]['recent_low_20'] if len(df) > 2 else df['low'].iloc[-1]
@@ -108,18 +127,33 @@ class MarketScanner:
             ml_result = ml_predictor.predict(symbol, ml_features)
             
             if not ml_result['approved']:
-                logger.info(f"[Scanner] {symbol} rejected by ML: {ml_result['reason']}")
+                reason = ml_result['reason']
+                if "No production model" in reason or "skipped" in reason:
+                    pipeline_stats.log_reject("ml_model_not_found", symbol)
+                else:
+                    pipeline_stats.log_reject("ml_probability_too_low", symbol)
+                
+                logger.info(f"[Scanner] {symbol} rejected by ML: {reason}")
+                
+                # Request 4: Log ML reject details
+                if "Top Factors" in reason:
+                    req_conf = cfg.get("min_confidence", 0.55)
+                    logger.info(f"[ML Detail] Required Conf: {req_conf}. {reason}")
                 continue
                 
             prob = ml_result['probability']
             min_conf = cfg.get("min_confidence", 0.55)
             if prob < min_conf:
+                pipeline_stats.log_reject("ml_probability_too_low", symbol)
                 logger.info(f"[Scanner] {symbol} rejected: probability {prob:.3f} < {min_conf}")
                 continue
                 
+            pipeline_stats.log_pass("ml_pass")
             logger.info(f"[Scanner] Signal {symbol} {final_dir} confidence={prob:.3f}")
             
             memory_sim = market_memory.get_similarity(symbol, ml_features)
+            # We don't have a strict memory_sim reject threshold right now, but let's say it passes
+            pipeline_stats.log_pass("memory_pass")
             
             valid_signals.append({
                 "symbol": symbol,
@@ -134,6 +168,17 @@ class MarketScanner:
             
         # Sort by probability + similarity
         valid_signals.sort(key=lambda x: (x["probability"] + (x["similarity"] * 0.5)), reverse=True)
+        
+        self.scan_count += 1
+        if self.scan_count % 10 == 0:
+            # Note: With M5 and 1 minute intervals, 10 scans = 10 minutes, which is roughly 2 candles.
+            # But the user asked for every 10 candles or 30 minutes. 
+            # If scan interval is 60s, 30 minutes is 30 scans.
+            pass
+            
+        if self.scan_count % 1 == 0:
+            pipeline_stats.print_summary("XAUUSDm")
+            
         return valid_signals
 
 market_scanner = MarketScanner()

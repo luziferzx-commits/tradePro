@@ -9,7 +9,7 @@ XAUUSDm:
   risk_multiplier: 1.0
 
 EURUSDm:
-  enabled: true
+  enabled: false
   market_type: forex
   timeframe: M5
   min_confidence: 0.62
@@ -19,7 +19,7 @@ EURUSDm:
   risk_multiplier: 0.7
 
 GBPUSDm:
-  enabled: true
+  enabled: false
   market_type: forex
   timeframe: M5
   min_confidence: 0.62
@@ -29,7 +29,7 @@ GBPUSDm:
   risk_multiplier: 0.7
 
 USDJPYm:
-  enabled: true
+  enabled: false
   market_type: forex
   timeframe: M5
   min_confidence: 0.60
@@ -39,7 +39,7 @@ USDJPYm:
   risk_multiplier: 0.7
 
 US30m:
-  enabled: true
+  enabled: false
   market_type: indices
   timeframe: M5
   min_confidence: 0.65
@@ -49,7 +49,7 @@ US30m:
   risk_multiplier: 0.8
 
 USTECm: # NAS100 equivalent in Exness
-  enabled: true
+  enabled: false
   market_type: indices
   timeframe: M5
   min_confidence: 0.65
@@ -59,7 +59,7 @@ USTECm: # NAS100 equivalent in Exness
   risk_multiplier: 0.8
 
 US500m: # SPX500 equivalent in Exness
-  enabled: true
+  enabled: false
   market_type: indices
   timeframe: M5
   min_confidence: 0.65
@@ -69,7 +69,7 @@ US500m: # SPX500 equivalent in Exness
   risk_multiplier: 0.8
 
 BTCUSDm:
-  enabled: true
+  enabled: false
   market_type: crypto
   timeframe: M15
   min_confidence: 0.70
@@ -79,7 +79,7 @@ BTCUSDm:
   risk_multiplier: 0.5
 
 ETHUSDm:
-  enabled: true
+  enabled: false
   market_type: crypto
   timeframe: M15
   min_confidence: 0.70
@@ -89,7 +89,7 @@ ETHUSDm:
   risk_multiplier: 0.5
 
 XAGUSDm:
-  enabled: true
+  enabled: false
   market_type: metal
   timeframe: M5
   min_confidence: 0.65
@@ -99,7 +99,7 @@ XAGUSDm:
   risk_multiplier: 1.0
 
 USOILm:
-  enabled: true
+  enabled: false
   market_type: oil
   timeframe: M15
   min_confidence: 0.65

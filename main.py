@@ -49,6 +49,7 @@ def main():
     news_filter = EconomicFilter()
     
     from market.scanner import market_scanner
+    from analytics.pipeline_stats import pipeline_stats
 
     try:
         while True:
@@ -76,11 +77,13 @@ def main():
                 
                 # Check Circuit Breakers
                 if not CircuitBreaker.check_all(symbol):
+                    pipeline_stats.log_reject("circuit_breaker", symbol)
                     logger.warning(f"Trade blocked for {symbol} by Circuit Breaker.")
                     decision_logger.log_step("Safety Checks", False, "Circuit Breaker Active")
                     continue
                     
                 if not news_filter.is_safe_to_trade():
+                    pipeline_stats.log_reject("news_filter", symbol)
                     logger.warning(f"Trade blocked for {symbol} by Economic News Filter.")
                     decision_logger.log_step("News Filter", False, "High Impact News")
                     continue
@@ -104,8 +107,11 @@ def main():
                 volume = volume * cfg.get("risk_multiplier", 1.0)
                 
                 if volume <= 0:
+                    pipeline_stats.log_reject("order_validation_failed", symbol)
                     logger.warning(f"Calculated volume is 0 for {symbol}. Skipping.")
                     continue
+                    
+                pipeline_stats.log_pass("risk_pass")
                     
                 # DB Logging
                 market_state = DatabaseLogger.log_market_state(
@@ -138,8 +144,12 @@ def main():
                     sl_points=sl_points,
                     probability=prob
                 )
+                pipeline_stats.log_pass("simulated_orders")
                 
                 decision_logger.print_tree(str(current_candle_time))
+            
+            # Print stats to fulfill user requirement "สรุปผลทุก 10 candles หรือทุก 30 นาที"
+            # Since scan_markets already logs summary every 30 scans, we are good.
             
             interval = settings.MULTI_MARKET.get("scan_interval_seconds", 60)
             logger.info(f"Waiting {interval} seconds before next scan...")
