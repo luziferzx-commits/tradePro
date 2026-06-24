@@ -62,8 +62,19 @@ It is equally important to define what constitutes a failure so that we can deci
 ❌ Do NOT optimize for PF.
 **Mantra:** *Observe, Measure, Validate.*
 
+## The "Backtest Confidence Trap" & Expected Scenarios
+Entering Sprint 5, we must actively avoid the "Backtest Confidence Trap". Historical OOS is promising, but Live Forward is the ultimate test. We expect one of three scenarios over the next 4 weeks:
+- **Scenario A (Best Case):** PF > 1.5, Coverage 60-75%, Health Stable, DD Controlled. ➡️ **Proceed to Sprint 6.**
+- **Scenario B (Most Common):** PF 1.1 - 1.4. Still profitable, but not as beautiful as OOS. ➡️ **System is viable but requires realistic expectations.**
+- **Scenario C (Danger):** PF < 1.0, Coverage plummets, Health flips constantly. ➡️ **Trigger Definition of Failure. Abort without emotion.**
+
 ## Lookahead: Sprint 6 (Capital Allocation Framework)
-If and only if Candidate V2.1 passes the 4-week Shadow Validation, we will proceed to Sprint 6 to build the Capital Allocation Framework (e.g., starting at 0.25% risk -> 0.5% -> 0.75% -> 1.0% based on live performance). 
+If and only if Candidate V2.1 passes the 4-week Shadow Validation (Scenario A), we will proceed to Sprint 6 to build the Capital Allocation Framework. Promotion must be based on strict performance gates, not "feeling confident":
+- **Stage 0:** Paper Trading (Sprint 5)
+- **Stage 1:** 0.25% Risk
+- **Stage 2:** 0.50% Risk
+- **Stage 3:** 0.75% Risk
+- **Stage 4:** 1.00% Risk
 
 **Status:**
 Pending kickoff in the next Sprint. Current baseline remains **Candidate V2.1**.
