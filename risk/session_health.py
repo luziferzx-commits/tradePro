@@ -15,10 +15,10 @@ if not logger.handlers:
 
 
 class HealthState(Enum):
-    HEALTHY = 1.0
-    WARNING = 0.5
-    DEGRADED = 0.25
-    DISABLED = 0.0
+    HEALTHY = 1
+    WARNING = 2
+    DEGRADED = 3
+    DISABLED = 4
 
 
 class CategoryHealthTracker:
@@ -118,7 +118,7 @@ class AdaptiveSessionHealth:
         Evaluate health BEFORE applying the trade.
         Returns the risk multiplier (0.0 to 1.0) based on the most pessimistic state.
         """
-        states = []
+        multipliers = []
         
         # We track multiple dimensions
         dimensions = {
@@ -135,14 +135,27 @@ class AdaptiveSessionHealth:
             if name:
                 tracker = self._get_tracker(str(name), category_type)
                 state = tracker.evaluate_health()
-                states.append(state)
+                
+                mult = 1.0
+                if state == HealthState.WARNING:
+                    mult = 0.75
+                elif state == HealthState.DEGRADED:
+                    mult = 0.50
+                elif state == HealthState.DISABLED:
+                    if category_type in ['session_regime', 'session']:
+                        mult = 0.0
+                    else:
+                        mult = 0.50 # Soft cap for non-session contexts
+                
+                # Apply rules: symbol and direction are diagnostic only
+                if category_type not in ['symbol', 'direction']:
+                    multipliers.append(mult)
 
-        if not states:
+        if not multipliers:
             return 1.0
 
         # Find the most pessimistic state (min multiplier)
-        worst_state = min(states, key=lambda s: s.value)
-        return worst_state.value
+        return min(multipliers)
 
     def update_trade(self, features: dict, pnl_r: float):
         """
