@@ -94,7 +94,8 @@ class MultiAssetScanner:
             h4_trend = "UP" if h4_close > h4_ema50 else "DOWN"
             
         # 4. Market Score
-        market_score = MarketScoreCalculator.calculate(df, regime, h4_trend=h4_trend)
+        market_type = meta.get("asset_class", meta.get("market_type", "FOREX")).upper()
+        market_score = MarketScoreCalculator.calculate(df, regime, h4_trend=h4_trend, asset_class=market_type)
         final_dir = market_score['final_direction']
         
         if final_dir == "NEUTRAL":

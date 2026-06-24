@@ -1,17 +1,18 @@
 import pandas as pd
 from datetime import datetime
-from strategy.setups import SetupEvaluator
+from strategy.factory import StrategyFactory
 
 class MarketScoreCalculator:
     @staticmethod
-    def calculate(df: pd.DataFrame, regime: dict, h4_trend: str = "NEUTRAL") -> dict:
+    def calculate(df: pd.DataFrame, regime: dict, h4_trend: str = "NEUTRAL", asset_class: str = "FOREX") -> dict:
         if df.empty or len(df) < 5:
             return {
                 "final_score": 0.0, "final_direction": "NEUTRAL", "setup_name": "None", "reason": "No data", "all_setups": [],
                 "trend_score": 0.0, "breakout_score": 0.0, "reversal_score": 0.0, "session_score": 0.0, "h4_trend": h4_trend
             }
             
-        setups = SetupEvaluator.evaluate_all(df, regime, h4_trend=h4_trend)
+        evaluator = StrategyFactory.get_evaluator(asset_class)
+        setups = evaluator.evaluate_all(df, regime, h4_trend=h4_trend)
         
         if not setups:
             return {
