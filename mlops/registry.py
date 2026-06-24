@@ -40,12 +40,19 @@ class ModelRegistry:
         print(f"Promoted model {version} from {from_status} to {to_status}")
         return True
         
-    def register_model(self, model, metadata, status="candidate"):
+    def get_symbol_dir(self, status, symbol=None):
+        if symbol:
+            target_dir = os.path.join(self.base_dir, symbol, status)
+            os.makedirs(target_dir, exist_ok=True)
+            return target_dir
+        return getattr(self, f"{status}_dir")
+        
+    def register_model(self, model, metadata, status="candidate", symbol=None):
         version = metadata.get("model_version", f"v{datetime.utcnow().strftime('%Y%m%d%H%M%S')}")
         metadata["model_version"] = version
         metadata["registered_at"] = datetime.utcnow().isoformat()
         
-        target_dir = getattr(self, f"{status}_dir")
+        target_dir = self.get_symbol_dir(status, symbol)
         model_dir = os.path.join(target_dir, version)
         os.makedirs(model_dir, exist_ok=True)
         
@@ -55,13 +62,17 @@ class ModelRegistry:
             
         return version
         
-    def get_production_model(self):
-        models = os.listdir(self.production_dir)
+    def get_production_model(self, symbol=None):
+        prod_dir = os.path.join(self.base_dir, symbol, "production") if symbol else self.production_dir
+        if not os.path.exists(prod_dir):
+            return None, None
+            
+        models = os.listdir(prod_dir)
         if not models:
             return None, None
             
         latest_version = sorted(models)[-1]
-        model_dir = os.path.join(self.production_dir, latest_version)
+        model_dir = os.path.join(prod_dir, latest_version)
         
         model_path = os.path.join(model_dir, "xgb.pkl")
         meta_path = os.path.join(model_dir, "metadata.json")

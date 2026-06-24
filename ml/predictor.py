@@ -8,20 +8,36 @@ logger = logging.getLogger("GoldBot.MLPredictor")
 
 class MLPredictor:
     def __init__(self):
-        self.model, self.metadata = registry.get_production_model()
-        if self.model is None:
-            logger.warning("No production model found in registry.")
+        self.models = {}
+        self.metadatas = {}
+        
+    def get_model(self, symbol):
+        if symbol in self.models:
+            return self.models[symbol], self.metadatas[symbol]
             
-    def predict(self, features_dict):
-        if self.model is None:
+        model, metadata = registry.get_production_model(symbol)
+        if model is None:
+            # Fallback to generic model
+            model, metadata = registry.get_production_model(None)
+            if model is None:
+                logger.warning(f"No production model found for {symbol} and no generic fallback.")
+                return None, None
+                
+        self.models[symbol] = model
+        self.metadatas[symbol] = metadata
+        return model, metadata
+            
+    def predict(self, symbol, features_dict):
+        model, metadata = self.get_model(symbol)
+        if model is None:
             return {
                 "approved": False,
-                "reason": "No production model loaded.",
+                "reason": f"No production model loaded for {symbol}.",
                 "probability": 0.0,
                 "feature_hash": "N/A"
             }
             
-        expected_features = self.metadata.get("features", [])
+        expected_features = metadata.get("features", [])
         
         # Check if all required features exist
         missing = [f for f in expected_features if f not in features_dict]
@@ -42,22 +58,22 @@ class MLPredictor:
         
         # Check Drift
         from analytics.drift_detector import drift_detector
-        is_drifted, drift_reason = drift_detector.check_drift(features_dict, self.metadata)
+        is_drifted, drift_reason = drift_detector.check_drift(features_dict, metadata)
         if is_drifted:
             return {
                 "approved": False,
                 "reason": drift_reason,
                 "probability": 0.0,
                 "feature_hash": feature_hash,
-                "model_version": self.metadata.get("model_version", "unknown")
+                "model_version": metadata.get("model_version", "unknown")
             }
         
         try:
             import xgboost as xgb
-            prob = self.model.predict_proba(df)[0][1]
+            prob = model.predict_proba(df)[0][1]
             
             # XAI: Explainable AI
-            contribs = self.model.get_booster().predict(xgb.DMatrix(df), pred_contribs=True)[0]
+            contribs = model.get_booster().predict(xgb.DMatrix(df), pred_contribs=True)[0]
             feature_contribs = []
             for i, feat in enumerate(expected_features):
                 if i < len(contribs) - 1:
@@ -78,7 +94,7 @@ class MLPredictor:
                 "reason": f"Model inference error: {str(e)}",
                 "probability": 0.0,
                 "feature_hash": feature_hash,
-                "model_version": self.metadata.get("model_version", "unknown")
+                "model_version": metadata.get("model_version", "unknown")
             }
             
         approved = prob >= 0.55
@@ -87,10 +103,10 @@ class MLPredictor:
             "approved": approved,
             "probability": prob,
             "feature_hash": feature_hash,
-            "model_version": self.metadata.get("model_version", "unknown"),
-            "expected_rr": self.metadata.get("expected_rr", 2.5),
-            "expected_holding_time_hrs": self.metadata.get("expected_holding_time_hrs", 4.0),
-            "expected_max_dd_r": self.metadata.get("expected_max_dd_r", 10.0),
+            "model_version": metadata.get("model_version", "unknown"),
+            "expected_rr": metadata.get("expected_rr", 2.5),
+            "expected_holding_time_hrs": metadata.get("expected_holding_time_hrs", 4.0),
+            "expected_max_dd_r": metadata.get("expected_max_dd_r", 10.0),
             "reason": xai_reason
         }
 

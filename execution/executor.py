@@ -11,20 +11,25 @@ class Executor:
         """
         Sends an order to MT5. sl_points is in point values (e.g., 500 = 50 pips).
         """
+        from risk.portfolio_manager import portfolio_manager
+        
+        # Enforce DRY_RUN specifically as requested by user
+        if not settings.DRY_RUN:
+            logger.error("EXECUTION BLOCKED: System is forced to DRY_RUN mode for Multi-Market testing.")
+            return False
+            
         if settings.IS_DEMO_ACCOUNT:
             account_info = mt5.account_info()
             if not account_info or account_info.trade_mode != mt5.ACCOUNT_TRADE_MODE_DEMO:
                 logger.error("Execution blocked: Settings demand Demo account but current account is not Demo.")
                 return False
                 
-        # Check max open positions
-        positions = mt5.positions_get(symbol=symbol)
-        if positions is not None:
-            # Filter by our magic number
-            our_positions = [p for p in positions if p.magic == settings.MAGIC_NUMBER]
-            if len(our_positions) >= settings.MAX_OPEN_POSITIONS:
-                logger.warning(f"Execution blocked: Max open positions ({settings.MAX_OPEN_POSITIONS}) reached.")
-                return False
+        # Check max open positions (Replaced by PortfolioManager)
+        # We will use PortfolioManager instead
+        approved, reason = portfolio_manager.can_open_trade(symbol, settings.RISK_PER_TRADE_PCT)
+        if not approved:
+            logger.warning(f"[Risk] {symbol} rejected: {reason}")
+            return False
 
         if sl_points <= 0:
             logger.error("Execution blocked: SL points must be strictly positive.")

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v2.0.0] - 2026-06-24
+### Added
+- **Multi-Market Trading Bot Upgrade**: ระบบสามารถเทรดหลายตลาด (Forex, Crypto, Indices, Metals) พร้อมกันผ่าน `symbols.yaml`
+- **Market Scanner**: สแกนหลายตลาดในลูปเดียว พร้อมระบบจัดอันดับ Signal ยอดเยี่ยม
+- **Portfolio Risk Manager**: กฎการจำกัดความเสี่ยงรวบยอด (Total Open Risk 3%, Daily Loss 5%) และตัวกรอง Correlation (จำกัดออเดอร์ในกลุ่มสินทรัพย์เดียวกันไม่เกิน 2 ไม้)
+- **Dynamic Model Loading**: XGBoost และ Market Memory ถูกแยกเก็บราย Symbol เพื่อไม่ให้ข้อมูลปะปนกัน
+- **Dry Run Multi-Market**: โหมดจำลองผลการเทรดแบบ 10 ตลาดพร้อมกัน
+
 ## [v1.0.0] - 2026-06-24
 นี่คือเวอร์ชันแรกสุดที่เป็นทางการของ GQOS Institutional Framework
 

@@ -25,6 +25,21 @@ class Settings:
     MAX_CONSECUTIVE_LOSSES = 5
     MAX_SPREAD_POINTS = 50     # e.g., 5.0 pips for Gold
     
+    # Multi-Market Configuration
+    MULTI_MARKET = {
+        "enabled": True,
+        "max_symbols_per_scan": 11,
+        "scan_interval_seconds": 60,
+        "max_open_trades": 5,
+        "max_total_open_risk": 0.03,
+        "max_daily_loss": 0.05,
+        "allow_crypto": True,
+        "allow_indices": True,
+        "allow_forex": True,
+        "allow_metals": True,
+        "allow_oil": True
+    }
+    
     # Safety & Execution
     DRY_RUN = os.getenv("DRY_RUN", "True").lower() == "true"
     IS_DEMO_ACCOUNT = os.getenv("IS_DEMO_ACCOUNT", "True").lower() == "true"

@@ -1,16 +1,16 @@
 # Project Overview
-- **Project Name**: GQOS (GoldBot Quant Research Operating System) / tradePro
+- **Project Name**: GQOS (tradePro) - Multi-Market Trading Bot
 - **Primary Objective**: สร้างระบบเทรดอัตโนมัติระดับสถาบันที่ไม่ได้มุ่งเน้นแค่ "บอทที่สมบูรณ์แบบ" แต่สร้าง "องค์กร/ระบบที่สามารถค้นหา ทดสอบ และทดแทน Alpha ได้อย่างต่อเนื่อง" (Platform > Product)
-- **Supported Markets**: ปัจจุบันโฟกัสที่ **XAUUSD (Gold)** บน MT5 (Broker: Exness) แต่สถาปัตยกรรมถูกออกแบบมารองรับ Multi-Market 
+- **Supported Markets**: รองรับ Multi-Market เต็มรูปแบบ (XAUUSD, EURUSD, BTCUSD, US30, etc.) โดยใช้ `symbols.yaml` และรันลูปสแกนหลายตลาดในโปรเซสเดียว 
 - **Trading Strategy**: ใช้ Quant Scoring (Indicators + Regime) ผสมผสานกับ AI Prediction (XGBoost) และเช็คความคล้ายคลึงจากอดีต (Market Memory)
 
 # Current Status
 - **สิ่งที่ทำเสร็จแล้ว**: 
-  - ระบบ Execution เชื่อมต่อ MT5 (V1)
-  - โมดูล Market Memory (Rebuilt สำเร็จ โหลดเวกเตอร์ชัยชนะ 964 รูปแบบ)
-  - Risk Manager & Circuit Breakers ป้องกันข่าวแรง
+  - อัพเกรดเป็น **Multi-Market Trading Bot** รองรับตลาดและสแกนพร้อมกันได้ 11 คู่เงิน
+  - โมดูล Market Scanner จัดอันดับสัญญาณเทรด
+  - โมเดล Predictor และ Market Memory แยกโหลดอิสระแบบ Dynamic ตามแต่ละ Symbol
+  - ระบบ Execution และ Portfolio Risk Control (คุมความเสี่ยงรวมทั้งพอร์ต + Correlation)
   - Telegram Notifications แจ้งเตือนเข้าและปิดออเดอร์
-  - GQOS Architecture (Phase 0) สถาปัตยกรรมระดับองค์กร (Core, Accounting, Shadow Trading, Research Pipeline)
 - **สิ่งที่กำลังพัฒนา**: 
   - การทำ Shadow Validation (เฝ้าดูผลงาน 90 วัน) ของ Champion Alphas
   - การรองรับหลายตลาด (Multi-Market Scanner)
