@@ -208,13 +208,23 @@ def run_baseline_export():
     df.set_index('time', inplace=True)
     df.sort_index(inplace=True)
     
-    params = {
-        'rolling_window': 15,
-        'recovery_trades': 5,
-        'disabled_threshold': 0.50,
-        'degraded_multiplier': 0.60,
-        'warning_multiplier': 0.85
-    }
+    # Load config from YAML
+    import yaml
+    config_path = 'config/session_health.v2_1.yaml'
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as f:
+            params = yaml.safe_load(f)
+        print(f"Loaded config from {config_path}: {params}")
+    else:
+        print("Config file not found. Falling back to default Candidate V2.1 params.")
+        params = {
+            'rolling_window': 15,
+            'recovery_trades': 5,
+            'disabled_threshold': 0.50,
+            'degraded_multiplier': 0.60,
+            'warning_multiplier': 0.85
+        }
+        
     print("Running Candidate V2 Baseline and exporting diagnostics...")
     metrics = run_backtest(df, params, export_csv=True)
     print("Baseline Metrics:", metrics)

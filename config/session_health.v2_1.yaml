@@ -1,0 +1,9 @@
+# Candidate V2.1 Configuration
+# Status: ACCEPTED for Shadow/Paper Validation
+# NOT APPROVED for live trading yet.
+
+rolling_window: 15
+recovery_trades: 5
+disabled_threshold: 0.50
+degraded_multiplier: 0.60
+warning_multiplier: 0.85
