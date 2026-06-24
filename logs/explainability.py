@@ -14,6 +14,7 @@ class ExplainabilityLogger:
             "market_score", "ml_probability", "prod_probability", "candidate_probability",
             "probability_gap_abs", "probability_gap_signed",
             "session_health", "risk_multiplier", "health_dynamic", "health_source", "health_note",
+            "memory_key", "memory_matches", "memory_pf", "memory_win_rate", "memory_expectancy", "memory_confidence",
             "decision", "decision_stage", "reasons"
         ]
         self._ensure_file_exists()
@@ -40,6 +41,12 @@ class ExplainabilityLogger:
                    health_dynamic: bool = False,
                    health_source: str = "initialized_default",
                    health_note: str = "PnL feedback loop not implemented in A1",
+                   memory_key: str = "UNKNOWN",
+                   memory_matches: int = 0,
+                   memory_pf: float = 0.0,
+                   memory_win_rate: float = 0.0,
+                   memory_expectancy: float = 0.0,
+                   memory_confidence: str = "UNKNOWN",
                    decision: str = "REJECT", 
                    decision_stage: str = "UNKNOWN",
                    reasons: list = None):
@@ -65,6 +72,12 @@ class ExplainabilityLogger:
             "health_dynamic": health_dynamic,
             "health_source": health_source,
             "health_note": health_note,
+            "memory_key": memory_key,
+            "memory_matches": memory_matches,
+            "memory_pf": memory_pf,
+            "memory_win_rate": memory_win_rate,
+            "memory_expectancy": memory_expectancy,
+            "memory_confidence": memory_confidence,
             "decision": decision,
             "decision_stage": decision_stage,
             "reasons": reasons
@@ -94,6 +107,7 @@ class ExplainabilityLogger:
         print(f"Market Score: {row['market_score']:.1f}")
         print(f"ML Prob: {row['ml_probability']:.2f} | Prod: {row['prod_probability']:.3f} | Cand: {row['candidate_probability']:.3f} | Gap: {row['probability_gap_signed']:.3f}")
         print(f"Session Health: {row['session_health']} (Dynamic: {row['health_dynamic']})")
+        print(f"Market Memory: {row['memory_confidence']} (Matches: {row['memory_matches']}, PF: {row['memory_pf']:.2f})")
         
         decision_color = "\033[92m" if row['decision'] == "ACCEPT" else "\033[91m"
         reset_color = "\033[0m"

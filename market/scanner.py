@@ -11,7 +11,7 @@ from market.regime_detector import RegimeDetector
 from strategy.scorer import MultiScorer
 from features.feature_store import feature_store
 from ml.predictor import ml_predictor
-from ml.market_memory import market_memory
+from memory.market_memory_v2 import market_memory_v2
 from analytics.pipeline_stats import pipeline_stats
 from logs.explainability import explainability_logger
 from risk.session_health import AdaptiveSessionHealth
@@ -88,6 +88,13 @@ class MarketScanner:
             ex_session_health = "HEALTHY" # Because of A1 default
             ex_risk_mult = 1.0
             
+            ex_mem_key = "UNKNOWN"
+            ex_mem_matches = 0
+            ex_mem_pf = 0.0
+            ex_mem_win_rate = 0.0
+            ex_mem_expectancy = 0.0
+            ex_mem_conf = "UNKNOWN"
+            
             def log_explainability(decision, decision_stage, reasons):
                 explainability_logger.log_signal(
                     symbol=symbol,
@@ -104,6 +111,12 @@ class MarketScanner:
                     health_dynamic=False,
                     health_source="initialized_default",
                     health_note="PnL feedback loop not implemented in A1",
+                    memory_key=ex_mem_key,
+                    memory_matches=ex_mem_matches,
+                    memory_pf=ex_mem_pf,
+                    memory_win_rate=ex_mem_win_rate,
+                    memory_expectancy=ex_mem_expectancy,
+                    memory_confidence=ex_mem_conf,
                     decision=decision,
                     decision_stage=decision_stage,
                     reasons=reasons
@@ -169,6 +182,21 @@ class MarketScanner:
             market_score = MarketScoreCalculator.calculate(df, regime)
             final_dir = market_score['final_direction']
             ex_market_score = market_score['final_score']
+            
+            # Query Market Memory V2 (Read-only observer)
+            atr_bucket_map = {
+                "HIGH_VOLATILITY": "HIGH",
+                "LOW_VOLATILITY": "LOW",
+                "NORMAL_VOLATILITY": "NORMAL"
+            }
+            atr_bucket = atr_bucket_map.get(regime.get("volatility_state", "NORMAL_VOLATILITY"), "NORMAL")
+            mem_res = market_memory_v2.get_memory(ex_session, ex_regime, atr_bucket, final_dir)
+            ex_mem_key = mem_res["memory_key"]
+            ex_mem_matches = mem_res["memory_matches"]
+            ex_mem_pf = mem_res["memory_pf"]
+            ex_mem_win_rate = mem_res["memory_win_rate"]
+            ex_mem_expectancy = mem_res["memory_expectancy"]
+            ex_mem_conf = mem_res["memory_confidence"]
             
             if final_dir == "NEUTRAL":
                 pipeline_stats.log_reject("quant_neutral", symbol)

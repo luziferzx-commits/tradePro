@@ -49,7 +49,13 @@ class TelemetryDatabase:
                         health_dynamic BOOLEAN NOT NULL,
                         health_source TEXT NOT NULL,
                         health_note TEXT,
-                        shadow_pnl REAL DEFAULT 0.0
+                        shadow_pnl REAL DEFAULT 0.0,
+                        memory_key TEXT,
+                        memory_matches INTEGER DEFAULT 0,
+                        memory_pf REAL DEFAULT 0.0,
+                        memory_win_rate REAL DEFAULT 0.0,
+                        memory_expectancy REAL DEFAULT 0.0,
+                        memory_confidence TEXT DEFAULT 'UNKNOWN'
                     )
                 """)
                 
@@ -60,7 +66,16 @@ class TelemetryDatabase:
                     cursor.execute("ALTER TABLE signals ADD COLUMN probability_gap_abs REAL DEFAULT 0.0")
                     cursor.execute("ALTER TABLE signals ADD COLUMN probability_gap_signed REAL DEFAULT 0.0")
                 except sqlite3.OperationalError:
-                    # Columns already exist
+                    pass
+                    
+                try:
+                    cursor.execute("ALTER TABLE signals ADD COLUMN memory_key TEXT")
+                    cursor.execute("ALTER TABLE signals ADD COLUMN memory_matches INTEGER DEFAULT 0")
+                    cursor.execute("ALTER TABLE signals ADD COLUMN memory_pf REAL DEFAULT 0.0")
+                    cursor.execute("ALTER TABLE signals ADD COLUMN memory_win_rate REAL DEFAULT 0.0")
+                    cursor.execute("ALTER TABLE signals ADD COLUMN memory_expectancy REAL DEFAULT 0.0")
+                    cursor.execute("ALTER TABLE signals ADD COLUMN memory_confidence TEXT DEFAULT 'UNKNOWN'")
+                except sqlite3.OperationalError:
                     pass
                 
                 # Indexes for query speed
@@ -94,9 +109,10 @@ class TelemetryDatabase:
                         market_score, ml_probability, prod_probability, candidate_probability,
                         probability_gap_abs, probability_gap_signed,
                         session_health, risk_multiplier,
-                        decision, decision_stage, reasons, health_dynamic, health_source, health_note
+                        decision, decision_stage, reasons, health_dynamic, health_source, health_note,
+                        memory_key, memory_matches, memory_pf, memory_win_rate, memory_expectancy, memory_confidence
                     ) VALUES (
-                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                     )
                 """, (
                     row.get("timestamp"),
@@ -117,7 +133,13 @@ class TelemetryDatabase:
                     reasons_str,
                     row.get("health_dynamic"),
                     row.get("health_source"),
-                    row.get("health_note")
+                    row.get("health_note"),
+                    row.get("memory_key"),
+                    row.get("memory_matches", 0),
+                    row.get("memory_pf", 0.0),
+                    row.get("memory_win_rate", 0.0),
+                    row.get("memory_expectancy", 0.0),
+                    row.get("memory_confidence", "UNKNOWN")
                 ))
                 conn.commit()
         except Exception as e:

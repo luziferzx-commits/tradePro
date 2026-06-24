@@ -41,6 +41,27 @@
 
         <div class="grid-main">
             <div class="card">
+                <h2>Market Memory (Latest Signal)</h2>
+                <div class="gap-stats" id="memoryCard">
+                    <div class="gap-item">
+                        <span class="label">Context</span>
+                        <span class="value" id="memContext">Loading...</span>
+                    </div>
+                    <div class="gap-item">
+                        <span class="label">Matches</span>
+                        <span class="value" id="memMatches">--</span>
+                    </div>
+                    <div class="gap-item">
+                        <span class="label">Profit Factor</span>
+                        <span class="value" id="memPf">--</span>
+                    </div>
+                    <div class="gap-item">
+                        <span class="label">Confidence</span>
+                        <span class="value badge" id="memConf">--</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
                 <h2>ML Probability Distribution</h2>
                 <div class="chart-container">
                     <canvas id="chartMlDist"></canvas>

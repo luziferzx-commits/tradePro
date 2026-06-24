@@ -148,6 +148,22 @@ def get_latest_signals():
         ORDER BY id DESC LIMIT 20
     """)
 
+@app.get("/api/latest-memory")
+def get_latest_memory():
+    data = query_db("""
+        SELECT 
+            session, regime, 
+            memory_key, memory_matches, memory_pf, memory_confidence
+        FROM signals
+        ORDER BY id DESC LIMIT 1
+    """)
+    if not data:
+        return {
+            "session": "UNKNOWN", "regime": "UNKNOWN", 
+            "memory_key": "UNKNOWN", "memory_matches": 0, "memory_pf": 0.0, "memory_confidence": "UNKNOWN"
+        }
+    return data[0]
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("scripts.dashboard_api:app", host="0.0.0.0", port=8000, reload=True)

@@ -183,6 +183,32 @@ async function updateDashboard() {
             tbody.appendChild(tr);
         });
     }
+    // 8. Market Memory
+    const memory = await fetchAPI('/latest-memory');
+    if (memory) {
+        document.getElementById('memContext').innerText = `${memory.session} + ${memory.regime}`;
+        document.getElementById('memMatches').innerText = memory.memory_matches;
+        document.getElementById('memPf').innerText = memory.memory_pf.toFixed(2);
+        
+        const confBadge = document.getElementById('memConf');
+        confBadge.innerText = memory.memory_confidence;
+        
+        if (memory.memory_confidence === 'HIGH') {
+            confBadge.className = "value badge badge-accept";
+        } else if (memory.memory_confidence === 'MEDIUM') {
+            confBadge.className = "value badge";
+            confBadge.style.background = "rgba(245, 158, 11, 0.1)";
+            confBadge.style.color = "var(--warning)";
+            confBadge.style.border = "1px solid rgba(245, 158, 11, 0.2)";
+        } else if (memory.memory_confidence === 'LOW') {
+            confBadge.className = "value badge badge-reject";
+        } else {
+            confBadge.className = "value badge";
+            confBadge.style.background = "rgba(100, 116, 139, 0.1)";
+            confBadge.style.color = "var(--text-muted)";
+            confBadge.style.border = "1px solid rgba(100, 116, 139, 0.2)";
+        }
+    }
 }
 
 // Init
