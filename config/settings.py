@@ -20,7 +20,8 @@ class Settings:
     
     # Risk Management
     RISK_PER_TRADE_PCT = float(os.getenv("RISK_PER_TRADE_PCT", 0.01))  # 1% risk per trade
-    MAX_DAILY_LOSS_PCT = float(os.getenv("MAX_DAILY_LOSS_PCT", 0.05))  # 5% max daily loss
+    MAX_DAILY_LOSS_PCT = float(os.getenv("MAX_DAILY_LOSS_PCT", 0.03))  # 3% max daily loss
+    MAX_DAILY_LOSS_WARNING_PCT = float(os.getenv("MAX_DAILY_LOSS_WARNING_PCT", 0.02)) # 2% warning
     MAX_DRAWDOWN_PCT = float(os.getenv("MAX_DRAWDOWN_PCT", 0.15))      # 15% max drawdown
     MAX_CONSECUTIVE_LOSSES = int(os.getenv("MAX_CONSECUTIVE_LOSSES", 5))
     MAX_SPREAD_POINTS = int(os.getenv("MAX_SPREAD_POINTS", 50))        # e.g., 5.0 pips for Gold

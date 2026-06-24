@@ -1,28 +1,56 @@
-import time
-import logging
-from datetime import datetime
-from config.settings import settings
-# Force DRY RUN globally as requested by user
-settings.DRY_RUN = True
+# =============================================================================
+# main.py — tradePro / GoldBot MetaTrader 5 XAUUSD GQOS Quantitative System
+# Production Ready with Fixes 01-07
+# =============================================================================
 
+# ── Imports ─────────────────────────────────────────────────────────────────
+# stdlib
+import logging
+import logging.handlers
+import math                                  # [FIX-06]
+import signal                                # [FIX-06]
+import sys
+import time
+from datetime import datetime
+
+# third-party
+import MetaTrader5 as mt5
+import pandas as pd
+from sqlalchemy.exc import SQLAlchemyError   # [FIX-03]
+
+# local — core & config
+from config.settings import settings
 from data.mt5_client import mt5_client
-from news.economic_filter import EconomicFilter
-from safety.circuit_breaker import CircuitBreaker
-from risk.manager import RiskManager
-from risk.guard import RiskGuard
-from risk.portfolio_manager import portfolio_manager
-from execution.executor import Executor
-from execution.shadow_executor import ShadowExecutor
 from database.logger import DatabaseLogger
-from positions.tracker import PositionTracker
+from database.repository import repository
+
+# local — logic & ml
 from analytics.daily_report import daily_report
 from analytics.decision_tree import decision_logger
 from analytics.model_health_report import health_monitor
-import MetaTrader5 as mt5
+from analytics.pipeline_stats import pipeline_stats
+from execution.executor import Executor
+from execution.shadow_executor import ShadowExecutor
+from market.scanner import market_scanner
+from memory.market_memory import market_memory
+from ml.feature_validator import FeatureValidator         # [FIX-07]
+from ml.predictor import MLPredictor
+from news.economic_filter import EconomicFilter
+from notifications.telegram_notifier import notify_bot_started
+from positions.tracker import PositionTracker
 
-import logging.handlers
+# local — risk
+from risk.circuit_breaker import CircuitBreaker
+from risk.daily_drawdown_guard import DailyDrawdownGuard  # [FIX-05]
+from risk.guard import RiskGuard
+from risk.manager import RiskManager
+from risk.portfolio_manager import portfolio_manager
+from risk.sl_tp_calculator import SLTPCalculator          # [FIX-04]
 
-# Configure built-in logging with Log Rotation
+# [FIX-02] REMOVED: from ai.gemini_filter import GeminiFilter
+
+
+# ── Logging Configuration ───────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -33,124 +61,286 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-
 logger = logging.getLogger("GoldBot")
 
+
+# ── Helper Functions & Signal Handlers ──────────────────────────────────────
+# [FIX-06] Graceful shutdown and precise timing
+_shutdown_requested = False
+
+def _request_shutdown(signum, frame):
+    global _shutdown_requested
+    logger.warning(f"Signal {signum} received — graceful shutdown requested.")
+    _shutdown_requested = True
+
+signal.signal(signal.SIGTERM, _request_shutdown)
+signal.signal(signal.SIGINT,  _request_shutdown)
+
+
+def get_timeframe_seconds(timeframe: str) -> int:
+    """Convert MT5 TIMEFRAME string/constant to seconds."""
+    _map = {
+        mt5.TIMEFRAME_M1:  60, "M1": 60,
+        mt5.TIMEFRAME_M5:  300, "M5": 300,
+        mt5.TIMEFRAME_M15: 900, "M15": 900,
+        mt5.TIMEFRAME_M30: 1800, "M30": 1800,
+        mt5.TIMEFRAME_H1:  3600, "H1": 3600,
+        mt5.TIMEFRAME_H4:  14400, "H4": 14400,
+        mt5.TIMEFRAME_D1:  86400, "D1": 86400,
+    }
+    return _map.get(timeframe, 300)   # default M5 = 300s
+
+
+def sleep_until_next_candle(tf_seconds: int, buffer_sec: int = 5) -> None:
+    """
+    Sleep precisely until after the next candle close + buffer.
+    Much more accurate than fixed time.sleep(30).
+    """
+    now = time.time()
+    remainder = now % tf_seconds
+    sleep_time = (tf_seconds - remainder) + buffer_sec
+    sleep_time = min(sleep_time, tf_seconds)   # never sleep more than 1 candle
+    logger.info(f"⏱  Next candle in {sleep_time:.0f}s (tf={tf_seconds}s buffer={buffer_sec}s)")
+    time.sleep(sleep_time)
+
+
+# ── Main Entrypoint ─────────────────────────────────────────────────────────
 def main():
-    logger.info("Initializing GoldBot Multi-Market V2...")
-    logger.warning("FORCED DRY_RUN MODE ACTIVE. No real orders will be sent.")
+    logger.info("Initializing GoldBot Multi-Market V2 (Production Mode)...")
     
+    if settings.DRY_RUN:
+        logger.warning("DRY_RUN MODE ACTIVE. No real orders will be sent.")
+        
     if not mt5_client.connect():
         logger.error("Failed to start due to MT5 connection error.")
         return
 
-    from notifications.telegram_notifier import notify_bot_started
     notify_bot_started()
 
     news_filter = EconomicFilter()
+    ml_predictor = MLPredictor()
+    # [FIX-02] REMOVED: ai_filter = GeminiFilter()
     
-    from market.scanner import market_scanner
-    from analytics.pipeline_stats import pipeline_stats
+    MAX_RECONNECT = 3
+    reconnect_count = 0
+    tf_seconds = get_timeframe_seconds(settings.TIMEFRAME)
 
     try:
-        while True:
-            # 1. Sync Positions
-            PositionTracker.sync_open_positions()
-
-            # 2. Multi-Market Scan
-            valid_signals = market_scanner.scan_markets()
+        # [FIX-06] Graceful shutdown loop
+        while not _shutdown_requested:
             
-            logger.info(f"Scan complete. Found {len(valid_signals)} valid signals.")
-            
-            # 3. Process Signals (Highest Priority First)
-            for signal_data in valid_signals:
-                symbol = signal_data['symbol']
-                direction = signal_data['direction']
-                prob = signal_data['probability']
-                sim = signal_data['similarity']
-                cfg = signal_data['config']
-                features = signal_data['features']
-                market_score = signal_data['score']
-                current_candle_time = signal_data['timestamp']
-                
-                logger.info(f"Processing {direction} signal for {symbol} (Prob: {prob:.3f}, Sim: {sim:.2f})")
-                decision_logger.reset()
-                
-                # Calculate Risk / Lots
-                sl_points = cfg.get("atr_multiplier_sl", 1.5) * features['atr'] * 10 # Example conversion
-                # Safety fallback
-                if sl_points < 100: sl_points = 500
-                tp_points = sl_points * 2 # 1:2 RR
-                
-                health_score = health_monitor.get_latest_health()
-                
-                # Evaluate Trade with Unified Risk Guard
-                evaluation = RiskGuard.evaluate_trade(
-                    symbol=symbol,
-                    direction=direction,
-                    signal_price=features['close'],
-                    sl_points=sl_points,
-                    tp_points=tp_points,
-                    ml_prob=prob,
-                    health_score=health_score
+            # [FIX-06] MT5 connection health check + reconnect
+            if not mt5.terminal_info():
+                reconnect_count += 1
+                logger.warning(
+                    f"MT5 connection lost. Attempt {reconnect_count}/{MAX_RECONNECT}..."
                 )
+                if reconnect_count > MAX_RECONNECT:
+                    logger.critical("Max MT5 reconnect attempts exceeded. Shutting down.")
+                    break
+                if mt5_client.connect():
+                    logger.info("MT5 reconnected successfully.")
+                    reconnect_count = 0
+                else:
+                    time.sleep(30)
+                    continue
+            else:
+                reconnect_count = 0   # reset counter on healthy connection
                 
-                if not evaluation["allowed"]:
-                    pipeline_stats.log_reject("risk_guard_failed", symbol)
-                    logger.warning(f"Trade blocked for {symbol}: {evaluation['reason']} (Guard: {evaluation['guard_that_failed']})")
-                    decision_logger.log_step("Safety Checks", False, evaluation['guard_that_failed'])
+            try:
+                # ── START OF CANDLE LOGIC ──────────────────────────────────
+                if not mt5_client.is_new_candle():
+                    time.sleep(1)
                     continue
                     
-                pipeline_stats.log_pass("risk_pass")
-                volume = evaluation["position_size"]
+                logger.info("New closed candle detected. Processing...")
+                decision_logger.reset()
+                
+                # [FIX-05] Daily drawdown kill switch — must be first safety gate
+                dd_safe, dd_reason = DailyDrawdownGuard.is_safe()
+                if not dd_safe:
+                    logger.critical(f"🛑 DAILY DRAWDOWN KILL SWITCH: {dd_reason}")
+                    decision_logger.log_step("Daily DD Guard", False, dd_reason)
+                    daily_report.log_block("daily_drawdown")
+                    break  # Exit the while loop entirely — bot stops for today
+                elif "WARNING" in dd_reason:
+                    logger.warning(f"⚠ Daily Drawdown Warning: {dd_reason}")
+                    decision_logger.log_step("Daily DD Guard", True, dd_reason)
+                else:
+                    decision_logger.log_step("Daily DD Guard", True, dd_reason)
+
+                # 1. Sync Positions
+                PositionTracker.sync_open_positions()
+
+                # 2. Multi-Market Scan
+                valid_signals = market_scanner.scan_markets()
+                logger.info(f"Scan complete. Found {len(valid_signals)} valid signals.")
+                
+                # 3. Process Signals
+                for signal_data in valid_signals:
+                    symbol = signal_data['symbol']
+                    direction = signal_data['direction']
+                    cfg = signal_data['config']
+                    features = signal_data['features']
+                    market_score = signal_data['score']
+                    current_candle_time = signal_data['timestamp']
+                    df = signal_data['df']
                     
-                # DB Logging
-                market_state = DatabaseLogger.log_market_state(
-                    symbol=symbol,
-                    timeframe=cfg.get("timeframe", "M5"),
-                    close_price=features['close'],
-                    indicators=features,
-                    regime={"volatility_state": "HIGH_VOLATILITY" if features["is_high_volatility"] else "NORMAL"}
-                )
-                
-                db_signal = DatabaseLogger.log_signal(
-                    market_state_id=market_state.id,
-                    strategy_name="V2_MultiScorer",
-                    direction=direction,
-                    market_score=market_score
-                )
-                
-                acc_info = mt5.account_info()
-                est_risk = (acc_info.balance * settings.RISK_PER_TRADE_PCT) if acc_info else 0.0
-                daily_report.log_intended_execution(direction, volume, est_risk)
-                
-                logger.info(f"Executing {direction} on {symbol} with volume {volume}")
-                decision_logger.log_step("Execution", True, f"DRY_RUN {direction} {volume} lots")
-                
-                Executor.execute_trade(
-                    signal_id=db_signal.id,
-                    symbol=symbol,
-                    direction=direction,
-                    volume=volume,
-                    sl_points=sl_points,
-                    probability=prob,
-                    evaluation=evaluation
-                )
-                pipeline_stats.log_pass("simulated_orders")
-                
-                decision_logger.print_tree(str(current_candle_time))
-            
-            # Print stats to fulfill user requirement "สรุปผลทุก 10 candles หรือทุก 30 นาที"
-            # Since scan_markets already logs summary every 30 scans, we are good.
-            
-            interval = settings.MULTI_MARKET.get("scan_interval_seconds", 60)
-            logger.info(f"Waiting {interval} seconds before next scan...")
-            time.sleep(interval)
-            
-    except KeyboardInterrupt:
-        logger.info("GoldBot stopped by user.")
+                    logger.info(f"Processing {direction} signal for {symbol} (Score: {market_score})")
+
+                    # Feature Construction
+                    ml_features = features.copy()
+                    memory_sim = market_memory.get_similarity(ml_features)
+                    logger.info(f"Market Memory Similarity: {memory_sim:.2f}")
+                    
+                    # [FIX-07] Clamp memory_sim
+                    memory_sim = float(max(0.0, min(1.0, memory_sim)))
+                    ml_features['memory_sim'] = memory_sim
+                    
+                    # [FIX-07] Validate feature completeness
+                    feat_ok, missing_keys = FeatureValidator.check_completeness(ml_features)
+                    if not feat_ok:
+                        logger.error(f"ML features incomplete, missing: {missing_keys}. Skipping.")
+                        decision_logger.log_step("ML Predictor", False, f"Missing: {missing_keys}")
+                        decision_logger.print_tree(str(current_candle_time))
+                        continue
+
+                    # [FIX-07] Sanitize NaN/Inf and clamp out-of-bound values
+                    ml_features, feat_warnings = FeatureValidator.validate_and_sanitize(ml_features)
+                    if feat_warnings:
+                        logger.warning(f"Feature sanitization: {feat_warnings}")
+                    
+                    # Consensus Engine / Prediction
+                    ml_result = ml_predictor.predict(ml_features)
+                    final_dir = direction
+                    
+                    # [FIX-04] Dynamic ATR-based SL/TP
+                    sl_tp = SLTPCalculator.calculate(df, final_dir)
+                    sl_points = sl_tp['sl_points']
+                    tp_points = sl_tp['tp_points']
+                    
+                    logger.info(
+                        f"SL/TP: {sl_points}pts / {tp_points}pts | "
+                        f"ATR={sl_tp['atr_used']:.2f}$ [{sl_tp['atr_regime']}] | "
+                        f"RR={sl_tp['rr_ratio']}"
+                    )
+                    
+                    decision_logger.log_step(
+                        "SL/TP Calc", True,
+                        f"SL={sl_points}pts TP={tp_points}pts [{sl_tp['atr_regime']}]"
+                    )
+
+                    # Evaluate Risk
+                    health_score = health_monitor.get_latest_health()
+                    evaluation = RiskGuard.evaluate_trade(
+                        symbol=symbol,
+                        direction=final_dir,
+                        signal_price=features['close'],
+                        sl_points=sl_points,
+                        tp_points=tp_points,
+                        ml_prob=ml_result['probability'],
+                        health_score=health_score
+                    )
+                    
+                    if not evaluation["allowed"]:
+                        pipeline_stats.log_reject("risk_guard_failed", symbol)
+                        logger.warning(f"Trade blocked for {symbol}: {evaluation['reason']}")
+                        decision_logger.log_step("Safety Checks", False, evaluation['guard_that_failed'])
+                        continue
+                        
+                    pipeline_stats.log_pass("risk_pass")
+                    volume = evaluation["position_size"]
+
+                    # DB Logging (Duplicate candle guard inherently handled here)
+                    market_state = DatabaseLogger.log_market_state(
+                        symbol=symbol,
+                        timeframe=cfg.get("timeframe", "M5"),
+                        close_price=features['close'],
+                        indicators=features,
+                        regime={"vol_state": "HIGH" if features.get("is_high_volatility") else "NORM"}
+                    )
+                    
+                    db_signal = DatabaseLogger.log_signal(
+                        market_state_id=market_state.id,
+                        strategy_name="V2_MultiScorer",
+                        direction=final_dir,
+                        market_score=market_score
+                    )
+
+                    # [FIX-03] ML Result Save Block (SQLAlchemy 2.0 + Error Handling)
+                    with repository.get_session() as session:
+                        try:
+                            sig = session.get(db_signal.__class__, db_signal.id)
+                            if sig is None:
+                                logger.error(
+                                    f"Signal record id={db_signal.id} not found in DB. "
+                                    "Skipping ML result save."
+                                )
+                            else:
+                                sig.ml_probability = float(ml_result['probability'])
+                                sig.ml_model_version = ml_result['model_version']
+                                sig.ml_feature_hash = ml_result['feature_hash']
+                                sig.ml_expected_rr = float(ml_result['expected_rr'])
+                                sig.ml_expected_holding_time = float(ml_result['expected_holding_time_hrs'])
+                                sig.ml_expected_drawdown = float(ml_result['expected_max_dd_r'])
+                                sig.ml_rejected = not ml_result['approved']
+                                sig.ml_rejection_reason = ml_result['reason']
+                                session.commit()
+                        except SQLAlchemyError as e:
+                            logger.error(f"DB error saving ML result for signal {db_signal.id}: {e}")
+                            session.rollback()
+
+                    # Report Logic
+                    acc_info = mt5.account_info()
+                    est_risk = (acc_info.balance * settings.RISK_PER_TRADE_PCT) if acc_info else 0.0
+                    daily_report.log_intended_execution(final_dir, volume, est_risk)
+
+                    logger.info(f"Executing {final_dir} on {symbol} with volume {volume}")
+                    decision_logger.log_step("Execution", True, f"{final_dir} {volume} lots")
+
+                    # Execution Block
+                    if settings.DRY_RUN:
+                        # ShadowExecutor call
+                        ShadowExecutor.execute_trade(
+                            signal_id=db_signal.id,
+                            symbol=symbol,
+                            direction=final_dir,
+                            volume=volume,
+                            sl_points=sl_points,
+                            tp_points=tp_points,            # [FIX-04] add TP
+                        )
+                        pipeline_stats.log_pass("simulated_orders")
+                    else:
+                        # Executor call (LIVE)
+                        Executor.execute_trade(
+                            signal_id=db_signal.id,
+                            symbol=symbol,
+                            direction=final_dir,
+                            volume=volume,
+                            sl_points=sl_points,
+                            tp_points=tp_points,            # [FIX-04] add TP
+                            probability=ml_result['probability'],
+                        )
+                        pipeline_stats.log_pass("live_orders")
+                        
+                    decision_logger.print_tree(str(current_candle_time))
+                # ── END OF CANDLE LOGIC ────────────────────────────────────
+
+            except Exception as candle_err:
+                # [FIX-06] Catch isolated candle errors, log, and keep running
+                logger.error(f"Error in candle processing: {candle_err}", exc_info=True)
+                time.sleep(10)
+                continue
+
+            # [FIX-06] Smart sleep instead of fixed time.sleep(30)
+            sleep_until_next_candle(tf_seconds)
+
+    except Exception as fatal_err:
+        logger.critical(f"FATAL error in main loop: {fatal_err}", exc_info=True)
     finally:
+        logger.info("GoldBot shutting down...")
         mt5_client.disconnect()
+
 
 if __name__ == "__main__":
     main()
