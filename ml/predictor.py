@@ -1,135 +1,92 @@
-import pandas as pd
-import hashlib
+"""ml/predictor.py — XGBoost model loader and predictor."""
+import os
 import json
-from mlops.registry import registry
+import hashlib
 import logging
+import joblib
+import pandas as pd
 
-logger = logging.getLogger("GoldBot.MLPredictor")
+logger = logging.getLogger(__name__)
+
 
 class MLPredictor:
-    def __init__(self):
-        self.prod_models = {}
-        self.prod_metadatas = {}
-        self.cand_models = {}
-        self.cand_metadatas = {}
+    def __init__(self, model_path: str = "models/xgboost_model.pkl"):
+        """Initialize and lazily load the XGBoost model."""
+        self.model_path = model_path
+        self._available = False
+        self.model = None
+        self.feature_names = []
+        self.threshold = 0.5
+        self.model_version = "unknown"
         
-    def get_models(self, symbol):
-        from config.settings import settings
+        self._load_model()
         
-        # Production
-        if symbol not in self.prod_models:
-            prod_model, prod_meta = registry.get_production_model(symbol)
-            if prod_model is None:
-                allow_generic = settings.MULTI_MARKET.get("allow_generic_model_fallback", False)
-                if allow_generic or "XAU" in symbol:
-                    prod_model, prod_meta = registry.get_production_model(None)
-                    if prod_model:
-                        logger.info(f"[ML] {symbol} prod model fallback to generic XAUUSD.")
-            else:
-                logger.info(f"[ML] {symbol} prod model loaded.")
-            self.prod_models[symbol] = prod_model
-            self.prod_metadatas[symbol] = prod_meta
+    def _load_model(self):
+        """Loads the saved joblib dictionary from disk."""
+        if not os.path.exists(self.model_path):
+            logger.critical(f"ML Model file missing at {self.model_path}. Predictor will deny all trades.")
+            self._available = False
+            return
             
-        # Candidate
-        if symbol not in self.cand_models:
-            cand_model, cand_meta = registry.get_candidate_model(symbol)
-            if cand_model:
-                logger.info(f"[ML] {symbol} cand model loaded for Shadow Testing.")
-            self.cand_models[symbol] = cand_model
-            self.cand_metadatas[symbol] = cand_meta
-            
-        return self.prod_models[symbol], self.prod_metadatas[symbol], self.cand_models[symbol], self.cand_metadatas[symbol]
-
-    def _infer(self, model, metadata, features_dict):
-        if model is None:
-            return None
-            
-        expected_features = metadata.get("features", [])
-        missing = [f for f in expected_features if f not in features_dict]
-        if missing:
-            return None
-            
-        df = pd.DataFrame([features_dict])[expected_features]
         try:
-            import xgboost as xgb
-            prob = model.predict_proba(df)[0][1]
-            return prob
+            data = joblib.load(self.model_path)
+            self.model = data.get("model")
+            self.feature_names = data.get("feature_names", [])
+            self.threshold = data.get("threshold", 0.5)
+            # Default to file modification time if version not explicitly set
+            file_mtime = os.path.getmtime(self.model_path)
+            self.model_version = data.get("model_version", f"xgb_{int(file_mtime)}")
+            
+            self._available = True
+            logger.info(f"Loaded ML model: {self.model_version} (threshold={self.threshold:.3f})")
+            
         except Exception as e:
-            logger.error(f"Inference error: {e}")
-            return None
-            
-    def predict(self, symbol, features_dict):
-        prod_model, prod_meta, cand_model, cand_meta = self.get_models(symbol)
-        
-        from config.settings import settings
-        import yaml
-        
-        # Load min_confidence from symbols.yaml
-        min_conf = 0.55
-        try:
-            with open("config/symbols.yaml", "r") as f:
-                sym_cfg = yaml.safe_load(f).get(symbol, {})
-                min_conf = sym_cfg.get("min_confidence", 0.55)
-        except:
-            pass
-            
-        prod_prob = self._infer(prod_model, prod_meta, features_dict)
-        cand_prob = self._infer(cand_model, cand_meta, features_dict)
-        
-        from analytics.pipeline_stats import pipeline_stats
-        
-        prod_approved = False
-        cand_approved = False
-        
-        if prod_prob is not None:
-            prod_approved = prod_prob >= min_conf
-        if cand_prob is not None:
-            cand_approved = cand_prob >= min_conf
-            
-        # Shadow Logging
-        if prod_prob is not None or cand_prob is not None:
-            p_str = f"Prod: {prod_prob:.3f} {'APPROVE' if prod_approved else 'REJECT'}" if prod_prob is not None else "Prod: N/A"
-            c_str = f"Cand: {cand_prob:.3f} {'APPROVE' if cand_approved else 'REJECT'}" if cand_prob is not None else "Cand: N/A"
-            logger.info(f"[Shadow] {symbol} | {p_str} | {c_str}")
-            pipeline_stats.log_shadow(symbol, prod_approved, cand_approved, prod_prob, cand_prob)
-            
-        # Safety Rules
-        feature_str = json.dumps(features_dict, sort_keys=True)
-        feature_hash = hashlib.sha256(feature_str.encode()).hexdigest()[:16]
-        
-        use_candidate = False
-        if settings.DRY_RUN:
-            if cand_model is not None:
-                use_candidate = True
-        else:
-            if cand_model is not None and prod_model is None:
-                logger.error(f"[SAFETY] Live trading attempted with Candidate Model for {symbol}. BLOCKED.")
-                use_candidate = False
-                
-        # Return result based on active model
-        active_prob = cand_prob if use_candidate else prod_prob
-        active_approved = cand_approved if use_candidate else prod_approved
-        active_meta = cand_meta if use_candidate else prod_meta
-        
-        if active_prob is None:
-            return {
-                "approved": False,
-                "reason": "Model inference failed or no model available.",
-                "probability": 0.0,
-                "prod_probability": prod_prob if prod_prob is not None else 0.0,
-                "candidate_probability": cand_prob if cand_prob is not None else 0.0,
-                "feature_hash": "N/A"
-            }
-            
-        return {
-            "approved": active_approved,
-            "probability": active_prob,
-            "prod_probability": prod_prob if prod_prob is not None else 0.0,
-            "candidate_probability": cand_prob if cand_prob is not None else 0.0,
-            "feature_hash": feature_hash,
-            "model_version": active_meta.get("model_version", "unknown") if active_meta else "unknown",
-            "expected_rr": active_meta.get("expected_rr", 2.5) if active_meta else 2.5,
-            "reason": f"Active Model (Cand={use_candidate}) prob {active_prob:.3f}"
-        }
+            logger.critical(f"Failed to load ML model from {self.model_path}. Error: {e}")
+            self._available = False
 
-ml_predictor = MLPredictor()
+    def predict(self, ml_features: dict) -> dict:
+        """
+        Executes prediction on the feature dictionary.
+        Returns a dict adhering to the strict contract expected by main.py.
+        """
+        # Hash features for auditing (sort keys to ensure deterministic hash)
+        feats_json = json.dumps(ml_features, sort_keys=True)
+        feature_hash = hashlib.md5(feats_json.encode('utf-8')).hexdigest()[:8]
+        
+        # Base result
+        result = {
+            'probability': 0.0,
+            'approved': False,
+            'reason': "model_not_loaded",
+            'model_version': self.model_version,
+            'feature_hash': feature_hash,
+            'expected_rr': 2.0,
+            'expected_holding_time_hrs': 4.0,
+            'expected_max_dd_r': 0.5
+        }
+        
+        if not self._available or not self.model:
+            return result
+            
+        try:
+            # Build feature vector in exact order of saved feature_names
+            X_list = [ml_features.get(feat, 0.0) for feat in self.feature_names]
+            X_df = pd.DataFrame([X_list], columns=self.feature_names)
+            
+            # Predict probability of class 1 (win)
+            prob = float(self.model.predict_proba(X_df)[0][1])
+            approved = (prob >= self.threshold)
+            
+            result['probability'] = prob
+            result['approved'] = approved
+            
+            if approved:
+                result['reason'] = "approved"
+            else:
+                result['reason'] = f"prob={prob:.3f} < threshold={self.threshold:.3f}"
+                
+        except Exception as e:
+            logger.error(f"Prediction error during inference: {e}")
+            result['reason'] = f"prediction_error: {str(e)}"
+            
+        return result
