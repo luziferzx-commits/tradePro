@@ -71,16 +71,20 @@ class CryptoEvaluator(BaseSetupEvaluator):
             
         score = min(score, 95)
         
-        # Apply Macro Sentiment Filter
+        # Apply Macro Sentiment
         if direction == "BUY" and sentiment == "BEARISH":
-            return {"setup_name": "Crypto Momentum Breakout", "direction": "NEUTRAL", "score": 0, "reason": "Blocked by BEARISH Crypto News"}
+            score -= 20
         elif direction == "SELL" and sentiment == "BULLISH":
-            return {"setup_name": "Crypto Momentum Breakout", "direction": "NEUTRAL", "score": 0, "reason": "Blocked by BULLISH Crypto News"}
+            score -= 20
             
         if direction == "BUY" and sentiment == "BULLISH":
-            score = min(score + 15, 100)
+            score = min(score + 10, 100)
         elif direction == "SELL" and sentiment == "BEARISH":
-            score = min(score + 15, 100)
+            score = min(score + 10, 100)
+            
+        score = max(score, 0)
+        if score < 50:
+            return {"setup_name": "Crypto Momentum Breakout", "direction": "NEUTRAL", "score": 0, "reason": "Blocked by low score after sentiment penalty"}
             
         return {"setup_name": "Crypto Momentum Breakout", "direction": direction, "score": score, "reason": f"Momentum score {score}"}
 
@@ -107,15 +111,19 @@ class CryptoEvaluator(BaseSetupEvaluator):
         if adx > 25:
             score += 10
             
-        # Apply Macro Sentiment Filter
+        # Apply Macro Sentiment
         if direction == "BUY" and sentiment == "BEARISH":
-            return {"setup_name": "Bollinger Squeeze", "direction": "NEUTRAL", "score": 0, "reason": "Blocked by BEARISH Crypto News"}
+            score -= 20
         elif direction == "SELL" and sentiment == "BULLISH":
-            return {"setup_name": "Bollinger Squeeze", "direction": "NEUTRAL", "score": 0, "reason": "Blocked by BULLISH Crypto News"}
+            score -= 20
             
         if direction == "BUY" and sentiment == "BULLISH":
-            score = min(score + 15, 100)
+            score = min(score + 10, 100)
         elif direction == "SELL" and sentiment == "BEARISH":
-            score = min(score + 15, 100)
+            score = min(score + 10, 100)
+            
+        score = max(score, 0)
+        if score < 50:
+            return {"setup_name": "Bollinger Squeeze", "direction": "NEUTRAL", "score": 0, "reason": "Blocked by low score after sentiment penalty"}
             
         return {"setup_name": "Bollinger Squeeze", "direction": direction, "score": score, "reason": "BB Squeeze Explosion"}

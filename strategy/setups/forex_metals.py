@@ -109,14 +109,18 @@ class ForexMetalsEvaluator(BaseSetupEvaluator):
         
         # Apply Macro Sentiment
         if direction == "BUY" and sentiment == "BEARISH":
-            return {"setup_name": name, "direction": "NEUTRAL", "score": 0, "reason": "Blocked by BEARISH Macro News"}
+            score -= 20
         elif direction == "SELL" and sentiment == "BULLISH":
-            return {"setup_name": name, "direction": "NEUTRAL", "score": 0, "reason": "Blocked by BULLISH Macro News"}
+            score -= 20
         
         if direction == "BUY" and sentiment == "BULLISH":
             score = min(score + 10, 100)
         elif direction == "SELL" and sentiment == "BEARISH":
             score = min(score + 10, 100)
+            
+        score = max(score, 0)
+        if score < 50:
+            return {"setup_name": name, "direction": "NEUTRAL", "score": 0, "reason": "Blocked by low score after sentiment penalty"}
             
         return {"setup_name": name, "direction": direction, "score": score, "reason": f"Breakout score {score}"}
 
