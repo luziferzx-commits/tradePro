@@ -37,7 +37,8 @@ class Settings:
         "allow_indices": True,
         "allow_forex": True,
         "allow_metals": True,
-        "allow_oil": True
+        "allow_oil": True,
+        "allow_generic_model_fallback": False
     }
     
     # Safety & Execution

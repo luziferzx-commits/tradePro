@@ -15,13 +15,26 @@ class MLPredictor:
         if symbol in self.models:
             return self.models[symbol], self.metadatas[symbol]
             
+        from config.settings import settings
+        
         model, metadata = registry.get_production_model(symbol)
         if model is None:
-            # Fallback to generic model
-            model, metadata = registry.get_production_model(None)
-            if model is None:
-                logger.warning(f"No production model found for {symbol} and no generic fallback.")
+            # Check if generic fallback is allowed
+            allow_generic = settings.MULTI_MARKET.get("allow_generic_model_fallback", False)
+            
+            # Special case for Gold: historically XAUUSD was the only model, so it can use generic
+            if allow_generic or "XAU" in symbol:
+                model, metadata = registry.get_production_model(None)
+                if model is None:
+                    logger.warning(f"No production model found for {symbol} and no generic fallback.")
+                    return None, None
+                else:
+                    logger.info(f"[ML] {symbol} model loaded successfully (fallback to generic XAUUSD model).")
+            else:
+                logger.warning(f"[ML] {symbol} skipped: symbol-specific model not found, NO_TRADE. Generic model disabled for safety.")
                 return None, None
+        else:
+            logger.info(f"[ML] {symbol} model loaded successfully (symbol-specific).")
                 
         self.models[symbol] = model
         self.metadatas[symbol] = metadata
