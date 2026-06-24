@@ -3,12 +3,12 @@ from datetime import datetime
 
 class SetupEvaluator:
     @staticmethod
-    def evaluate_all(df: pd.DataFrame, regime: dict) -> list:
+    def evaluate_all(df: pd.DataFrame, regime: dict, h4_trend: str = "NEUTRAL") -> list:
         """
         Evaluates all setups and returns a list of diagnostic dictionaries.
         """
         setups = []
-        if len(df) < 2:
+        if len(df) < 5:
             return setups
             
         latest = df.iloc[-1]
@@ -17,112 +17,134 @@ class SetupEvaluator:
         dt_time = pd.to_datetime(latest['time'])
         hour = dt_time.hour
         
-        adx = latest['adx']
-        rsi = latest['rsi']
+        adx = latest.get('adx', 0)
+        atr = latest.get('atr', 0)
         close = latest['close']
+        open_price = latest['open']
         high = latest['high']
         low = latest['low']
-        ema50 = latest['ema50']
-        recent_high = prev['recent_high_20']
-        recent_low = prev['recent_low_20']
-        trend_state = regime.get('trend_state', 'UNKNOWN')
+        ema50 = latest.get('ema50', 0)
+        plus_di = latest.get('plus_di', 0)
+        minus_di = latest.get('minus_di', 0)
+        recent_high = prev.get('recent_high_20', high)
+        recent_low = prev.get('recent_low_20', low)
         
         # 1. London Breakout
         setups.append(SetupEvaluator._evaluate_breakout(
-            "London Breakout", hour in [7, 8, 9, 10], close, prev['close'], recent_high, recent_low
+            "London Breakout", hour in [7, 8, 9, 10], open_price, close, prev['close'], 
+            recent_high, recent_low, adx, atr, high, low, h4_trend, regime
         ))
         
         # 2. NY Breakout
         setups.append(SetupEvaluator._evaluate_breakout(
-            "NY Breakout", hour in [13, 14, 15, 16], close, prev['close'], recent_high, recent_low
+            "NY Breakout", hour in [13, 14, 15, 16], open_price, close, prev['close'], 
+            recent_high, recent_low, adx, atr, high, low, h4_trend, regime
         ))
         
-        # 3. EMA Pullback Continuation
-        setups.append(SetupEvaluator._evaluate_ema_pullback(
-            adx, trend_state, close, high, low, ema50, prev['close'], prev['ema50']
-        ))
-        
-        # 4. RSI Exhaustion Reversal
+        # 3. RSI Exhaustion Reversal
         setups.append(SetupEvaluator._evaluate_rsi_reversal(
-            df, close, ema50, prev['close'], prev['ema50']
+            df, close, ema50, prev['close'], prev.get('ema50', 0)
         ))
         
-        # 5. Range Boundary Bounce
-        setups.append(SetupEvaluator._evaluate_range_bounce(
-            trend_state, close, high, low, recent_high, recent_low
-        ))
-        
-        # 6. Volatility Expansion Breakout
+        # 4. Volatility Expansion Breakout
         setups.append(SetupEvaluator._evaluate_volatility_expansion(
-            adx, latest['plus_di'], latest['minus_di'], close, prev['close'], recent_high, recent_low
+            adx, plus_di, minus_di, close, prev['close'], recent_high, recent_low, regime
         ))
         
         return setups
 
     @staticmethod
-    def _evaluate_breakout(name, time_cond, close, prev_close, recent_high, recent_low):
-        if not time_cond:
-            return {"setup_name": name, "direction": "NEUTRAL", "score": 0, "reason": "Not in session", "failed_conditions": ["Session Time"]}
-            
-        if close > recent_high and prev_close <= recent_high:
-            return {"setup_name": name, "direction": "BUY", "score": 85, "reason": "Broke 20-period high", "failed_conditions": []}
-        elif close < recent_low and prev_close >= recent_low:
-            return {"setup_name": name, "direction": "SELL", "score": 85, "reason": "Broke 20-period low", "failed_conditions": []}
-            
-        return {"setup_name": name, "direction": "NEUTRAL", "score": 0, "reason": "No breakout detected", "failed_conditions": ["Price inside range"]}
+    def _evaluate_breakout(name, time_cond, open_price, close, prev_close, recent_high, recent_low, adx, atr, high, low, h4_trend, regime):
+        trend_state = regime.get('trend_state', 'UNKNOWN')
+        if trend_state == "RANGING":
+            return {
+                "setup_name": name, "direction": "NEUTRAL", "score": 0,
+                "reason": "Blocked: Ranging market (breakout failure risk)",
+                "failed_conditions": ["Trending Regime Required"]
+            }
 
-    @staticmethod
-    def _evaluate_ema_pullback(adx, trend_state, close, high, low, ema50, prev_close, prev_ema50):
-        if adx < 25:
-            return {"setup_name": "EMA Pullback Continuation", "direction": "NEUTRAL", "score": 0, "reason": "ADX < 25 (Weak trend)", "failed_conditions": ["ADX > 25"]}
+        if not time_cond:
+            return {"setup_name": name, "direction": "NEUTRAL", "score": 0, "reason": "Not in session"}
             
-        if trend_state == "TRENDING_UP":
-            if low <= ema50 and close > ema50: # Touched but rejected
-                return {"setup_name": "EMA Pullback Continuation", "direction": "BUY", "score": 80, "reason": "Bounce off EMA50 in Uptrend", "failed_conditions": []}
-        elif trend_state == "TRENDING_DOWN":
-            if high >= ema50 and close < ema50:
-                return {"setup_name": "EMA Pullback Continuation", "direction": "SELL", "score": 80, "reason": "Rejection at EMA50 in Downtrend", "failed_conditions": []}
+        direction = "NEUTRAL"
+        if close > recent_high and prev_close <= recent_high:
+            direction = "BUY"
+        elif close < recent_low and prev_close >= recent_low:
+            direction = "SELL"
+            
+        if direction == "NEUTRAL":
+            return {"setup_name": name, "direction": "NEUTRAL", "score": 0, "reason": "No breakout detected"}
+            
+        score = 65
+        if adx > 25:
+            score += 10
+            
+        candle_range = high - low
+        body_size = abs(close - open_price)
+        if candle_range > 0 and body_size > (candle_range * 0.5):
+            score += 10
+            
+        if direction == "BUY":
+            if atr > 0 and (close - recent_high) > (0.1 * atr):
+                score += 10
+            if h4_trend == "UP":
+                score += 10
+            elif h4_trend == "DOWN":
+                score -= 20
+        else:
+            if atr > 0 and (recent_low - close) > (0.1 * atr):
+                score += 10
+            if h4_trend == "DOWN":
+                score += 10
+            elif h4_trend == "UP":
+                score -= 20
                 
-        return {"setup_name": "EMA Pullback Continuation", "direction": "NEUTRAL", "score": 0, "reason": "No pullback rejection", "failed_conditions": ["EMA Bounce"]}
+        score = min(max(score, 0), 95)
+        return {"setup_name": name, "direction": direction, "score": score, "reason": f"Breakout score {score}"}
 
     @staticmethod
     def _evaluate_rsi_reversal(df_slice, close, ema50, prev_close, prev_ema50):
-        min_rsi = df_slice['rsi'].min()
-        max_rsi = df_slice['rsi'].max()
+        recent = df_slice.iloc[-5:]
+        min_rsi = recent['rsi'].min()
+        max_rsi = recent['rsi'].max()
+        current_rsi = recent['rsi'].iloc[-1]
         
-        if min_rsi < 30 and close > ema50 and prev_close <= prev_ema50:
-            return {"setup_name": "RSI Exhaustion Reversal", "direction": "BUY", "score": 80, "reason": "Oversold RSI + Structural Break UP", "failed_conditions": []}
-        elif max_rsi > 70 and close < ema50 and prev_close >= prev_ema50:
-            return {"setup_name": "RSI Exhaustion Reversal", "direction": "SELL", "score": 80, "reason": "Overbought RSI + Structural Break DOWN", "failed_conditions": []}
+        if min_rsi < 30 and current_rsi > 35 and close > ema50 and prev_close <= prev_ema50:
+            return {"setup_name": "RSI Exhaustion Reversal", "direction": "BUY", "score": 75, "reason": "Oversold recovery"}
+        elif max_rsi > 70 and current_rsi < 65 and close < ema50 and prev_close >= prev_ema50:
+            return {"setup_name": "RSI Exhaustion Reversal", "direction": "SELL", "score": 75, "reason": "Overbought rollover"}
             
-        return {"setup_name": "RSI Exhaustion Reversal", "direction": "NEUTRAL", "score": 0, "reason": "No exhaustion reversal", "failed_conditions": ["RSI Extreme", "EMA Cross"]}
+        return {"setup_name": "RSI Exhaustion Reversal", "direction": "NEUTRAL", "score": 0, "reason": "No reversal"}
 
     @staticmethod
-    def _evaluate_range_bounce(trend_state, close, high, low, recent_high, recent_low):
-        if trend_state != "RANGING":
-            return {"setup_name": "Range Boundary Bounce", "direction": "NEUTRAL", "score": 0, "reason": "Not in ranging market", "failed_conditions": ["Ranging Regime"]}
-            
-        range_size = recent_high - recent_low
-        if range_size == 0:
-            return {"setup_name": "Range Boundary Bounce", "direction": "NEUTRAL", "score": 0, "reason": "Zero range", "failed_conditions": ["Valid Range"]}
-            
-        # Bounce off bottom
-        if low <= recent_low + (range_size * 0.1) and close > low:
-            return {"setup_name": "Range Boundary Bounce", "direction": "BUY", "score": 75, "reason": "Bounce off range support", "failed_conditions": []}
-        # Bounce off top
-        if high >= recent_high - (range_size * 0.1) and close < high:
-            return {"setup_name": "Range Boundary Bounce", "direction": "SELL", "score": 75, "reason": "Rejection at range resistance", "failed_conditions": []}
-            
-        return {"setup_name": "Range Boundary Bounce", "direction": "NEUTRAL", "score": 0, "reason": "Middle of range", "failed_conditions": ["Boundary Touch"]}
+    def _evaluate_volatility_expansion(adx, plus_di, minus_di, close, prev_close, recent_high, recent_low, regime):
+        trend_state = regime.get('trend_state', 'UNKNOWN')
+        if trend_state == "RANGING":
+            return {
+                "setup_name": "Volatility Expansion Breakout", "direction": "NEUTRAL", "score": 0,
+                "reason": "Blocked: Ranging market (breakout failure risk)",
+                "failed_conditions": ["Trending Regime Required"]
+            }
 
-    @staticmethod
-    def _evaluate_volatility_expansion(adx, plus_di, minus_di, close, prev_close, recent_high, recent_low):
         if adx < 30:
-            return {"setup_name": "Volatility Expansion Breakout", "direction": "NEUTRAL", "score": 0, "reason": "ADX < 30", "failed_conditions": ["High ADX"]}
+            return {"setup_name": "Volatility Expansion Breakout", "direction": "NEUTRAL", "score": 0, "reason": "ADX < 30"}
             
+        direction = "NEUTRAL"
         if plus_di > minus_di and close > recent_high and prev_close <= recent_high:
-            return {"setup_name": "Volatility Expansion Breakout", "direction": "BUY", "score": 85, "reason": "Bullish expansion breakout", "failed_conditions": []}
+            direction = "BUY"
         elif minus_di > plus_di and close < recent_low and prev_close >= recent_low:
-            return {"setup_name": "Volatility Expansion Breakout", "direction": "SELL", "score": 85, "reason": "Bearish expansion breakout", "failed_conditions": []}
+            direction = "SELL"
             
-        return {"setup_name": "Volatility Expansion Breakout", "direction": "NEUTRAL", "score": 0, "reason": "No expansion breakout", "failed_conditions": ["Breakout"]}
+        if direction == "NEUTRAL":
+            return {"setup_name": "Volatility Expansion Breakout", "direction": "NEUTRAL", "score": 0, "reason": "No expansion breakout"}
+            
+        score = 65
+        if adx > 35:
+            score += 10
+        if direction == "BUY" and (plus_di - minus_di) > 5:
+            score += 10
+        elif direction == "SELL" and (minus_di - plus_di) > 5:
+            score += 10
+            
+        score = min(score, 85)
+        return {"setup_name": "Volatility Expansion Breakout", "direction": direction, "score": score, "reason": f"Expansion score {score}"}

@@ -77,7 +77,7 @@ def run_walk_forward():
     n_splits = 5
     fold_size = len(df) // (n_splits + 1)
     
-    if fold_size < 100:
+    if fold_size < 50:
         logger.error("Dataset too small for 5 walk-forward splits.")
         return
 

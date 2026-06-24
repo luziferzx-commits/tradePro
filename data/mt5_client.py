@@ -92,4 +92,15 @@ class MT5Client:
         resolved_symbol = self.resolve_symbol(symbol)
         return mt5.symbol_info(resolved_symbol)
 
+    def get_h4_data(self, symbol: str, count: int = 50) -> pd.DataFrame | None:
+        resolved_symbol = self.resolve_symbol(symbol)
+        if not mt5.symbol_select(resolved_symbol, True):
+            return None
+        rates = mt5.copy_rates_from_pos(resolved_symbol, mt5.TIMEFRAME_H4, 0, count)
+        if rates is None:
+            return None
+        df = pd.DataFrame(rates)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+        return df
+
 mt5_client = MT5Client()

@@ -64,7 +64,7 @@ def simulate_trade_outcome(df: pd.DataFrame, current_idx: int, direction: str, s
     return 0
 
 
-def build_dataset(num_candles: int = 5000):
+def build_dataset(num_candles: int = 15000):
     logger.info("Initializing MT5 connection...")
     if not mt5_client.connect():
         logger.error("Failed to connect to MT5.")
@@ -95,6 +95,17 @@ def build_dataset(num_candles: int = 5000):
     logger.info("Calculating technical indicators...")
     df = IndicatorCalculator.add_indicators(df)
     
+    logger.info("Fetching H4 data for trend filter...")
+    df_h4 = mt5_client.get_h4_data(symbol, num_candles // 48 + 50)
+    if df_h4 is not None and not df_h4.empty:
+        df_h4['h4_ema50'] = df_h4['close'].ewm(span=50).mean()
+        df_h4['h4_trend'] = np.where(df_h4['close'] > df_h4['h4_ema50'], 'UP', 'DOWN')
+        df_h4_clean = df_h4[['time', 'h4_trend']].rename(columns={'time': 'h4_time'})
+        df = pd.merge_asof(df.sort_values('time'), df_h4_clean.sort_values('h4_time'), left_on='time', right_on='h4_time', direction='backward')
+        df['h4_trend'] = df['h4_trend'].fillna('NEUTRAL')
+    else:
+        df['h4_trend'] = 'NEUTRAL'
+    
     dataset_rows = []
     
     logger.info("Starting row-by-row simulation and label generation...")
@@ -120,7 +131,8 @@ def build_dataset(num_candles: int = 5000):
         regime = RegimeDetector.detect(df_slice)
         
         # 5. Market Score Calculation
-        score_result = MarketScoreCalculator.calculate(df_slice, regime)
+        h4_trend = row.get('h4_trend', 'NEUTRAL')
+        score_result = MarketScoreCalculator.calculate(df_slice, regime, h4_trend=h4_trend)
         direction = score_result.get('final_direction', 'NEUTRAL')
         
         if direction == 'NEUTRAL':
@@ -219,4 +231,4 @@ def build_dataset(num_candles: int = 5000):
     print("="*40)
 
 if __name__ == "__main__":
-    build_dataset(num_candles=5000)
+    build_dataset(num_candles=15000)

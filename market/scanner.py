@@ -178,8 +178,15 @@ class MarketScanner:
                 return "NORMAL"
                 
             ex_session = _get_session_name(current_candle_time.hour, market_type)
-            
-            market_score = MarketScoreCalculator.calculate(df, regime)
+            # H4 Trend Filter
+            df_h4 = mt5_client.get_h4_data(symbol, 50)
+            h4_trend = "NEUTRAL"
+            if df_h4 is not None and len(df_h4) >= 50:
+                h4_ema50 = df_h4['close'].ewm(span=50).iloc[-1]
+                h4_close = df_h4['close'].iloc[-1]
+                h4_trend = "UP" if h4_close > h4_ema50 else "DOWN"
+                
+            market_score = MarketScoreCalculator.calculate(df, regime, h4_trend=h4_trend)
             final_dir = market_score['final_direction']
             ex_market_score = market_score['final_score']
             
