@@ -45,6 +45,15 @@ Capital Allocation: 0%
    - Health states do not oscillate rapidly.
    - No critical runtime bugs.
 
+## Definition of Failure (Shadow Validation Failure Conditions)
+It is equally important to define what constitutes a failure so that we can decisively reject the model without debate if real-world data turns hostile. The Shadow Validation will be considered a **FAILURE** if any of the following occur:
+1. **PF < 1.20** for 2 consecutive weeks.
+2. **Coverage < 50%** (The system is skipping too many trades and becoming overly conservative).
+3. **Health Oscillation exceeds threshold** (e.g., > 20 state flips per week, indicating unstable context definition).
+4. **Recovery Success Rate < 30%** (When the system re-enables risk, it immediately loses and disables again).
+5. **Runtime errors** affecting execution logic.
+6. **Max DD exceeds expected backtest envelope** (e.g., DD breaches the -10R threshold we optimized for).
+
 ## Anti-Goals for Sprint 5
 ❌ Do NOT add new indicators.
 ❌ Do NOT add new feature engineering.
@@ -52,6 +61,9 @@ Capital Allocation: 0%
 ❌ Do NOT retrain the model.
 ❌ Do NOT optimize for PF.
 **Mantra:** *Observe, Measure, Validate.*
+
+## Lookahead: Sprint 6 (Capital Allocation Framework)
+If and only if Candidate V2.1 passes the 4-week Shadow Validation, we will proceed to Sprint 6 to build the Capital Allocation Framework (e.g., starting at 0.25% risk -> 0.5% -> 0.75% -> 1.0% based on live performance). 
 
 **Status:**
 Pending kickoff in the next Sprint. Current baseline remains **Candidate V2.1**.
