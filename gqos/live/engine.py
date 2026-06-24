@@ -74,8 +74,6 @@ class LiveTradingEngine:
                     execution_price=Decimal('0'), # Reconciliation price
                     reason=f"Broker Truth Override: Actual={actual_qty}, Local={local_qty}"
                 )
-                self._event_bus.publish(MessageEnvelope.create(payload=evt, version=1))
-                
                 # In real life we'd inject a trade into accounting here
                 
         if mismatch:
@@ -104,3 +102,9 @@ class LiveTradingEngine:
         
     def save_state(self):
         self._persistence.save_snapshot(self._accounting.state, self._portfolio.state)
+
+    def stop(self):
+        print("Stopping Live Trading Engine...")
+        self.save_state()
+        self._adapter.stop()
+        print("Engine stopped safely.")

@@ -43,4 +43,88 @@ class PositionTracker:
                             rr = close_deal.profit / risk_usd if risk_usd > 0 else 0
                         except Exception:
                             rr = 0
-                        notify_trade_closed(db_trade.ticket, db_trade.direction, close_deal.profit, rr)
+                        notify_trade_closed(db_trade.ticket, db_trade.symbol, db_trade.direction, close_deal.profit, rr)
+
+    @staticmethod
+    def manage_trailing_stops():
+        """
+        Implements Break-Even and Trailing Stop logic for all open MT5 positions.
+        - Break-Even: If price reaches +1R, move SL to Entry.
+        - Trailing: If price reaches +2R, move SL to +1R.
+        """
+        mt5_positions = mt5.positions_get()
+        if not mt5_positions:
+            return
+            
+        with repository.get_session() as session:
+            db_open_trades = session.query(TradeRecord).filter(TradeRecord.status == 'OPEN').all()
+            db_trade_map = {t.ticket: t for t in db_open_trades}
+            
+            for p in mt5_positions:
+                db_trade = db_trade_map.get(p.ticket)
+                if not db_trade:
+                    continue
+                    
+                entry_price = p.price_open
+                current_sl = p.sl
+                current_price = p.price_current
+                
+                # If SL is not set or 0, we can't calculate R
+                if current_sl == 0.0 or db_trade.sl == 0.0:
+                    continue
+                    
+                # Calculate initial R distance based on DB original SL
+                initial_sl = float(db_trade.sl)
+                r_dist = abs(entry_price - initial_sl)
+                
+                if r_dist <= 0:
+                    continue
+                
+                is_buy = p.type == mt5.POSITION_TYPE_BUY
+                
+                # Calculate current floating R
+                if is_buy:
+                    floating_r = (current_price - entry_price) / r_dist
+                    break_even_price = entry_price
+                    trail_price_1r = entry_price + (r_dist * 0.8) # Trail slightly below 1R to give breathing room
+                else:
+                    floating_r = (entry_price - current_price) / r_dist
+                    break_even_price = entry_price
+                    trail_price_1r = entry_price - (r_dist * 0.8)
+
+                new_sl = None
+                
+                # Break-Even at +1R
+                if floating_r >= 1.0 and floating_r < 2.0:
+                    # Check if SL is not already moved to BE or better
+                    if is_buy and current_sl < break_even_price:
+                        new_sl = break_even_price
+                    elif not is_buy and current_sl > break_even_price:
+                        new_sl = break_even_price
+                        
+                # Trail at +2R
+                elif floating_r >= 2.0:
+                    if is_buy and current_sl < trail_price_1r:
+                        new_sl = trail_price_1r
+                    elif not is_buy and current_sl > trail_price_1r:
+                        new_sl = trail_price_1r
+                        
+                if new_sl is not None:
+                    # Need to format price to symbol digits
+                    sym_info = mt5.symbol_info(p.symbol)
+                    if sym_info:
+                        new_sl = round(new_sl, sym_info.digits)
+                        
+                        request = {
+                            "action": mt5.TRADE_ACTION_SLTP,
+                            "position": p.ticket,
+                            "symbol": p.symbol,
+                            "sl": float(new_sl),
+                            "tp": float(p.tp),
+                        }
+                        
+                        result = mt5.order_send(request)
+                        if result.retcode == mt5.TRADE_RETCODE_DONE:
+                            logger.info(f"Moved SL for {p.symbol} (Ticket: {p.ticket}) to {new_sl} (R={floating_r:.2f})")
+                        else:
+                            logger.warning(f"Failed to move SL for {p.symbol}: {result.comment}")

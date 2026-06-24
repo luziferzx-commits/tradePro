@@ -60,6 +60,10 @@ class MT5Client:
             self.connected = False
             logger.info("Disconnected from MT5")
 
+    def is_new_candle(self) -> bool:
+        """Fallback is_new_candle to satisfy main.py loop condition. Sleep handles timing."""
+        return True
+
     def get_historical_data(self, symbol: str, timeframe: str, num_candles: int) -> pd.DataFrame:
         tf_map = {
             "M1": mt5.TIMEFRAME_M1,

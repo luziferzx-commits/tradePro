@@ -30,8 +30,13 @@ class Settings:
 
     
     # Multi-Market Configuration
+    ENABLE_MULTI_ASSET = os.getenv("ENABLE_MULTI_ASSET", "False").lower() == "true"
+    ENABLE_PORTFOLIO_RISK = os.getenv("ENABLE_PORTFOLIO_RISK", "False").lower() == "true"
+    ENABLE_SIGNAL_JOURNAL = os.getenv("ENABLE_SIGNAL_JOURNAL", "True").lower() == "true"
+    ENABLE_DD_GUARD = os.getenv("ENABLE_DD_GUARD", "True").lower() == "true"
+    
     MULTI_MARKET = {
-        "enabled": True,
+        "enabled": ENABLE_MULTI_ASSET,
         "max_symbols_per_scan": 11,
         "scan_interval_seconds": 60,
         "max_open_trades": 5,
@@ -47,6 +52,7 @@ class Settings:
     
     # Safety & Execution
     DRY_RUN = os.getenv("DRY_RUN", "True").lower() == "true"
+    LIVE_MICRO_MODE = os.getenv("LIVE_MICRO_MODE", "False").lower() == "true"
     ALLOW_LIVE_TRADING = os.getenv("ALLOW_LIVE_TRADING", "False").lower() == "true"
     IS_DEMO_ACCOUNT = os.getenv("IS_DEMO_ACCOUNT", "True").lower() == "true"
     MAGIC_NUMBER = 234000
@@ -62,6 +68,7 @@ class Settings:
     MIN_AI_CONFIDENCE = 85
     AI_REVIEW_THRESHOLD = 75
     EXECUTION_THRESHOLD = 85
+    GLOBAL_SIGNAL_THRESHOLD = 0.55
     BACKTEST_SPREAD_POINTS = 20
     
     # Database

@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import MetaTrader5 as mt5
 from database.logger import DatabaseLogger
@@ -12,6 +13,9 @@ class Executor:
         Sends an order to MT5. sl_points is in point values (e.g., 500 = 50 pips).
         """
         from risk.portfolio_manager import portfolio_manager
+        from data.mt5_client import mt5_client
+        
+        resolved_symbol = mt5_client.resolve_symbol(symbol)
         
         # Final Safety Assertion Layer
         if not evaluation or not evaluation.get("allowed"):
@@ -22,10 +26,16 @@ class Executor:
             logger.error(f"EXECUTION BLOCKED: Volume ({volume}) invalid or exceeds approved size ({evaluation.get('position_size', 0)}).")
             return False
 
-        # Enforce DRY_RUN specifically as requested by user
-        if not settings.DRY_RUN:
-            logger.error("EXECUTION BLOCKED: System is forced to DRY_RUN mode for Multi-Market testing.")
-            return False
+        # Enforce LIVE_MICRO_MODE
+        if settings.LIVE_MICRO_MODE:
+            symbol_info_check = mt5.symbol_info(resolved_symbol)
+            min_vol = symbol_info_check.volume_min if symbol_info_check else 0.01
+            if volume != min_vol:
+                logger.warning(f"LIVE_MICRO_MODE: Forcing volume from {volume} to {min_vol}")
+                volume = min_vol
+        
+        if settings.DRY_RUN:
+            logger.info(f"DRY_RUN ACTIVE: Simulated execution for {symbol} {direction} {volume} lots")
             
         if settings.IS_DEMO_ACCOUNT:
             account_info = mt5.account_info()
@@ -35,27 +45,28 @@ class Executor:
                 
         # Check max open positions (Replaced by PortfolioManager)
         # We will use PortfolioManager instead
-        approved, reason = portfolio_manager.can_open_trade(symbol, settings.RISK_PER_TRADE_PCT)
-        if not approved:
-            logger.warning(f"[Risk] {symbol} rejected: {reason}")
-            return False
+        if not settings.ENABLE_PORTFOLIO_RISK:
+            approved, reason = portfolio_manager.can_open_trade(symbol, settings.RISK_PER_TRADE_PCT)
+            if not approved:
+                logger.warning(f"[Risk] {symbol} rejected: {reason}")
+                return False
 
         if sl_points <= 0:
             logger.error("Execution blocked: SL points must be strictly positive.")
             return False
 
-        symbol_info = mt5.symbol_info(symbol)
+        symbol_info = mt5.symbol_info(resolved_symbol)
         if symbol_info is None:
-            logger.error(f"Symbol {symbol} not found")
+            logger.error(f"Symbol {symbol} (resolved: {resolved_symbol}) not found")
             return False
 
         if not symbol_info.visible:
-            if not mt5.symbol_select(symbol, True):
+            if not mt5.symbol_select(resolved_symbol, True):
                 logger.error(f"Symbol {symbol} failed to select")
                 return False
 
-        point = mt5.symbol_info(symbol).point
-        price = mt5.symbol_info_tick(symbol).ask if direction == "BUY" else mt5.symbol_info_tick(symbol).bid
+        point = mt5.symbol_info(resolved_symbol).point
+        price = mt5.symbol_info_tick(resolved_symbol).ask if direction == "BUY" else mt5.symbol_info_tick(resolved_symbol).bid
         
         # Calculate SL/TP
         if direction == "BUY":
@@ -69,7 +80,7 @@ class Executor:
 
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
-            "symbol": symbol,
+            "symbol": resolved_symbol,
             "volume": volume,
             "type": order_type,
             "price": price,
@@ -84,20 +95,20 @@ class Executor:
 
         if settings.DRY_RUN:
             logger.info(f"DRY_RUN ON. Intended execution: {request}")
-            mock_ticket = int(mt5.symbol_info_tick(symbol).time)
+            mock_ticket = int(mt5.symbol_info_tick(resolved_symbol).time)
             DatabaseLogger.log_trade_execution(
                 signal_id=signal_id,
                 ticket=mock_ticket, # Mock ticket
-                symbol=symbol,
+                symbol=symbol, # Keep original symbol for DB
                 direction=direction,
                 volume=volume,
                 open_price=price,
                 sl=sl,
                 tp=tp,
-                open_time=mt5.symbol_info_tick(symbol).time
+                open_time=datetime.utcnow()
             )
             from notifications.telegram_notifier import notify_trade_executed
-            notify_trade_executed(direction, volume, price, sl, tp, mock_ticket, probability)
+            notify_trade_executed(symbol, direction, volume, price, sl, tp, mock_ticket, probability)
             return True
 
         result = mt5.order_send(request)
@@ -111,16 +122,16 @@ class Executor:
         DatabaseLogger.log_trade_execution(
             signal_id=signal_id,
             ticket=result.order,
-            symbol=symbol,
+            symbol=symbol, # Keep original symbol for DB
             direction=direction,
             volume=volume,
             open_price=result.price,
             sl=sl,
             tp=tp,
-            open_time=mt5.symbol_info_tick(symbol).time # Approximated via tick time or use datetime.utcnow()
+            open_time=datetime.utcnow()
         )
         
         from notifications.telegram_notifier import notify_trade_executed
-        notify_trade_executed(direction, volume, result.price, sl, tp, result.order, probability)
+        notify_trade_executed(symbol, direction, volume, result.price, sl, tp, result.order, probability)
         
         return True

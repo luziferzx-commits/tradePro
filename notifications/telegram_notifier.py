@@ -18,11 +18,12 @@ def send_telegram(message: str):
     except Exception as e:
         logger.warning(f"Telegram notification failed: {e}")
 
-def notify_trade_executed(direction, lot, entry, sl, tp, ticket, probability):
+def notify_trade_executed(symbol, direction, lot, entry, sl, tp, ticket, probability):
     emoji = "🟢" if direction == "BUY" else "🔴"
     msg = (
         f"{emoji} <b>TRADE EXECUTED</b>\n"
         f"─────────────────\n"
+        f"Symbol    : <b>{symbol}</b>\n"
         f"Direction : {direction}\n"
         f"Lot       : {lot}\n"
         f"Entry     : {entry}\n"
@@ -35,11 +36,12 @@ def notify_trade_executed(direction, lot, entry, sl, tp, ticket, probability):
     )
     send_telegram(msg)
 
-def notify_trade_closed(ticket, direction, profit, rr):
+def notify_trade_closed(ticket, symbol, direction, profit, rr):
     emoji = "✅" if profit > 0 else "❌"
     msg = (
         f"{emoji} <b>TRADE CLOSED</b>\n"
         f"─────────────────\n"
+        f"Symbol  : <b>{symbol}</b>\n"
         f"Ticket  : #{ticket}\n"
         f"Direction: {direction}\n"
         f"Profit  : {profit:.2f} USD\n"

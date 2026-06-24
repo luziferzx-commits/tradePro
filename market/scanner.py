@@ -10,7 +10,8 @@ from strategy.market_score import MarketScoreCalculator
 from market.regime_detector import RegimeDetector
 from strategy.scorer import MultiScorer
 from features.feature_store import feature_store
-from ml.predictor import ml_predictor
+from ml.predictor import MLPredictor
+ml_predictor = MLPredictor()
 from memory.market_memory_v2 import market_memory_v2
 from analytics.pipeline_stats import pipeline_stats
 from logs.explainability import explainability_logger
@@ -49,7 +50,8 @@ class MarketScanner:
     def load_config(self):
         try:
             with open(self.config_path, "r") as f:
-                return yaml.safe_load(f)
+                data = yaml.safe_load(f)
+                return data.get("symbols", data)
         except Exception as e:
             logger.error(f"Failed to load {self.config_path}: {e}")
             return {}
@@ -58,12 +60,12 @@ class MarketScanner:
         active = {}
         for sym, cfg in self.symbols_config.items():
             if cfg.get("enabled", False):
-                mtype = cfg.get("market_type", "")
-                if mtype == "crypto" and not settings.MULTI_MARKET["allow_crypto"]: continue
-                if mtype == "indices" and not settings.MULTI_MARKET["allow_indices"]: continue
-                if mtype == "forex" and not settings.MULTI_MARKET["allow_forex"]: continue
-                if mtype == "metal" and not settings.MULTI_MARKET["allow_metals"]: continue
-                if mtype == "oil" and not settings.MULTI_MARKET["allow_oil"]: continue
+                mtype = cfg.get("asset_class", cfg.get("market_type", "")).upper()
+                if mtype == "CRYPTO" and not settings.MULTI_MARKET["allow_crypto"]: continue
+                if mtype == "INDICES" and not settings.MULTI_MARKET["allow_indices"]: continue
+                if mtype == "FOREX" and not settings.MULTI_MARKET["allow_forex"]: continue
+                if mtype in ["METALS", "METAL"] and not settings.MULTI_MARKET["allow_metals"]: continue
+                if mtype == "OIL" and not settings.MULTI_MARKET["allow_oil"]: continue
                 active[sym] = cfg
         return active
 
@@ -123,15 +125,16 @@ class MarketScanner:
                 )
             
             # Check Spread
-            symbol_info = mt5.symbol_info(symbol)
+            resolved_symbol = mt5_client.resolve_symbol(symbol)
+            symbol_info = mt5.symbol_info(resolved_symbol)
             if not symbol_info:
                 logger.error(f"[Scanner] Failed to get symbol info for {symbol}")
                 log_explainability("REJECT", "missing_data", ["missing_data"])
                 continue
                 
             if not symbol_info.visible:
-                mt5.symbol_select(symbol, True)
-                symbol_info = mt5.symbol_info(symbol)
+                mt5.symbol_select(resolved_symbol, True)
+                symbol_info = mt5.symbol_info(resolved_symbol)
                 
             spread = symbol_info.spread
             max_spread = cfg.get("max_spread", 50)
@@ -182,7 +185,7 @@ class MarketScanner:
             df_h4 = mt5_client.get_h4_data(symbol, 50)
             h4_trend = "NEUTRAL"
             if df_h4 is not None and len(df_h4) >= 50:
-                h4_ema50 = df_h4['close'].ewm(span=50).iloc[-1]
+                h4_ema50 = df_h4['close'].ewm(span=50).mean().iloc[-1]
                 h4_close = df_h4['close'].iloc[-1]
                 h4_trend = "UP" if h4_close > h4_ema50 else "DOWN"
                 
