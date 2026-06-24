@@ -26,25 +26,32 @@ Capital Allocation: 0%
      - `executed_or_skipped`
 3. **Observability Dashboard (Daily/Weekly):**
    - The primary engineering task is to build a dashboard reporting:
-     - Date
-     - Signals / Executed / Skipped
-     - Health State Distribution
-     - PF / Win Rate / Max DD
-     - Top Disabled Contexts
-     - Top Opportunity Cost Contexts
-     - Current Session Health Table (Live state tracking)
+     - **Signal Coverage:** Signals Generated, Signals Executed, Coverage % (e.g., target > 60%).
+     - **Performance Metrics:** PF, Win Rate, Max DD (Overall and per-window/period).
+     - **Recovery Efficiency:** Disabled Count, Recovered Count, Recovery Success Rate, Average Recovery Time (to ensure the logic actually recovers).
+     - **Health Oscillation Tracking:** Track specific state transitions (e.g., `HEALTHY -> DISABLED`, `DISABLED -> HEALTHY`) to detect dangerous flip-flopping within short timeframes.
+     - **Opportunity Cost Analysis:** Top Disabled Contexts, Top Opportunity Cost Contexts, Top Saved Loss Contexts.
+     - **Live Health Snapshot:** A clear, readable table showing the current state of every Context (e.g., `Asia + NORMAL: HEALTHY`, `London + CHOPPY: DISABLED`).
 4. **Comparison Metrics:**
    - `baseline shadow PnL` (Without Risk Layer)
    - `session-health adjusted PnL` (With V2.1 Risk Layer)
    - `missed opportunity`
    - `saved loss`
-5. **Promotion Rules (Acceptance Criteria):**
+5. **Promotion Rules (Acceptance Criteria for Sprint 6 - Capital Allocation):**
    - Minimum 4 weeks of paper/shadow validation.
    - PF >= 1.50
+   - Signal Coverage > 60%
    - Max DD controlled.
-   - Skipped trades <= 35% (Monitor if the 30% holds true).
+   - Health states do not oscillate rapidly.
    - No critical runtime bugs.
-   - Monitor for excessive oscillation or rapid disable/recover flip-flopping.
+
+## Anti-Goals for Sprint 5
+❌ Do NOT add new indicators.
+❌ Do NOT add new feature engineering.
+❌ Do NOT add new models.
+❌ Do NOT retrain the model.
+❌ Do NOT optimize for PF.
+**Mantra:** *Observe, Measure, Validate.*
 
 **Status:**
 Pending kickoff in the next Sprint. Current baseline remains **Candidate V2.1**.
