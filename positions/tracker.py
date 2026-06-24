@@ -36,3 +36,11 @@ class PositionTracker:
                             pnl=close_deal.profit
                         )
                         logger.info(f"Trade {db_trade.ticket} closed. PnL: {close_deal.profit}")
+                        
+                        from notifications.telegram_notifier import notify_trade_closed
+                        try:
+                            risk_usd = float(db_trade.volume) * 100 * abs(float(db_trade.open_price) - float(db_trade.sl)) if db_trade.volume else 0
+                            rr = close_deal.profit / risk_usd if risk_usd > 0 else 0
+                        except Exception:
+                            rr = 0
+                        notify_trade_closed(db_trade.ticket, db_trade.direction, close_deal.profit, rr)

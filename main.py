@@ -46,6 +46,9 @@ def main():
         logger.error("Failed to start due to MT5 connection error.")
         return
 
+    from notifications.telegram_notifier import notify_bot_started
+    notify_bot_started()
+
     news_filter = EconomicFilter()
     # Legacy strategy removed from flow, using Scorer V2
     # strategy = PrimarySignalGenerator()
@@ -271,7 +274,8 @@ def main():
                         symbol=settings.SYMBOL,
                         direction=final_dir,
                         volume=volume,
-                        sl_points=sl_points
+                        sl_points=sl_points,
+                        probability=ml_result['probability']
                     )
                 
                 decision_logger.print_tree(str(current_candle_time))

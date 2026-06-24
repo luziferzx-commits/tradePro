@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 class Executor:
     @staticmethod
-    def execute_trade(signal_id: int, symbol: str, direction: str, volume: float, sl_points: float = 500) -> bool:
+    def execute_trade(signal_id: int, symbol: str, direction: str, volume: float, sl_points: float = 500, probability: float = 0.0) -> bool:
         """
         Sends an order to MT5. sl_points is in point values (e.g., 500 = 50 pips).
         """
@@ -70,9 +70,10 @@ class Executor:
 
         if settings.DRY_RUN:
             logger.info(f"DRY_RUN ON. Intended execution: {request}")
+            mock_ticket = int(mt5.symbol_info_tick(symbol).time)
             DatabaseLogger.log_trade_execution(
                 signal_id=signal_id,
-                ticket=int(mt5.symbol_info_tick(symbol).time), # Mock ticket
+                ticket=mock_ticket, # Mock ticket
                 symbol=symbol,
                 direction=direction,
                 volume=volume,
@@ -81,6 +82,8 @@ class Executor:
                 tp=tp,
                 open_time=mt5.symbol_info_tick(symbol).time
             )
+            from notifications.telegram_notifier import notify_trade_executed
+            notify_trade_executed(direction, volume, price, sl, tp, mock_ticket, probability)
             return True
 
         result = mt5.order_send(request)
@@ -102,5 +105,8 @@ class Executor:
             tp=tp,
             open_time=mt5.symbol_info_tick(symbol).time # Approximated via tick time or use datetime.utcnow()
         )
+        
+        from notifications.telegram_notifier import notify_trade_executed
+        notify_trade_executed(direction, volume, result.price, sl, tp, result.order, probability)
         
         return True
