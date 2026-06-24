@@ -26,6 +26,7 @@ Capital Allocation: 0%
      - `executed_or_skipped`
 3. **Observability Dashboard (Daily/Weekly):**
    - The primary engineering task is to build a dashboard reporting:
+     - **Config Integrity:** `Config Version` and `Days Since Last Change`. (Must not reset during the 4-12 week validation).
      - **Signal Coverage:** Signals Generated, Signals Executed, Coverage % (e.g., target > 60%).
      - **Performance Metrics:** PF, Win Rate, Max DD (Overall and per-window/period).
      - **Recovery Efficiency:** Disabled Count, Recovered Count, Recovery Success Rate, Average Recovery Time (to ensure the logic actually recovers).
@@ -54,10 +55,14 @@ It is equally important to define what constitutes a failure so that we can deci
 5. **Runtime errors** affecting execution logic.
 6. **Max DD exceeds expected backtest envelope** (e.g., DD breaches the -10R threshold we optimized for).
 
-## Anti-Goals for Sprint 5
-❌ Do NOT add new indicators.
-❌ Do NOT add new feature engineering.
-❌ Do NOT add new models.
+## Anti-Goals & Strict Rules for Sprint 5
+**Frozen Components Rule:** During the entire Shadow Validation period, the following components are strictly FROZEN:
+- Model & Features
+- Thresholds & Risk Logic
+- Session Health Parameters
+*Even if a slight tweak would improve the PF, absolutely NO changes are allowed.* If you change the system mid-validation, you invalidate the entire forward test.
+
+❌ Do NOT add new indicators or models.
 ❌ Do NOT retrain the model.
 ❌ Do NOT optimize for PF.
 **Mantra:** *Observe, Measure, Validate.*
@@ -76,5 +81,13 @@ If and only if Candidate V2.1 passes the 4-week Shadow Validation (Scenario A), 
 - **Stage 3:** 0.75% Risk
 - **Stage 4:** 1.00% Risk
 
-**Status:**
-Pending kickoff in the next Sprint. Current baseline remains **Candidate V2.1**.
+**CRITICAL RULES FOR SPRINT 6:** 
+- **No Automatic Promotion:** Moving from 0.25% to 0.50% (and so on) requires manual human review. The system must not increase capital automatically.
+- **The 12-Week Milestone:** While 4 weeks is the minimum to start, the true test of robustness is **12 weeks** of live exposure. Only after 12 weeks will the system have seen enough varied market conditions (news, chop, trends, high/low vol) to truly prove itself.
+
+**Status Summary: GoldBot Edge V2**
+- Research Complete ✅
+- Candidate Frozen ✅
+- Forward Validation Ready ✅
+- Production Ready ❌
+- Capital Approved ❌
