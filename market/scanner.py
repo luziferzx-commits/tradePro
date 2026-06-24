@@ -128,6 +128,9 @@ class MarketScanner:
             
             if not ml_result['approved']:
                 reason = ml_result['reason']
+                prob = ml_result['probability']
+                pipeline_stats.log_ml_probability(prob)
+                
                 if "No production model" in reason or "skipped" in reason:
                     pipeline_stats.log_reject("ml_model_not_found", symbol)
                 else:
@@ -142,6 +145,7 @@ class MarketScanner:
                 continue
                 
             prob = ml_result['probability']
+            pipeline_stats.log_ml_probability(prob)
             min_conf = cfg.get("min_confidence", 0.55)
             if prob < min_conf:
                 pipeline_stats.log_reject("ml_probability_too_low", symbol)
@@ -176,7 +180,7 @@ class MarketScanner:
             # If scan interval is 60s, 30 minutes is 30 scans.
             pass
             
-        if self.scan_count % 1 == 0:
+        if self.scan_count % 30 == 0:
             pipeline_stats.print_summary("XAUUSDm")
             
         return valid_signals
