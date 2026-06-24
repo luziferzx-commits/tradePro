@@ -7,12 +7,21 @@ logger = logging.getLogger(__name__)
 
 class Executor:
     @staticmethod
-    def execute_trade(signal_id: int, symbol: str, direction: str, volume: float, sl_points: float = 500, probability: float = 0.0) -> bool:
+    def execute_trade(signal_id: int, symbol: str, direction: str, volume: float, sl_points: float = 500, probability: float = 0.0, evaluation: dict = None) -> bool:
         """
         Sends an order to MT5. sl_points is in point values (e.g., 500 = 50 pips).
         """
         from risk.portfolio_manager import portfolio_manager
         
+        # Final Safety Assertion Layer
+        if not evaluation or not evaluation.get("allowed"):
+            logger.error(f"EXECUTION BLOCKED: Trade for {symbol} did not pass RiskGuard evaluation.")
+            return False
+            
+        if volume > evaluation.get("position_size", 0.0) or volume <= 0:
+            logger.error(f"EXECUTION BLOCKED: Volume ({volume}) invalid or exceeds approved size ({evaluation.get('position_size', 0)}).")
+            return False
+
         # Enforce DRY_RUN specifically as requested by user
         if not settings.DRY_RUN:
             logger.error("EXECUTION BLOCKED: System is forced to DRY_RUN mode for Multi-Market testing.")

@@ -178,6 +178,13 @@ def build_dataset(symbol="XAUUSDm", timeframe="M5", atr_multiplier=2.0):
             "result_r": result_r,
             "label": 1 if result_r > 0 else 0
         }
+        
+        # --- LAYER B: RUNTIME DATA VALIDATION ---
+        # Assert no future bar access occurred in feature extraction
+        assert df_slice.index[-1] == i, f"Leakage Alert! Current index is {i} but df_slice extends to {df_slice.index[-1]}"
+        # Ensure timestamp alignment
+        assert str(df_slice.iloc[-1]['time']) == str(candle['time']), "Leakage Alert! Timestamp mismatch between features and target candle."
+        
         dataset_rows.append(row)
         
         if len(dataset_rows) % 100 == 0:

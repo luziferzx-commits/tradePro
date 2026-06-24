@@ -9,6 +9,7 @@ from data.mt5_client import mt5_client
 from news.economic_filter import EconomicFilter
 from safety.circuit_breaker import CircuitBreaker
 from risk.manager import RiskManager
+from risk.guard import RiskGuard
 from risk.portfolio_manager import portfolio_manager
 from execution.executor import Executor
 from execution.shadow_executor import ShadowExecutor
@@ -75,43 +76,33 @@ def main():
                 logger.info(f"Processing {direction} signal for {symbol} (Prob: {prob:.3f}, Sim: {sim:.2f})")
                 decision_logger.reset()
                 
-                # Check Circuit Breakers
-                if not CircuitBreaker.check_all(symbol):
-                    pipeline_stats.log_reject("circuit_breaker", symbol)
-                    logger.warning(f"Trade blocked for {symbol} by Circuit Breaker.")
-                    decision_logger.log_step("Safety Checks", False, "Circuit Breaker Active")
-                    continue
-                    
-                if not news_filter.is_safe_to_trade():
-                    pipeline_stats.log_reject("news_filter", symbol)
-                    logger.warning(f"Trade blocked for {symbol} by Economic News Filter.")
-                    decision_logger.log_step("News Filter", False, "High Impact News")
-                    continue
-
                 # Calculate Risk / Lots
                 sl_points = cfg.get("atr_multiplier_sl", 1.5) * features['atr'] * 10 # Example conversion
                 # Safety fallback
                 if sl_points < 100: sl_points = 500
+                tp_points = sl_points * 2 # 1:2 RR
                 
                 health_score = health_monitor.get_latest_health()
                 
-                volume = RiskManager.calculate_position_size(
-                    symbol=symbol, 
+                # Evaluate Trade with Unified Risk Guard
+                evaluation = RiskGuard.evaluate_trade(
+                    symbol=symbol,
+                    direction=direction,
+                    signal_price=features['close'],
                     sl_points=sl_points,
+                    tp_points=tp_points,
                     ml_prob=prob,
-                    memory_sim=sim,
                     health_score=health_score
                 )
                 
-                # Apply risk multiplier per symbol config
-                volume = volume * cfg.get("risk_multiplier", 1.0)
-                
-                if volume <= 0:
-                    pipeline_stats.log_reject("order_validation_failed", symbol)
-                    logger.warning(f"Calculated volume is 0 for {symbol}. Skipping.")
+                if not evaluation["allowed"]:
+                    pipeline_stats.log_reject("risk_guard_failed", symbol)
+                    logger.warning(f"Trade blocked for {symbol}: {evaluation['reason']} (Guard: {evaluation['guard_that_failed']})")
+                    decision_logger.log_step("Safety Checks", False, evaluation['guard_that_failed'])
                     continue
                     
                 pipeline_stats.log_pass("risk_pass")
+                volume = evaluation["position_size"]
                     
                 # DB Logging
                 market_state = DatabaseLogger.log_market_state(
@@ -142,7 +133,8 @@ def main():
                     direction=direction,
                     volume=volume,
                     sl_points=sl_points,
-                    probability=prob
+                    probability=prob,
+                    evaluation=evaluation
                 )
                 pipeline_stats.log_pass("simulated_orders")
                 

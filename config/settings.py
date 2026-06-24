@@ -19,11 +19,14 @@ class Settings:
     TIMEFRAME = "M5" # Handled explicitly in mt5_client
     
     # Risk Management
-    RISK_PER_TRADE_PCT = 0.01  # 1% risk per trade
-    MAX_DAILY_LOSS_PCT = 0.05  # 5% max daily loss
-    MAX_DRAWDOWN_PCT = 0.15    # 15% max drawdown
-    MAX_CONSECUTIVE_LOSSES = 5
-    MAX_SPREAD_POINTS = 50     # e.g., 5.0 pips for Gold
+    RISK_PER_TRADE_PCT = float(os.getenv("RISK_PER_TRADE_PCT", 0.01))  # 1% risk per trade
+    MAX_DAILY_LOSS_PCT = float(os.getenv("MAX_DAILY_LOSS_PCT", 0.05))  # 5% max daily loss
+    MAX_DRAWDOWN_PCT = float(os.getenv("MAX_DRAWDOWN_PCT", 0.15))      # 15% max drawdown
+    MAX_CONSECUTIVE_LOSSES = int(os.getenv("MAX_CONSECUTIVE_LOSSES", 5))
+    MAX_SPREAD_POINTS = int(os.getenv("MAX_SPREAD_POINTS", 50))        # e.g., 5.0 pips for Gold
+    MAX_SLIPPAGE_POINTS = int(os.getenv("MAX_SLIPPAGE_POINTS", 20))    # Pre-trade signal price drift
+    MAX_TRADES_PER_DAY = int(os.getenv("MAX_TRADES_PER_DAY", 5))
+
     
     # Multi-Market Configuration
     MULTI_MARKET = {
@@ -43,11 +46,14 @@ class Settings:
     
     # Safety & Execution
     DRY_RUN = os.getenv("DRY_RUN", "True").lower() == "true"
+    ALLOW_LIVE_TRADING = os.getenv("ALLOW_LIVE_TRADING", "False").lower() == "true"
     IS_DEMO_ACCOUNT = os.getenv("IS_DEMO_ACCOUNT", "True").lower() == "true"
     MAGIC_NUMBER = 234000
-    MAX_OPEN_POSITIONS = 1
+    MAX_OPEN_POSITIONS = int(os.getenv("MAX_OPEN_POSITIONS", 1))
     COOLDOWN_MINUTES = 5
     MIN_EQUITY = float(os.getenv("MIN_EQUITY", "100.0"))
+    REQUIRE_STOP_LOSS = os.getenv("REQUIRE_STOP_LOSS", "True").lower() == "true"
+    REQUIRE_TAKE_PROFIT = os.getenv("REQUIRE_TAKE_PROFIT", "True").lower() == "true"
     
     # AI Settings
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
