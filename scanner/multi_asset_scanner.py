@@ -197,7 +197,8 @@ class MultiAssetScanner:
                 'spread_points': spread,
                 'volatility_regime': regime.get('volatility_state', 'NORMAL'),
                 'status': 'REJECTED',
-                'reason': ml_result.get("reason", "ml_rejected")
+                'reason': ml_result.get("reason", "ml_rejected"),
+                'strategy_id': market_score.get('strategy_id', 'legacy_gqos_alpha_v1')
             }
 
         return {
@@ -210,5 +211,6 @@ class MultiAssetScanner:
             'spread_points': spread,
             'volatility_regime': regime.get('volatility_state', 'NORMAL'),
             'status': 'APPROVED',
-            'atr': atr
+            'atr': atr,
+            'strategy_id': market_score.get('strategy_id', 'legacy_gqos_alpha_v1')
         }

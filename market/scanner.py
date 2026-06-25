@@ -7,6 +7,8 @@ from config.settings import settings
 from data.mt5_client import mt5_client
 from strategy.indicators import IndicatorCalculator
 from strategy.market_score import MarketScoreCalculator
+from strategy.strategies.registry import StrategyRegistry
+from strategy.strategies.ensemble_router import EnsembleRouter
 from market.regime_detector import RegimeDetector
 from strategy.scorer import MultiScorer
 from features.feature_store import feature_store
@@ -189,7 +191,25 @@ class MarketScanner:
                 h4_close = df_h4['close'].iloc[-1]
                 h4_trend = "UP" if h4_close > h4_ema50 else "DOWN"
                 
-            market_score = MarketScoreCalculator.calculate(df, regime, h4_trend=h4_trend)
+            strategy_engine = os.getenv("STRATEGY_ENGINE", "legacy")
+            if strategy_engine == "abc_router":
+                registry = StrategyRegistry(symbol, "M5")
+                router = EnsembleRouter(trading_cost_r=0.1, min_ev_threshold=0.0)
+                signal_dec = router.route(df, regime, registry)
+                market_score = {
+                    "final_direction": signal_dec.direction,
+                    "final_score": signal_dec.edge_score * 100 if signal_dec.edge_score > 0 else 0,
+                    "setup_name": signal_dec.setup_name,
+                    "reason": signal_dec.entry_reason,
+                    "trend_score": 0.0,
+                    "breakout_score": 0.0,
+                    "reversal_score": 0.0,
+                    "session_score": 0.0,
+                    "h4_trend": h4_trend
+                }
+            else:
+                market_score = MarketScoreCalculator.calculate(df, regime, h4_trend=h4_trend)
+                
             final_dir = market_score['final_direction']
             ex_market_score = market_score['final_score']
             

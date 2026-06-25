@@ -90,7 +90,7 @@ class AlphaWorker:
                                else (entry_price + sl_buffer)
 
                     cmd = SizePositionCommand(
-                        strategy_id="gqos_alpha_v1",
+                        strategy_id=sig.get('strategy_id', 'legacy_gqos_alpha_v1'),
                         symbol=symbol,
                         direction=direction,
                         entry_price=entry_price,

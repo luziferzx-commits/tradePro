@@ -1,0 +1,14 @@
+{
+  "accounting": {
+    "positions": {}
+  },
+  "portfolio": {
+    "total_equity": "9999.82",
+    "unallocated_cash": "0.00",
+    "allocations": {
+      "gqos_alpha_v1": {
+        "allocated_capital": "9999.82"
+      }
+    }
+  }
+}
