@@ -40,7 +40,22 @@ def create_template_report():
     report_path = os.path.join(os.path.dirname(__file__), '..', 'reports', 'ABC_SHADOW_VALIDATION_REPORT.md')
     os.makedirs(os.path.dirname(report_path), exist_ok=True)
     
-    content = """# ABC Strategy Shadow Validation Report
+    # Fetch Strategy Health State
+    health_summary_md = "## Strategy Health Summary\n\n| Strategy | Score | Status | Risk Multiplier | PF | Exp R | Win Rate | Trades |\n|---|---|---|---|---|---|---|---|\n"
+    import json
+    health_state_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'strategy_health_state.json')
+    if os.path.exists(health_state_path):
+        try:
+            with open(health_state_path, 'r') as f:
+                health_data = json.load(f)
+                for strat, state in health_data.items():
+                    health_summary_md += f"| {strat} | {state['health_score']:.1f} | {state['status']} | {state['risk_multiplier']}x | {state['rolling_pf']:.2f} | {state['rolling_expectancy_r']:.2f} | {state['rolling_win_rate']*100:.1f}% | {state['trade_count']} |\n"
+        except Exception as e:
+            health_summary_md += f"| Error loading health state | {e} | - | - | - | - | - | - |\n"
+    else:
+        health_summary_md += "| No health state found (run update_strategy_health.py) | - | - | - | - | - | - | - |\n"
+
+    content = f"""# ABC Strategy Shadow Validation Report
 
 *Generated on: {timestamp}*
 
@@ -57,6 +72,8 @@ This report summarizes the performance of the `EnsembleRouter` running in Shadow
 *   **Trades Approved by Router**: 0
 *   **Trades Rejected by Router**: 0
 *   **Live Order Violations**: 0 ✅ (Must be 0)
+
+{health_summary_md}
 
 ### Rejection Reason Breakdown
 *   *Negative Expected Value (EV <= 0)*: 0

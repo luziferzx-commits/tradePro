@@ -90,6 +90,10 @@ def main():
     entry_price = 0.0
     sl = 0.0
     tp = 0.0
+    active_strategy_id = None
+    
+    # Dictionary to store historical trades by strategy to calculate dynamic rolling metrics
+    strategy_history = {}
     
     # Slicing is slow, let's just use regime from full DF for now to speed up the proof-of-concept
     df['hour'] = pd.to_datetime(df['time']).dt.hour
@@ -98,12 +102,45 @@ def main():
         c = records[i]
         
         if in_trade:
+            trade_pnl = 0.0
+            trade_result = ""
             if trade_dir == "BUY":
-                if c['low'] <= sl: trades_router.append({"pnl": sl - entry_price, "result": "LOSS"}); in_trade = False
-                elif c['high'] >= tp: trades_router.append({"pnl": tp - entry_price, "result": "WIN"}); in_trade = False
+                if c['low'] <= sl: trade_pnl = sl - entry_price; trade_result = "LOSS"; in_trade = False
+                elif c['high'] >= tp: trade_pnl = tp - entry_price; trade_result = "WIN"; in_trade = False
             else:
-                if c['high'] >= sl: trades_router.append({"pnl": entry_price - sl, "result": "LOSS"}); in_trade = False
-                elif c['low'] <= tp: trades_router.append({"pnl": entry_price - tp, "result": "WIN"}); in_trade = False
+                if c['high'] >= sl: trade_pnl = entry_price - sl; trade_result = "LOSS"; in_trade = False
+                elif c['low'] <= tp: trade_pnl = entry_price - tp; trade_result = "WIN"; in_trade = False
+            
+            if not in_trade:
+                trade_dict = {"pnl": trade_pnl, "result": trade_result, "strategy_id": active_strategy_id}
+                trades_router.append(trade_dict)
+                
+                # Update Health Manager In-Memory
+                if active_strategy_id not in strategy_history:
+                    strategy_history[active_strategy_id] = []
+                strategy_history[active_strategy_id].append(trade_dict)
+                
+                # Calculate rolling stats (simplified)
+                strat_trades = strategy_history[active_strategy_id]
+                s_wins = [t for t in strat_trades if t['result'] == 'WIN']
+                s_losses = [t for t in strat_trades if t['result'] == 'LOSS']
+                s_gp = sum(t['pnl'] for t in s_wins)
+                s_gl = abs(sum(t['pnl'] for t in s_losses))
+                
+                pf = s_gp / s_gl if s_gl > 0 else 99.0
+                win_rate = len(s_wins) / len(strat_trades) if strat_trades else 0.0
+                
+                # Feed to Health Manager
+                router.health_manager.update_metrics(
+                    strategy_id=active_strategy_id,
+                    pf=pf,
+                    expectancy=0.5, # Dummy expectancy for speed
+                    win_rate=win_rate,
+                    max_dd=0.01,    # Dummy DD for speed
+                    avg_rr=1.5,     # Dummy avg_rr for speed
+                    trade_count=len(strat_trades)
+                )
+                
             continue
             
         # We need a regime dictionary. Let's mock a basic one to avoid recalculating regime every candle
@@ -129,6 +166,7 @@ def main():
             entry_price = signal.entry_price
             sl = signal.stop_loss
             tp = signal.take_profit
+            active_strategy_id = signal.strategy_id
             
     metrics = calculate_metrics(trades_router)
     print_metrics("Ensemble Router Validation", metrics)

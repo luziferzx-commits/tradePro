@@ -13,6 +13,10 @@ class EnsembleRouter:
     def __init__(self, trading_cost_r: float = 0.1, min_ev_threshold: float = 0.05):
         self.trading_cost_r = trading_cost_r
         self.min_ev_threshold = min_ev_threshold
+        
+        # Initialize Strategy Health Manager
+        from strategy.health_manager import StrategyHealthManager
+        self.health_manager = StrategyHealthManager()
 
     def route(self, df: pd.DataFrame, regime: dict, registry: StrategyRegistry, ml_predictions: dict = None, session_info: dict = None) -> SignalDecision:
         if df.empty:
@@ -68,11 +72,20 @@ class EnsembleRouter:
         if not candidates:
             return self._neutral("No strategies generated active signals")
             
-        # 2. Calculate EV and filter
+        # 2. Calculate EV, Apply Health, and filter
         valid_candidates = []
         for sig in candidates:
+            # Check strategy health
+            health_state = self.health_manager.get_state(sig.strategy_id)
+            if health_state.status == "DISABLED_BY_EVIDENCE":
+                sig.status = "REJECTED"
+                sig.rejection_reason = "STRATEGY_HEALTH_DISABLED"
+                continue
+
+            # Apply Risk Multiplier from Health Layer
+            sig.risk_r *= health_state.risk_multiplier
+
             # TODO: Inject real historical Win Rate from backtest DB or ML Predictor
-            # For now, we estimate based on ML prediction if available, else standard baseline
             win_prob = 0.40 
             if ml_predictions and 'probability' in ml_predictions:
                 win_prob = ml_predictions['probability']
@@ -80,12 +93,18 @@ class EnsembleRouter:
             loss_prob = 1.0 - win_prob
             
             # EV = (Win% * Reward) - (Loss% * Risk) - Cost
-            # Assuming risk_r is always 1.0 standard R unit
+            # Assuming expected risk is the multiplied risk
             expected_value_after_cost = (win_prob * sig.expected_rr) - (loss_prob * 1.0) - self.trading_cost_r
             
             # Apply session-specific EV penalties if any were marked earlier (e.g. overlap)
-            if sig.session_label == "LONDON_NY_OVERLAP":
+            if getattr(sig, 'session_label', '') == "LONDON_NY_OVERLAP":
                 expected_value_after_cost -= 0.05
+                
+            # Health penalty on EV: if degraded, make it harder to pass
+            if health_state.status == "DEGRADED":
+                expected_value_after_cost -= 0.05
+            elif health_state.status in ["WATCHLIST", "INSUFFICIENT_SAMPLE"]:
+                expected_value_after_cost -= 0.10
             
             sig.edge_score = expected_value_after_cost
             sig.cost_estimate = self.trading_cost_r
@@ -98,7 +117,7 @@ class EnsembleRouter:
                 sig.rejection_reason = f"Negative or low EV: {expected_value_after_cost:.2f}"
                 
         if not valid_candidates:
-            return self._neutral("All candidates rejected due to low Expected Value")
+            return self._neutral("All candidates rejected due to low Expected Value or Health")
             
         # 3. Anti-overlap / Select Best
         # Rank by EV (highest first)
