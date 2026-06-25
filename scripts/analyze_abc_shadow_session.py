@@ -57,7 +57,7 @@ def create_template_report():
 
     content = f"""# ABC Strategy Shadow Validation Report
 
-*Generated on: {timestamp}*
+*Generated on: {{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}}*
 
 ## Executive Summary
 This report summarizes the performance of the `EnsembleRouter` running in Shadow Mode (`DRY_RUN=True`).
@@ -121,7 +121,7 @@ This report summarizes the performance of the `EnsembleRouter` running in Shadow
 ## 4. Strategy Health Guard
 *   *Are any strategies operating below PF 1.0?* **No data**
 *   *Was the kill-switch triggered?* **No**
-""".format(timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+"""
 
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write(content)

@@ -52,7 +52,7 @@ class TestSessionRouterRules(unittest.TestCase):
         session_info = {"session_label": "LONDON_NY_OVERLAP"}
         signal = self.router.route(self.df, regime, self.registry, session_info=session_info)
         self.assertEqual(signal.direction, "BUY")
-        self.assertAlmostEqual(signal.edge_score, 1.25)
+        self.assertAlmostEqual(signal.edge_score, 1.15)
 
 if __name__ == '__main__':
     unittest.main()

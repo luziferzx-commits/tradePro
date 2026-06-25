@@ -1,6 +1,6 @@
 # ABC Strategy Shadow Validation Report
 
-*Generated on: 2026-06-25 09:39:21*
+*Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}*
 
 ## Executive Summary
 This report summarizes the performance of the `EnsembleRouter` running in Shadow Mode (`DRY_RUN=True`).
@@ -15,6 +15,15 @@ This report summarizes the performance of the `EnsembleRouter` running in Shadow
 *   **Trades Approved by Router**: 0
 *   **Trades Rejected by Router**: 0
 *   **Live Order Violations**: 0 ✅ (Must be 0)
+
+## Strategy Health Summary
+
+| Strategy | Score | Status | Risk Multiplier | PF | Exp R | Win Rate | Trades |
+|---|---|---|---|---|---|---|---|
+| StrategyABreakout | 20.0 | INSUFFICIENT_SAMPLE | 0.25x | 0.00 | 0.00 | 0.0% | 0 |
+| StrategyBTrendPullback | 20.0 | INSUFFICIENT_SAMPLE | 0.25x | 0.00 | 0.00 | 0.0% | 0 |
+| StrategyCMeanReversion | 20.0 | INSUFFICIENT_SAMPLE | 0.25x | 0.00 | 0.00 | 0.0% | 0 |
+
 
 ### Rejection Reason Breakdown
 *   *Negative Expected Value (EV <= 0)*: 0
