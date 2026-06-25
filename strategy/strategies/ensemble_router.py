@@ -22,7 +22,7 @@ class EnsembleRouter:
         # 1. Gather all candidate signals
         for strategy in registry.get_all_strategies():
             signal = strategy.generate_signal(df, regime)
-            if signal.direction != "NEUTRAL" and not signal.is_disabled_by_evidence:
+            if signal.direction != "NEUTRAL" and not strategy.is_disabled_by_evidence:
                 candidates.append(signal)
                 
         if not candidates:
