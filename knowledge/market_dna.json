@@ -1,0 +1,14 @@
+{
+  "XAUUSD": {
+    "best_session": "LONDON",
+    "core_strategy": "London Breakout",
+    "preferred_regime": "RANGE",
+    "optimal_volatility": "High"
+  },
+  "EURUSD": {
+    "best_session": "LONDON_NY_OVERLAP",
+    "core_strategy": "NY Breakout",
+    "preferred_regime": "RANGE",
+    "optimal_volatility": "Extreme"
+  }
+}

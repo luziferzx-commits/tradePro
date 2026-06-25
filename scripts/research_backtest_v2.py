@@ -39,7 +39,7 @@ def simulate_trade(records, start_idx, direction, entry_price, sl, tp):
 def main():
     parser = argparse.ArgumentParser(description="Research Backtest V2")
     parser.add_argument("--candles", type=int, default=1000, help="Number of historical candles to fetch")
-    parser.add_argument("--symbols", type=str, nargs='+', default=["XAUUSD"], help="List of symbols to backtest")
+    parser.add_argument("--symbols", type=str, nargs='+', default=["XAUUSD", "BTCUSD", "EURUSD", "GBPUSD", "NAS100", "US30", "USDJPY", "AUDUSD", "ETHUSD", "SPX500"], help="List of symbols to backtest")
     args = parser.parse_args()
 
     if not mt5_client.connect():
@@ -88,6 +88,12 @@ def main():
             }
             
             sess_label = SessionDetector.detect(c['time'].timestamp())
+            dt = pd.to_datetime(c['time'])
+            time_fields = {
+                "entry_time_utc": str(dt),
+                "year": dt.year,
+                "month": dt.month
+            }
             
             # --- 1. LEGACY ---
             # To speed up, we pass a small slice to MarketScoreCalculator
@@ -107,7 +113,8 @@ def main():
                         "strategy": legacy_score['setup_name'], "hour": c['hour'], "weekday": c['weekday'], 
                         "pnl_r": pnl / sl_dist if sl_dist > 0 else 0, "pnl": pnl, "result": res, "r_multiple": pnl / sl_dist if sl_dist > 0 else 0,
                         "atr": c.get('atr', 0.0), "adx": c.get('adx', 0.0), "ema50_slope": c.get('ema50_slope', 0.0),
-                        "spread": c.get('atr', 0.0) * 0.1, "spread_model": "SIMULATED_DYNAMIC_ATR_BASED", "spread_is_simulated": True
+                        "spread": c.get('atr', 0.0) * 0.1, "spread_model": "SIMULATED_DYNAMIC_ATR_BASED", "spread_is_simulated": True,
+                        **time_fields
                     })
                     
             # Generate ABC Signals
@@ -129,7 +136,8 @@ def main():
                         "strategy": sig_abc.strategy_id, "hour": c['hour'], "weekday": c['weekday'], 
                         "pnl_r": pnl / sl_dist if sl_dist > 0 else 0, "pnl": pnl, "result": res, "r_multiple": pnl / sl_dist if sl_dist > 0 else 0,
                         "atr": c.get('atr', 0.0), "adx": c.get('adx', 0.0), "ema50_slope": c.get('ema50_slope', 0.0),
-                        "spread": c.get('atr', 0.0) * 0.1, "spread_model": "SIMULATED_DYNAMIC_ATR_BASED", "spread_is_simulated": True
+                        "spread": c.get('atr', 0.0) * 0.1, "spread_model": "SIMULATED_DYNAMIC_ATR_BASED", "spread_is_simulated": True,
+                        **time_fields
                     })
             
             # --- 3. ABC+Session ---
@@ -144,7 +152,8 @@ def main():
                         "strategy": sig_sess.strategy_id, "hour": c['hour'], "weekday": c['weekday'], 
                         "pnl_r": pnl / sl_dist if sl_dist > 0 else 0, "pnl": pnl, "result": res, "r_multiple": pnl / sl_dist if sl_dist > 0 else 0,
                         "atr": c.get('atr', 0.0), "adx": c.get('adx', 0.0), "ema50_slope": c.get('ema50_slope', 0.0),
-                        "spread": c.get('atr', 0.0) * 0.1, "spread_model": "SIMULATED_DYNAMIC_ATR_BASED", "spread_is_simulated": True
+                        "spread": c.get('atr', 0.0) * 0.1, "spread_model": "SIMULATED_DYNAMIC_ATR_BASED", "spread_is_simulated": True,
+                        **time_fields
                     })
 
             # --- 4. ABC+Session+Health ---
@@ -160,7 +169,8 @@ def main():
                         "strategy": sig_health.strategy_id, "hour": c['hour'], "weekday": c['weekday'], 
                         "pnl_r": r_mult, "pnl": pnl, "result": res, "r_multiple": r_mult,
                         "atr": c.get('atr', 0.0), "adx": c.get('adx', 0.0), "ema50_slope": c.get('ema50_slope', 0.0),
-                        "spread": c.get('atr', 0.0) * 0.1, "spread_model": "SIMULATED_DYNAMIC_ATR_BASED", "spread_is_simulated": True
+                        "spread": c.get('atr', 0.0) * 0.1, "spread_model": "SIMULATED_DYNAMIC_ATR_BASED", "spread_is_simulated": True,
+                        **time_fields
                     })
                     # Feedback loop!
                     strat_trades = [t for t in all_trades if t['engine'] == "ABC+Session+Health" and t['strategy'] == sig_health.strategy_id]
