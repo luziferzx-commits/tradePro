@@ -57,11 +57,11 @@ class ForexMetalsEvaluator(BaseSetupEvaluator):
             adx, plus_di, minus_di, close, prev['close'], recent_high, recent_low, regime
         ))
         
-        # 5. Asia Session Continuation
-        setups.append(self._evaluate_asia_continuation(
-            "Asia Continuation", hour in [17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4], 
-            close, ema50, regime.get('trend_state', 'UNKNOWN'), rsi=latest.get('rsi', 50)
-        ))
+        # 5. Asia Session Continuation (DISABLED - Needs rigorous backtesting on n>200 historical samples first)
+        # setups.append(self._evaluate_asia_continuation(
+        #     "Asia Continuation", hour in [17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4], 
+        #     close, ema50, regime.get('trend_state', 'UNKNOWN'), rsi=latest.get('rsi', 50)
+        # ))
         
         return setups
 
