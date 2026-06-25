@@ -12,6 +12,21 @@ class NewsFilter:
         self.last_fetch = None
         self.url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
         self.monitored_currencies = {"USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD"}
+        
+        # Hardcoded mapping to ensure indices are correctly mapped to their respective currencies
+        self.symbol_currency_map = {
+            "BTCUSD": ["USD"],
+            "ETHUSD": ["USD"],
+            "EURUSD": ["EUR", "USD"],
+            "GBPUSD": ["GBP", "USD"],
+            "GER40": ["EUR"],
+            "DE30": ["EUR"],
+            "NAS100": ["USD"],
+            "US500": ["USD"],
+            "USDJPY": ["USD", "JPY"],
+            "XAGUSD": ["USD"],
+            "XAUUSD": ["USD"]
+        }
 
     def fetch_news(self):
         try:
@@ -48,7 +63,8 @@ class NewsFilter:
         for event in self.news_events:
             # If symbol is provided, only block if the news currency is part of the symbol
             if symbol:
-                if event["country"] not in symbol:
+                mapped_currencies = self.symbol_currency_map.get(symbol, ["USD"])
+                if event["country"] not in mapped_currencies:
                     continue
                     
             time_diff = abs((now - event["time"]).total_seconds())

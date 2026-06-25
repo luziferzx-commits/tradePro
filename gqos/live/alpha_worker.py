@@ -80,7 +80,11 @@ class AlphaWorker:
                     # Calculate SL from ATR passed from scanner
                     point = Decimal(str(sym_info.point))
                     atr = Decimal(str(sig.get('atr', 0.0)))
-                    sl_buffer = atr * Decimal('15') if atr > 0 else Decimal('500') * point
+                    
+                    symbol_config = self.registry.get(symbol) or {}
+                    atr_multiplier = Decimal(str(symbol_config.get("atr_sl_multiplier", 15.0)))
+                    
+                    sl_buffer = atr * atr_multiplier if atr > 0 else Decimal('500') * point
                     
                     sl_price = (entry_price - sl_buffer) if direction == TradeDirection.BUY \
                                else (entry_price + sl_buffer)

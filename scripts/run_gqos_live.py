@@ -95,7 +95,7 @@ def main():
             
     adapter = MT5BrokerAdapter(evt_bus, oms_callback)
     safety = GlobalKillSwitch(oms, adapter)
-    hb_monitor = HeartbeatMonitor(evt_bus, safety, timeout_seconds=5.0)
+    hb_monitor = HeartbeatMonitor(evt_bus, safety, timeout_seconds=60.0)
     
     snapshot_path = "gqos_ledger_state.json"
     persistence = LedgerSnapshotService(snapshot_path)
