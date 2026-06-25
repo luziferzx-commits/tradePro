@@ -1,22 +1,30 @@
 {
   "accounting": {
     "positions": {
-      "gqos_alpha_v1_XAUUSDm": {
+      "gqos_alpha_v1_US500m": {
         "strategy_id": "gqos_alpha_v1",
-        "symbol": "XAUUSDm",
+        "symbol": "US500m",
         "direction": 1,
-        "quantity": "0.45",
-        "average_price": "3987.834222222222444444444444",
+        "quantity": "0.03",
+        "average_price": "7438.29",
+        "realized_pnl": "0"
+      },
+      "gqos_alpha_v1_USDJPYm": {
+        "strategy_id": "gqos_alpha_v1",
+        "symbol": "USDJPYm",
+        "direction": 1,
+        "quantity": "0.59",
+        "average_price": "161.826",
         "realized_pnl": "0"
       }
     }
   },
   "portfolio": {
-    "total_equity": "9999.82",
+    "total_equity": "9669.45",
     "unallocated_cash": "0.00",
     "allocations": {
       "gqos_alpha_v1": {
-        "allocated_capital": "9999.82"
+        "allocated_capital": "9669.45"
       }
     }
   }

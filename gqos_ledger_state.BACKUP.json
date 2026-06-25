@@ -1,0 +1,23 @@
+{
+  "accounting": {
+    "positions": {
+      "gqos_alpha_v1_XAUUSDm": {
+        "strategy_id": "gqos_alpha_v1",
+        "symbol": "XAUUSDm",
+        "direction": 1,
+        "quantity": "0.50",
+        "average_price": "3987.1566000000002400000000",
+        "realized_pnl": "0"
+      }
+    }
+  },
+  "portfolio": {
+    "total_equity": "9999.82",
+    "unallocated_cash": "0.00",
+    "allocations": {
+      "gqos_alpha_v1": {
+        "allocated_capital": "9999.82"
+      }
+    }
+  }
+}

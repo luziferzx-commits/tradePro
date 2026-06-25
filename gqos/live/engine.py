@@ -48,40 +48,40 @@ class LiveTradingEngine:
             print(f"Failed to fetch broker positions: {e}. HALTING.")
             self._safety.trigger("Failed to query broker on startup")
             return
-            
+
         local_positions = {}
         for key, pos in self._accounting.state.positions.items():
             sym = pos.symbol
             qty = pos.quantity if pos.direction == TradeDirection.BUY else -pos.quantity
             local_positions[sym] = local_positions.get(sym, Decimal('0')) + qty
-            
+
         mismatch = False
-        
+
         for sym, actual_qty in actual_positions.items():
             local_qty = local_positions.get(sym, Decimal('0'))
-            
+
             if actual_qty != local_qty:
                 mismatch = True
                 diff = actual_qty - local_qty
-                
                 direction = TradeDirection.BUY if diff > 0 else TradeDirection.SELL
-                
-                print(f"MISMATCH on {sym}: Local={local_qty}, Broker={actual_qty}. Generating ReconciliationFill.")
-                
-                # Emit reconciliation event
+
+                print(f"MISMATCH on {sym}: Local={local_qty}, Broker={actual_qty}. Auto-reconciling...")
+
                 evt = ReconciliationFillEvent(
                     symbol=sym,
                     direction=direction,
                     quantity=abs(diff),
-                    execution_price=Decimal('0'), # Reconciliation price
+                    execution_price=Decimal('0'),
                     reason=f"Broker Truth Override: Actual={actual_qty}, Local={local_qty}"
                 )
-                # In real life we'd inject a trade into accounting here
-                
+
+                # Inject into accounting
+                env = MessageEnvelope.create(payload=evt, version=1)
+                self._event_bus.publish(env)
+
         if mismatch:
-            print("Reconciliation required. Live trading remains blocked.")
-            self._safety.trigger("Broker truth mismatch on startup")
-            self.is_reconciled = False
+            print("Reconciliation complete. Positions synced from broker. Resuming.")
+            self.is_reconciled = True
         else:
             print("Reconciliation Passed. System is fully synced.")
             self.is_reconciled = True

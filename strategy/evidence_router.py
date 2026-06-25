@@ -40,8 +40,8 @@ class EvidenceRouter:
             "trend_bucket": str(current_state['trend_bucket'])
         }
         
-        long_match = self.similarity_engine.find_similar_patterns(live_features, "LONG", threshold=0.0) # lower to 0.0 just to see what we get
-        short_match = self.similarity_engine.find_similar_patterns(live_features, "SHORT", threshold=0.0)
+        long_match = self.similarity_engine.find_similar_patterns(live_features, "LONG", threshold=0.70)
+        short_match = self.similarity_engine.find_similar_patterns(live_features, "SHORT", threshold=0.70)
         
         candidates = []
         if long_match: candidates.append(("LONG", long_match))
@@ -61,16 +61,23 @@ class EvidenceRouter:
         valid_promos = [p for p in best_match.get('promotions', []) if p in ['RESEARCH_VALIDATED', 'RESEARCH_DISCOVERED']]
         best_promo = valid_promos[0] if valid_promos else 'REJECTED'
         
-        logger.info(f"🔍 [EVIDENCE DEBUG] {symbol} Best Match: {best_direction} | Sim: {best_match['similarity_score']:.2f} | PF: {best_match['aggregate_pf']:.2f} | N: {best_match['sample_size']} | Promo: {best_promo}")
-        
+        logger.info(
+            f"🔍 [EVIDENCE DEBUG] {symbol} "
+            f"Best Match: {best_direction} | "
+            f"Sim: {best_match['similarity_score']:.2f} | "
+            f"PF: {best_match['aggregate_pf']:.2f} | "
+            f"ExpR: {best_match['aggregate_expectancy_r']:.3f} | "
+            f"N: {best_match['sample_size']} | "
+            f"Promo: {best_promo}"
+        )
         # Hard Rejection Rules
         if best_match['similarity_score'] < 0.70:
             return None
         if best_match['sample_size'] < 50: 
             return None
-        if best_match['aggregate_pf'] < 1.20: 
+        if best_match['aggregate_pf'] < 1.10: 
             return None
-        if best_match['aggregate_expectancy_r'] <= 0: 
+        if best_match['aggregate_expectancy_r'] < -0.05: 
             return None
         
         # If no valid promotion in the whole candidate group, reject it

@@ -58,56 +58,62 @@ class MT5BrokerAdapter(IBrokerAdapter):
         return positions
 
     def submit_order(self, order_id: str, symbol: str, direction: TradeDirection, quantity: Decimal, price: Decimal, stop_loss: Optional[Decimal] = None, take_profit: Optional[Decimal] = None):
-        """
-        Submits an order to MT5.
-        Note: The price argument is currently ignored as we execute Market Orders (TRADE_ACTION_DEAL).
-        """
-        resolved_symbol = symbol
+        # 1. Resolve symbol (EURUSD -> EURUSDm)
+        try:
+            from data.mt5_client import mt5_client
+            resolved_symbol = mt5_client.resolve_symbol(symbol)
+        except Exception:
+            resolved_symbol = symbol
+
+        # 2. Get symbol info
+        sym_info = mt5.symbol_info(resolved_symbol)
+        if sym_info is None:
+            self._oms_callback(order_id, OrderStatus.REJECTED.value, Decimal('0'), Decimal('0'), f"Symbol {resolved_symbol} not found")
+            return
+
+        # 3. Round volume to broker's volume_step
+        vol_step = sym_info.volume_step
+        raw_volume = float(quantity)
+        volume = round(round(raw_volume / vol_step) * vol_step, 8)
+        volume = max(sym_info.volume_min, min(sym_info.volume_max, volume))
         
+        logger.info(f"Volume: raw={raw_volume:.4f} -> rounded={volume:.2f} (step={vol_step}, min={sym_info.volume_min}, max={sym_info.volume_max})")
+
         order_type = mt5.ORDER_TYPE_BUY if direction == TradeDirection.BUY else mt5.ORDER_TYPE_SELL
-        
-        # Fetch current tick to get the market price
+
         tick = mt5.symbol_info_tick(resolved_symbol)
         if tick is None:
             self._oms_callback(order_id, OrderStatus.REJECTED.value, Decimal('0'), Decimal('0'), "Symbol tick not found")
             return
-            
+
         exec_price = tick.ask if direction == TradeDirection.BUY else tick.bid
 
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
             "symbol": resolved_symbol,
-            "volume": float(quantity),
+            "volume": volume,
             "type": order_type,
             "price": exec_price,
             "sl": float(stop_loss) if stop_loss else 0.0,
             "tp": float(take_profit) if take_profit else 0.0,
             "deviation": 20,
             "magic": settings.MAGIC_NUMBER,
-            "comment": order_id[:10], # Truncate to fit
+            "comment": order_id[:10],
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC,
         }
 
-        # Issue MT5 order send
         result = mt5.order_send(request)
         if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
             err_comment = getattr(result, 'comment', 'Unknown MT5 Error')
             logger.error(f"MT5 order_send failed for {order_id}: {err_comment}")
             self._oms_callback(order_id, OrderStatus.REJECTED.value, Decimal('0'), Decimal('0'), f"MT5 Error: {err_comment}")
             return
-            
-        # Success!
+
         logger.info(f"MT5 Order Executed: {result.order}")
-        # We immediately get a fill for Market Orders.
-        # Call OMS callback with 'FILL'
         filled_qty = Decimal(str(result.volume))
         filled_price = Decimal(str(result.price))
-        
-        # First send ACK
         self._oms_callback(order_id, OrderStatus.ACK.value, Decimal('0'), Decimal('0'), "MT5 Accepted")
-        
-        # Then send FILL
         self._oms_callback(order_id, "FILL", filled_qty, filled_price, f"MT5 Ticket: {result.order}")
 
     def cancel_order(self, order_id: str):

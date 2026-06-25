@@ -4,7 +4,6 @@ import logging
 import time
 from decimal import Decimal
 
-# Add root directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import MetaTrader5 as mt5
@@ -42,19 +41,20 @@ from gqos.risk.exposure import ExposureLimits
 from gqos.execution.pipeline import TradingPipeline
 from gqos.execution.stages import SizingStage, CircuitBreakerStage, ExposureStage, RiskBudgetStage, PortfolioSnapshotStage, PortfolioReservationStage, ExecutionStage
 
-# Setup basic logging
+# ─── Learning Loop imports ─────────────────────────────────────────
+from gqos.learning.outcome_logger import outcome_logger
+from gqos.learning.retrain_trigger import retrain_trigger
+# ──────────────────────────────────────────────────────────────────
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("GQOS-Live")
 
 class DefaultFeeModel:
     def calculate_fee(self, symbol, direction, quantity, execution_price):
-        # Rough MT5 comm/spread model
-        # Just returning 0 for now as MT5 deducts it from balance automatically.
         return Decimal('0'), "USD"
 
 class DefaultFxConverter:
     def convert(self, amount, from_curr, to_curr):
-        # 1:1 for now
         return amount
 
 def main():
@@ -62,7 +62,6 @@ def main():
     logger.info("  GQOS LIVE ENGINE (INSTITUTIONAL MODE)  ")
     logger.info("=========================================")
     
-    # 1. Connect MT5
     if not mt5.initialize():
         logger.error(f"MT5 initialization failed. Error code: {mt5.last_error()}")
         return
@@ -75,16 +74,14 @@ def main():
     initial_capital = Decimal(str(acc_info.balance))
     logger.info(f"Connected to MT5. Initial Capital: ${initial_capital}")
 
-    # 2. Setup Bus
     cmd_bus = LocalCommandBus(logger)
     evt_bus = LocalEventBus(logger)
     
-    # 3. Setup Accounting & Portfolio
     accounting = AccountingEngine(evt_bus, DefaultFeeModel(), DefaultFxConverter())
-    portfolio = PortfolioManager("LivePort", initial_capital)
+    portfolio  = PortfolioManager("LivePort", initial_capital)
     portfolio.allocate_capital("gqos_alpha_v1", initial_capital)
+    logger.info("Allocated virtual capital to strategies.")
     
-    # 4. Setup Execution & Live Adapters
     oms = OrderManagementSystem(evt_bus)
     
     def oms_callback(order_id, status, fill_qty, fill_price, msg):
@@ -93,27 +90,26 @@ def main():
         else:
             oms.update_order_status(order_id, OrderStatus(status), msg)
             
-    adapter = MT5BrokerAdapter(evt_bus, oms_callback)
-    safety = GlobalKillSwitch(oms, adapter)
+    adapter    = MT5BrokerAdapter(evt_bus, oms_callback)
+    safety     = GlobalKillSwitch(oms, adapter)
     hb_monitor = HeartbeatMonitor(evt_bus, safety, timeout_seconds=60.0)
     
     snapshot_path = "gqos_ledger_state.json"
-    persistence = LedgerSnapshotService(snapshot_path)
+    persistence   = LedgerSnapshotService(snapshot_path)
     
-    live_engine = LiveTradingEngine(evt_bus, cmd_bus, oms, adapter, safety, persistence, accounting, portfolio)
+    live_engine = LiveTradingEngine(
+        evt_bus, cmd_bus, oms, adapter, safety, persistence, accounting, portfolio
+    )
     
-    # 5. Setup Risk Engines
     sizing_engine = PositionSizingEngine()
-    policy = FixedFractionalPolicy(fraction=Decimal('0.02')) # 2% risk
-    
-    cb_engine = CircuitBreakerEngine()
+    policy        = FixedFractionalPolicy(fraction=Decimal('0.01'))
+    cb_engine     = CircuitBreakerEngine()
     
     asset_dir = AssetDirectory()
-    # Register symbols (mock metadata)
     for sym in ["XAUUSD", "XAGUSD", "BTCUSD", "ETHUSD", "US500", "EURUSD", "GBPUSD", "USDJPY", "NAS100", "GER40"]:
-        asset_dir.register_asset(AssetMetadata(sym, "MIXED", "FX", sym))
+        asset_dir.register_asset(AssetMetadata(sym,       "MIXED", "FX", sym))
         asset_dir.register_asset(AssetMetadata(f"{sym}m", "MIXED", "FX", sym))
-        asset_dir.register_asset(AssetMetadata(f"{sym}.m", "MIXED", "FX", sym))
+        asset_dir.register_asset(AssetMetadata(f"{sym}.m","MIXED", "FX", sym))
         
     exposure = ExposureEngine(asset_dir, ExposureLimits(
         max_gross_exposure=initial_capital * 10,
@@ -127,68 +123,82 @@ def main():
     store.save(RiskBudget("gqos_alpha_v1", total_capacity=initial_capital, utilized_capacity=Decimal('0')))
     risk_engine = RiskBudgetEngine(store)
     
-    # NEW: News Filter
     from gqos.risk.news_filter import NewsFilter
     from gqos.risk.news_stage import NewsGuardStage
     news_filter = NewsFilter(block_minutes=15)
-    news_stage = NewsGuardStage(news_filter)
+    news_stage  = NewsGuardStage(news_filter)
 
-    # 6. Setup Trading Pipeline
     stages = [
         news_stage,
         PortfolioSnapshotStage(portfolio),
         SizingStage(sizing_engine, policy),
         CircuitBreakerStage(cb_engine),
-        ExposureStage(exposure),
+        ExposureStage(exposure, max_positions=3, max_portfolio_risk_pct=0.06),
         RiskBudgetStage(risk_engine),
         PortfolioReservationStage(portfolio),
         ExecutionStage(cmd_bus, portfolio)
     ]
     pipeline = TradingPipeline(stages, evt_bus)
     
-    # Register the command handler so AlphaWorker's SizePositionCommand enters the pipeline
     def handle_sizing_command(env: MessageEnvelope):
         result = pipeline.dispatch(env)
         logger.info(f"Pipeline Result: {result}")
         
     cmd_bus.register_handler(SizePositionCommand, handle_sizing_command)
-    # The AlphaWorker publishes directly to cmd_bus or evt_bus? 
-    # AlphaWorker currently uses _event_bus.publish. Let's make it use cmd_bus!
     
-    # 7. Start Alpha Worker
-    alpha_worker = AlphaWorker(cmd_bus) 
-    
-    # Let AlphaWorker start
+    alpha_worker = AlphaWorker(cmd_bus)
     alpha_worker.start()
-    
-    # 7. Setup Notifications
+
+    # ─── Retrain Callback: reload ML model หลัง retrain เสร็จ ────────
+    def on_retrain_complete():
+        logger.info("♻️  Reloading ML models after retrain...")
+        try:
+            alpha_worker.predictor.reload()
+            logger.info("✅ ML models reloaded successfully.")
+        except Exception as e:
+            logger.error(f"Failed to reload ML models: {e}")
+
+    retrain_trigger.on_retrain_complete = on_retrain_complete
+    logger.info(
+        f"Learning Loop armed. "
+        f"Retrain trigger: every {retrain_trigger.retrain_threshold} live trades."
+    )
+    # ────────────────────────────────────────────────────────────────
+
     from notifications.telegram_notifier import notify_trade_executed, notify_trade_closed, notify_bot_started
     
     def on_trade_executed(env: MessageEnvelope):
         cmd = env.payload
-        # Convert TradeExecutedEvent back to Telegram format
         notify_trade_executed(
             symbol=cmd.symbol,
             direction=cmd.direction.name if hasattr(cmd.direction, 'name') else str(cmd.direction),
             lot=float(cmd.quantity),
             entry=float(cmd.execution_price),
-            sl=0.0, # SL/TP handled by strategy later
+            sl=0.0,
             tp=0.0,
             ticket="GQOS",
-            probability=0.0 # Will be populated if AlphaWorker injects metadata
+            probability=0.0
         )
         
-    last_closed_dir = {}
-    
+    last_closed_dir   = {}
+    last_closed_price = {}   # ← เก็บ exit_price สำหรับ Learning Loop
+
     def on_position_closed(env: MessageEnvelope):
         cmd = env.payload
-        last_closed_dir[cmd.symbol] = cmd.direction.name if hasattr(cmd.direction, 'name') else str(cmd.direction)
+        last_closed_dir[cmd.symbol] = (
+            cmd.direction.name if hasattr(cmd.direction, 'name') else str(cmd.direction)
+        )
+        # ─── Learning Loop: เก็บ exit_price ──────────────────────────
+        if hasattr(cmd, 'exit_price'):
+            last_closed_price[cmd.symbol] = float(cmd.exit_price)
+        # ─────────────────────────────────────────────────────────────
         
     def on_realized_pnl(env: MessageEnvelope):
-        cmd = env.payload
-        acc = mt5.account_info()
-        balance = acc.balance if acc else 0.0
+        cmd       = env.payload
+        acc       = mt5.account_info()
+        balance   = acc.balance if acc else 0.0
         direction = last_closed_dir.get(cmd.symbol, "UNKNOWN")
+
         notify_trade_closed(
             ticket="UNKNOWN",
             symbol=cmd.symbol,
@@ -197,18 +207,40 @@ def main():
             rr=0.0,
             balance=float(balance)
         )
+
+        # ─── Learning Loop: บันทึก outcome ───────────────────────────
+        try:
+            exit_price = last_closed_price.get(cmd.symbol, 0.0)
+            record = outcome_logger.on_trade_closed(
+                symbol=cmd.symbol,
+                realized_pnl=float(cmd.realized_pnl),
+                exit_price=exit_price,
+            )
+            if record:
+                outcome = "WIN" if float(cmd.realized_pnl) > 0 else "LOSS"
+                retrain_trigger.on_trade_closed(
+                    outcome=outcome,
+                    symbol=cmd.symbol,
+                    realized_pnl=float(cmd.realized_pnl),
+                )
+                stats = outcome_logger.get_stats()
+                logger.info(
+                    f"[Learning] {cmd.symbol} {outcome} pnl={cmd.realized_pnl:.2f} | "
+                    f"Live stats: {stats['total']} trades "
+                    f"WR={stats['win_rate']}% PnL={stats['total_pnl']:.2f}"
+                )
+        except Exception as e:
+            logger.warning(f"[Learning] on_trade_closed failed: {e}")
+        # ─────────────────────────────────────────────────────────────
         
     from gqos.risk.events import TradeExecutedEvent
     from gqos.accounting.events import PositionClosedEvent, RealizedPnLEmittedEvent
     
-    evt_bus.subscribe(TradeExecutedEvent, on_trade_executed)
-    evt_bus.subscribe(PositionClosedEvent, on_position_closed)
+    evt_bus.subscribe(TradeExecutedEvent,     on_trade_executed)
+    evt_bus.subscribe(PositionClosedEvent,    on_position_closed)
     evt_bus.subscribe(RealizedPnLEmittedEvent, on_realized_pnl)
     
-    # Notify boot
     notify_bot_started()
-
-    # 8. Start Everything
     live_engine.start()
     
     logger.info("GQOS Live Engine is completely booted and running. Press Ctrl+C to exit.")

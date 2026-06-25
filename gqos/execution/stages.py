@@ -136,25 +136,104 @@ class CircuitBreakerStage(IPipelineStage):
         return StageResult.continue_with(envelope)
 
 
+import MetaTrader5 as mt5
+import logging
+
+logger = logging.getLogger(__name__)
+
+CORRELATION_GROUPS = {
+    "METALS":    ["XAUUSDm", "XAGUSDm"],
+    "US_EQUITY": ["NAS100m", "US500m", "USTECm"],
+    "EUR_BLOCK": ["EURUSDm", "GBPUSDm"],
+    "CRYPTO":    ["BTCUSDm", "ETHUSDm"],
+}
+
 class ExposureStage(IPipelineStage):
-    def __init__(self, exposure_engine: ExposureEngine):
+    def __init__(self, exposure_engine: ExposureEngine, max_positions: int = 3, max_portfolio_risk_pct: float = 0.06):
         self._exposure = exposure_engine
-        
+        self._max_positions = max_positions
+        self._max_portfolio_risk_pct = max_portfolio_risk_pct
+
     def process(self, envelope: MessageEnvelope, context: PipelineContext) -> StageResult:
         if not isinstance(envelope.payload, ExecuteTradeCommand):
             return StageResult.continue_with(envelope)
-            
-        is_allowed, code, reason = self._exposure.evaluate_trade(envelope.payload)
+
+        cmd = envelope.payload
+
+        # ---- PORTFOLIO-LEVEL RISK GUARD ----
+        pos = mt5.positions_get() or []
+        acc = mt5.account_info()
+
+        if acc is not None:
+            # Rule 1: Max Open Positions
+            if len(pos) >= self._max_positions:
+                reject_event = TradeRejectedByExposureLimit(
+                    strategy_id=cmd.strategy_id, symbol=cmd.symbol,
+                    requested_value=cmd.estimated_value,
+                    limit_type="MAX_POSITIONS",
+                    reason=f"Max {self._max_positions} positions reached"
+                )
+                logger.warning(f"[ExposureStage] BLOCKED {cmd.symbol}: max positions {len(pos)}/{self._max_positions}")
+                return StageResult.halt("Max positions reached", events=[reject_event])
+
+            # Rule 2: Total Portfolio Risk Cap (6%)
+            total_risk = sum(
+                abs(p.price_open - p.sl) * p.volume * 100
+                for p in pos if p.sl > 0
+            )
+            incoming_risk = 0.0
+            if cmd.stop_loss and cmd.quantity:
+                try:
+                    from data.mt5_client import mt5_client
+                    resolved = mt5_client.resolve_symbol(cmd.symbol)
+                    tick = mt5.symbol_info_tick(resolved)
+                    if tick:
+                        exec_price = tick.ask if "BUY" in str(cmd.direction) else tick.bid
+                        incoming_risk = abs(exec_price - float(cmd.stop_loss)) * float(cmd.quantity) * 100
+                except Exception as e:
+                    logger.warning(f"[ExposureStage] Could not estimate incoming risk: {e}")
+
+            if (total_risk + incoming_risk) > (acc.balance * self._max_portfolio_risk_pct):
+                reject_event = TradeRejectedByExposureLimit(
+                    strategy_id=cmd.strategy_id, symbol=cmd.symbol,
+                    requested_value=cmd.estimated_value,
+                    limit_type="MAX_PORTFOLIO_RISK",
+                    reason=f"Portfolio risk {total_risk+incoming_risk:.0f} > {acc.balance * self._max_portfolio_risk_pct:.0f} (6%)"
+                )
+                logger.warning(f"[ExposureStage] BLOCKED {cmd.symbol}: portfolio risk cap")
+                return StageResult.halt("Portfolio risk cap exceeded", events=[reject_event])
+
+            # Rule 3: Correlation Group Cap
+            try:
+                from data.mt5_client import mt5_client
+                mt5_symbol = mt5_client.resolve_symbol(cmd.symbol)
+            except Exception:
+                mt5_symbol = cmd.symbol
+
+            open_symbols = {p.symbol for p in pos}
+            for group_name, group_symbols in CORRELATION_GROUPS.items():
+                if mt5_symbol in group_symbols:
+                    conflict = open_symbols.intersection(set(group_symbols))
+                    if conflict:
+                        reject_event = TradeRejectedByExposureLimit(
+                            strategy_id=cmd.strategy_id, symbol=cmd.symbol,
+                            requested_value=cmd.estimated_value,
+                            limit_type="CORRELATION_GROUP",
+                            reason=f"Correlated position already open in {group_name}: {conflict}"
+                        )
+                        logger.warning(f"[ExposureStage] BLOCKED {cmd.symbol}: correlation with {conflict}")
+                        return StageResult.halt("Correlation group limit", events=[reject_event])
+
+        # ---- PER-TRADE EXPOSURE CHECK (existing) ----
+        is_allowed, code, reason = self._exposure.evaluate_trade(cmd)
         if not is_allowed:
             reject_event = TradeRejectedByExposureLimit(
-                strategy_id=envelope.payload.strategy_id,
-                symbol=envelope.payload.symbol,
-                requested_value=envelope.payload.estimated_value,
-                limit_type=code,
-                reason=reason
+                strategy_id=cmd.strategy_id, symbol=cmd.symbol,
+                requested_value=cmd.estimated_value,
+                limit_type=code, reason=reason
             )
             return StageResult.halt("Exposure Limit Exceeded", events=[reject_event])
-            
+
         return StageResult.continue_with(envelope)
 
 
