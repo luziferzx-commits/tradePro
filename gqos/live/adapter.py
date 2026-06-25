@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 from decimal import Decimal
 
 from gqos.messaging.bus import IEventBus
@@ -45,7 +45,7 @@ class SandboxBrokerAdapter(IBrokerAdapter):
             raise ConnectionError("Broker disconnected")
         return self.actual_positions.copy()
 
-    def submit_order(self, order_id: str, symbol: str, direction: TradeDirection, quantity: Decimal, price: Decimal):
+    def submit_order(self, order_id: str, symbol: str, direction: TradeDirection, quantity: Decimal, price: Decimal, stop_loss: Optional[Decimal] = None, take_profit: Optional[Decimal] = None):
         """
         Simulates submitting an order to an exchange.
         """

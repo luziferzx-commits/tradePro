@@ -45,7 +45,7 @@ class LocalEventBus(IEventBus):
                 handler(envelope)
             except Exception as e:
                 # ADR-0003: Log and continue
-                self._logger.log("ERROR", f"Subscriber {handler.__name__} failed on Event {payload_type.__name__}: {str(e)}")
+                self._logger.error(f"Subscriber {handler.__name__} failed on Event {payload_type.__name__}: {str(e)}")
 
 
 class LocalCommandBus(ICommandBus):

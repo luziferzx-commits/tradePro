@@ -100,7 +100,7 @@ def main():
     snapshot_path = "gqos_ledger_state.json"
     persistence = LedgerSnapshotService(snapshot_path)
     
-    live_engine = LiveTradingEngine(evt_bus, oms, adapter, safety, persistence, accounting, portfolio)
+    live_engine = LiveTradingEngine(evt_bus, cmd_bus, oms, adapter, safety, persistence, accounting, portfolio)
     
     # 5. Setup Risk Engines
     sizing_engine = PositionSizingEngine()
@@ -112,6 +112,8 @@ def main():
     # Register symbols (mock metadata)
     for sym in ["XAUUSD", "XAGUSD", "BTCUSD", "ETHUSD", "US500", "EURUSD", "GBPUSD", "USDJPY", "NAS100", "GER40"]:
         asset_dir.register_asset(AssetMetadata(sym, "MIXED", "FX", sym))
+        asset_dir.register_asset(AssetMetadata(f"{sym}m", "MIXED", "FX", sym))
+        asset_dir.register_asset(AssetMetadata(f"{sym}.m", "MIXED", "FX", sym))
         
     exposure = ExposureEngine(asset_dir, ExposureLimits(
         max_gross_exposure=initial_capital * 10,
@@ -134,11 +136,11 @@ def main():
     # 6. Setup Trading Pipeline
     stages = [
         news_stage,
+        PortfolioSnapshotStage(portfolio),
         SizingStage(sizing_engine, policy),
         CircuitBreakerStage(cb_engine),
         ExposureStage(exposure),
         RiskBudgetStage(risk_engine),
-        PortfolioSnapshotStage(portfolio),
         PortfolioReservationStage(portfolio),
         ExecutionStage(cmd_bus, portfolio)
     ]
@@ -146,7 +148,8 @@ def main():
     
     # Register the command handler so AlphaWorker's SizePositionCommand enters the pipeline
     def handle_sizing_command(env: MessageEnvelope):
-        pipeline.execute(env)
+        result = pipeline.dispatch(env)
+        logger.info(f"Pipeline Result: {result}")
         
     cmd_bus.register_handler(SizePositionCommand, handle_sizing_command)
     # The AlphaWorker publishes directly to cmd_bus or evt_bus? 
@@ -171,7 +174,7 @@ def main():
             entry=float(cmd.execution_price),
             sl=0.0, # SL/TP handled by strategy later
             tp=0.0,
-            ticket=cmd.order_id,
+            ticket="GQOS",
             probability=0.0 # Will be populated if AlphaWorker injects metadata
         )
         

@@ -15,6 +15,8 @@ class ExecuteTradeCommand(Command):
     quantity: Decimal
     estimated_value: Decimal
     strategy_id: str
+    stop_loss: Optional[Decimal] = None
+    take_profit: Optional[Decimal] = None
 
 @dataclass(frozen=True)
 class RiskBudgetAllocated(Event):

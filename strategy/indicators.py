@@ -21,6 +21,9 @@ class IndicatorCalculator:
         df['macd_hist'] = macd.macd_diff()
         
         # EMAs
+        ema20 = EMAIndicator(close=df['close'], window=20)
+        df['ema20'] = ema20.ema_indicator()
+        
         ema50 = EMAIndicator(close=df['close'], window=50)
         df['ema50'] = ema50.ema_indicator()
         
@@ -42,12 +45,16 @@ class IndicatorCalculator:
         df['bb_upper'] = indicator_bb.bollinger_hband()
         df['bb_lower'] = indicator_bb.bollinger_lband()
 
-        # EMA Slope (normalized per ATR over 5 candles to make it scale-independent)
+        # EMA Slopes (normalized per ATR over 5 candles to make it scale-independent)
+        df['ema20_slope'] = (df['ema20'].diff(5) / df['atr']) * 10
         df['ema50_slope'] = (df['ema50'].diff(5) / df['atr']) * 10
+        df['ema200_slope'] = (df['ema200'].diff(5) / df['atr']) * 10
 
         # Structural Extremes (20-period for breakout detection)
         df['recent_high_20'] = df['high'].rolling(20).max()
         df['recent_low_20'] = df['low'].rolling(20).min()
+        df['recent_high_distance'] = (df['recent_high_20'] - df['close']) / df['atr']
+        df['recent_low_distance'] = (df['close'] - df['recent_low_20']) / df['atr']
         
         return df
 

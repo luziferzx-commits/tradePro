@@ -102,7 +102,9 @@ class SizingStage(IPipelineStage):
             direction=cmd.direction,
             quantity=result.quantity,
             estimated_value=result.estimated_value,
-            strategy_id=cmd.strategy_id
+            strategy_id=cmd.strategy_id,
+            stop_loss=cmd.stop_loss_price,
+            take_profit=cmd.take_profit_price
         )
         
         new_env = MessageEnvelope.create(

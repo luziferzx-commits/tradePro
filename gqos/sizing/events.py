@@ -17,6 +17,7 @@ class SizePositionCommand(Command):
     direction: TradeDirection
     entry_price: Decimal
     stop_loss_price: Optional[Decimal] = None
+    take_profit_price: Optional[Decimal] = None
     conviction: Optional[Decimal] = None
     metrics: Optional[StrategyMetrics] = None
     volatility: Optional[VolatilityMetrics] = None

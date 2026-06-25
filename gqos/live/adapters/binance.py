@@ -1,6 +1,6 @@
 import time
 import threading
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 from decimal import Decimal
 
 from gqos.common.enums import TradeDirection
@@ -59,7 +59,7 @@ class BinanceAdapter(IBrokerAdapter):
         """Rounds down to nearest step size safely"""
         return (value // step) * step
 
-    def submit_order(self, order_id: str, symbol: str, direction: TradeDirection, quantity: Decimal, price: Decimal):
+    def submit_order(self, order_id: str, symbol: str, direction: TradeDirection, quantity: Decimal, price: Decimal, stop_loss: Optional[Decimal] = None, take_profit: Optional[Decimal] = None):
         if not self._rate_limiter.consume(1):
             self._oms_callback(order_id, OrderStatus.REJECTED.value, None, None, "Rate Limit Exceeded (Local Bucket)")
             return

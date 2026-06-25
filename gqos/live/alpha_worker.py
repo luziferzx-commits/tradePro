@@ -15,6 +15,9 @@ from market.market_metadata import MarketMetadata
 from scanner.multi_asset_scanner import MultiAssetScanner
 from ml.predictor import MLPredictor
 from data.mt5_client import MT5Client
+from strategy.strategies.registry import StrategyRegistry
+from strategy.strategies.ensemble_router import EnsembleRouter
+from strategy.evidence_router import EvidenceRouter
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +36,12 @@ class AlphaWorker:
         self.metadata = MarketMetadata(self.registry)
         self.mt5_client = MT5Client()
         self.predictor = MLPredictor()
+        
+        import os
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        self.evidence_router = EvidenceRouter(base_dir=base_dir, mode="LIVE")
+        
+        self.abc_router = EnsembleRouter(trading_cost_r=0.1, min_ev_threshold=0.0)
         
         self.scanner = MultiAssetScanner(self.registry, self.metadata, self.mt5_client, self.predictor)
 
@@ -60,19 +69,79 @@ class AlphaWorker:
 
                 logger.info("AlphaWorker: New closed candle detected. Scanning markets...")
                 
+                # 1. Run Legacy MultiAssetScanner
                 approved, rejected = self.scanner.scan_all()
                 
-                logger.info(f"AlphaWorker: Scan complete. {len(approved)} signals approved. Sleeping 60s...")
+                # 2. Run EvidenceRouter
+                evidence_signals = []
+                try:
+                    from strategy.indicators import IndicatorCalculator
+                    symbols_to_scan = [m["symbol"] for m in self.registry.get_enabled_symbols()]
+                    for symbol in symbols_to_scan:
+                        df = self.mt5_client.get_historical_data(symbol, "M15", 250)
+                        if df is None or df.empty: continue
+                        df = IndicatorCalculator.add_indicators(df)
+                        
+                        sig = self.evidence_router.evaluate(df, symbol)
+                        if sig:
+                            evidence_signals.append({
+                                'symbol': symbol,
+                                'side': sig['direction'],
+                                'model_probability': float(sig.get('confidence', 0.95)),
+                                'atr': float(df.iloc[-1]['atr']),
+                                'source': 'EVIDENCE_ROUTER'
+                            })
+                            logger.info(f"💡 EvidenceRouter Signal: {symbol} {sig['direction']} (Sim: {sig['metadata']['similarity_score']:.2f})")
+                except Exception as e:
+                    logger.error(f"AlphaWorker EvidenceRouter scan failed: {e}", exc_info=True)
+                
+                # 3. Run ABC EnsembleRouter
+                abc_signals = []
+                try:
+                    from market.regime_detector import RegimeDetector
+                    for symbol in symbols_to_scan:
+                        df = self.mt5_client.get_historical_data(symbol, "M15", 250)
+                        if df is None or df.empty: continue
+                        df = IndicatorCalculator.add_indicators(df)
+                        regime = RegimeDetector.detect(df)
+                        registry = StrategyRegistry(symbol, "M15")
+                        decision = self.abc_router.route(df, regime, registry, ml_predictions=None, session_info=None)
+                        if decision.direction != "NEUTRAL":
+                            abc_signals.append({
+                                'symbol': symbol,
+                                'side': decision.direction,
+                                'model_probability': float(decision.edge_score) if decision.edge_score > 0 else 0.8,
+                                'atr': float(df.iloc[-1]['atr']),
+                                'source': 'ABC_ROUTER',
+                                'strategy_id': 'gqos_alpha_v1' # Using shared risk bucket
+                            })
+                            logger.info(f"💡 ABC Signal: {symbol} {decision.direction} (EV: {decision.edge_score:.2f})")
+                except Exception as e:
+                    logger.error(f"AlphaWorker ABC scan failed: {e}", exc_info=True)
+
+                # Combine all signals
+                approved.extend(evidence_signals)
+                approved.extend(abc_signals)
+                
+                logger.info(f"AlphaWorker: Scan complete. {len(approved)} signals approved ({len(evidence_signals)} from Evidence). Sleeping 60s...")
                 for sig in approved:
                     symbol = sig['symbol']
                     side = sig['side']
-                    direction = TradeDirection.BUY if side == "BUY" else TradeDirection.SELL
+                    direction = TradeDirection.BUY if side in ["BUY", "LONG"] else TradeDirection.SELL
                     
                     # Fetch current price for entry_price
-                    sym_info = mt5.symbol_info(symbol)
+                    resolved_symbol = self.mt5_client.resolve_symbol(symbol)
+                    sym_info = mt5.symbol_info(resolved_symbol)
                     if not sym_info:
-                        logger.error(f"Could not get symbol info for {symbol}")
+                        logger.error(f"Could not get symbol info for {resolved_symbol}")
                         continue
+                        
+                    # Fix: Check for existing open positions to prevent duplicate trades
+                    positions = mt5.positions_get(symbol=resolved_symbol)
+                    if positions and len(positions) > 0:
+                        logger.info(f"AlphaWorker: Skipping {resolved_symbol} as there is already an open position.")
+                        continue
+                        
                         
                     entry_price = Decimal(str(sym_info.ask if direction == TradeDirection.BUY else sym_info.bid))
                     conviction = Decimal(str(sig.get('model_probability', 0.5)))
@@ -81,20 +150,26 @@ class AlphaWorker:
                     point = Decimal(str(sym_info.point))
                     atr = Decimal(str(sig.get('atr', 0.0)))
                     
-                    symbol_config = self.registry.get(symbol) or {}
+                    symbol_config = self.registry.get_symbol(symbol) or {}
                     atr_multiplier = Decimal(str(symbol_config.get("atr_sl_multiplier", 15.0)))
                     
                     sl_buffer = atr * atr_multiplier if atr > 0 else Decimal('500') * point
                     
                     sl_price = (entry_price - sl_buffer) if direction == TradeDirection.BUY \
                                else (entry_price + sl_buffer)
+                               
+                    # Calculate TP with Risk/Reward Ratio of 1:2
+                    tp_buffer = sl_buffer * Decimal('2.0')
+                    tp_price = (entry_price + tp_buffer) if direction == TradeDirection.BUY \
+                               else (entry_price - tp_buffer)
 
                     cmd = SizePositionCommand(
-                        strategy_id=sig.get('strategy_id', 'legacy_gqos_alpha_v1'),
-                        symbol=symbol,
+                        strategy_id=sig.get('strategy_id', 'gqos_alpha_v1'),
+                        symbol=resolved_symbol,
                         direction=direction,
                         entry_price=entry_price,
                         stop_loss_price=sl_price,
+                        take_profit_price=tp_price,
                         conviction=conviction,
                         metrics=None,
                         volatility=None

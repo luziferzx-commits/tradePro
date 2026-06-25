@@ -1,7 +1,7 @@
 import logging
 import threading
 import time
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 from decimal import Decimal
 import MetaTrader5 as mt5
 
@@ -57,15 +57,12 @@ class MT5BrokerAdapter(IBrokerAdapter):
                     positions[p.symbol] = qty
         return positions
 
-    def submit_order(self, order_id: str, symbol: str, direction: TradeDirection, quantity: Decimal, price: Decimal):
+    def submit_order(self, order_id: str, symbol: str, direction: TradeDirection, quantity: Decimal, price: Decimal, stop_loss: Optional[Decimal] = None, take_profit: Optional[Decimal] = None):
         """
         Submits an order to MT5.
         Note: The price argument is currently ignored as we execute Market Orders (TRADE_ACTION_DEAL).
         """
-        # Resolve symbol prefix/suffix if needed (using global settings logic)
-        # For simplicity in adapter, we assume 'symbol' is already resolved, 
-        # or we just append the suffix.
-        resolved_symbol = f"{symbol}{settings.SYMBOL_SUFFIX}"
+        resolved_symbol = symbol
         
         order_type = mt5.ORDER_TYPE_BUY if direction == TradeDirection.BUY else mt5.ORDER_TYPE_SELL
         
@@ -83,6 +80,8 @@ class MT5BrokerAdapter(IBrokerAdapter):
             "volume": float(quantity),
             "type": order_type,
             "price": exec_price,
+            "sl": float(stop_loss) if stop_loss else 0.0,
+            "tp": float(take_profit) if take_profit else 0.0,
             "deviation": 20,
             "magic": settings.MAGIC_NUMBER,
             "comment": order_id[:10], # Truncate to fit

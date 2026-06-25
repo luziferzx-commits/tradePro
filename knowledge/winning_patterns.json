@@ -1,1 +1,2562 @@
-[]
+[
+  {
+    "symbol": "BTCUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 83.0,
+    "pf": 1.3155970089260207,
+    "exp_r": 0.14457831325301612,
+    "outlier_dep": 0.0263157894736847,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.31,
+      1.87,
+      1.72,
+      1.58,
+      1.32
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 70.0,
+    "pf": 1.4055557182800733,
+    "exp_r": 0.21428571428571785,
+    "outlier_dep": 0.029411764705882852,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      2.0,
+      0.98,
+      1.57,
+      1.58,
+      1.41
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 80.0,
+    "pf": 2.084545073658067,
+    "exp_r": 0.46874999999999795,
+    "outlier_dep": 0.02127659574468112,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.79,
+      1.78,
+      2.03,
+      2.01,
+      2.08
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 42.0,
+    "pf": 1.375390004413653,
+    "exp_r": 0.19047619047618966,
+    "outlier_dep": 0.050000000000001286,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.48,
+      1.16,
+      1.48,
+      1.49,
+      1.38
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 54.0,
+    "pf": 1.2945109356097366,
+    "exp_r": 0.15740740740740822,
+    "outlier_dep": 0.04000000000000064,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.41,
+      1.36,
+      1.79,
+      1.4,
+      1.29
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 43.0,
+    "pf": 1.3281943757536578,
+    "exp_r": 0.16279069767441615,
+    "outlier_dep": 0.05000000000000063,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.95,
+      1.16,
+      1.28,
+      1.35,
+      1.33
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Low",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 92.0,
+    "pf": 1.2289448270596608,
+    "exp_r": 0.14130434782609183,
+    "outlier_dep": 0.023809523809525276,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.11,
+      0.74,
+      0.88,
+      0.95,
+      1.23
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 85.0,
+    "pf": 1.4631383374072633,
+    "exp_r": 0.2352941176470612,
+    "outlier_dep": 0.02380952380952432,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.46,
+      0.69,
+      1.05,
+      1.32,
+      1.46
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Low",
+    "adx_bucket": "Weak (<20)",
+    "trades": 61.0,
+    "pf": 1.2165407671205422,
+    "exp_r": 0.14754098360656148,
+    "outlier_dep": 0.035714285714287364,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.82,
+      0.82,
+      1.02,
+      0.83,
+      1.22
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Low",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 32.0,
+    "pf": 1.2173633150255212,
+    "exp_r": 0.2499999999999939,
+    "outlier_dep": 0.0625000000000027,
+    "verdict": "HIGH_VARIANCE",
+    "pfs_progression": [
+      8.85,
+      4.19,
+      1.32,
+      1.28,
+      1.22
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 33.0,
+    "pf": 1.2189450742263823,
+    "exp_r": 0.13636363636364274,
+    "outlier_dep": 0.06666666666666811,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.79,
+      2.13,
+      1.21,
+      1.08,
+      1.22
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 88.0,
+    "pf": 1.2087332584942105,
+    "exp_r": 0.10795454545454422,
+    "outlier_dep": 0.025641025641026095,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.48,
+      0.95,
+      1.34,
+      1.13,
+      1.21
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Low",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 39.0,
+    "pf": 1.85897760511687,
+    "exp_r": 0.3461538461538456,
+    "outlier_dep": 0.04761904761905035,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.65,
+      1.99,
+      1.92,
+      1.74,
+      1.86
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Weak (<20)",
+    "trades": 44.0,
+    "pf": 1.3692095045397454,
+    "exp_r": 0.19318181818181993,
+    "outlier_dep": 0.04761904761904889,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.52,
+      0.89,
+      1.05,
+      1.17,
+      1.37
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 31.0,
+    "pf": 1.245742453163754,
+    "exp_r": 0.12903225806451876,
+    "outlier_dep": 0.07142857142857245,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.58,
+      1.16,
+      1.55,
+      1.29,
+      1.25
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 68.0,
+    "pf": 1.2384438709439807,
+    "exp_r": 0.13970588235293946,
+    "outlier_dep": 0.03225806451612962,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.5,
+      0.81,
+      1.3,
+      1.27,
+      1.24
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 44.0,
+    "pf": 1.2008257367697328,
+    "exp_r": 0.07954545454545614,
+    "outlier_dep": 0.05263157894736877,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.65,
+      0.74,
+      0.94,
+      1.34,
+      1.2
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "NEW_YORK",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 44.0,
+    "pf": 1.8072629683872554,
+    "exp_r": 0.36363636363636415,
+    "outlier_dep": 0.041666666666667136,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.0,
+      0.96,
+      1.89,
+      2.19,
+      1.81
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "NEW_YORK",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 63.0,
+    "pf": 1.2020549783367092,
+    "exp_r": 0.11111111111111041,
+    "outlier_dep": 0.03571428571428618,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.6,
+      1.65,
+      1.17,
+      1.16,
+      1.2
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "session": "NEW_YORK",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 37.0,
+    "pf": 1.3191979388126653,
+    "exp_r": 0.21621621621621376,
+    "outlier_dep": 0.055555555555556475,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.01,
+      0.98,
+      1.02,
+      1.59,
+      1.32
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Low",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 63.0,
+    "pf": 1.2455764069434432,
+    "exp_r": 0.1507936507936494,
+    "outlier_dep": 0.0344827586206904,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.33,
+      0.88,
+      0.85,
+      1.04,
+      1.25
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 56.0,
+    "pf": 1.510898548719976,
+    "exp_r": 0.2499999999999987,
+    "outlier_dep": 0.03571428571428648,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.26,
+      1.21,
+      1.54,
+      1.64,
+      1.51
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 37.0,
+    "pf": 1.9804268440143686,
+    "exp_r": 0.41891891891891975,
+    "outlier_dep": 0.047619047619048345,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      3.84,
+      3.83,
+      2.42,
+      2.32,
+      1.98
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Low",
+    "adx_bucket": "Weak (<20)",
+    "trades": 107.0,
+    "pf": 1.5092102526113265,
+    "exp_r": 0.3084112149532725,
+    "outlier_dep": 0.017857142857143852,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.31,
+      1.97,
+      1.56,
+      1.51,
+      1.51
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Low",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 48.0,
+    "pf": 1.4598579335854591,
+    "exp_r": 0.30208333333334253,
+    "outlier_dep": 0.040000000000001694,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      3.33,
+      2.65,
+      2.09,
+      1.49,
+      1.46
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 55.0,
+    "pf": 1.562825689156668,
+    "exp_r": 0.2727272727272705,
+    "outlier_dep": 0.035714285714286434,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      2.75,
+      2.34,
+      1.47,
+      1.54,
+      1.56
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Weak (<20)",
+    "trades": 36.0,
+    "pf": 1.279119564555966,
+    "exp_r": 0.11111111111111294,
+    "outlier_dep": 0.06250000000000112,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.68,
+      1.25,
+      1.75,
+      2.08,
+      1.28
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 62.0,
+    "pf": 1.2402111001906462,
+    "exp_r": 0.1290322580645166,
+    "outlier_dep": 0.03571428571428628,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.69,
+      0.75,
+      1.21,
+      1.09,
+      1.24
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Weak (<20)",
+    "trades": 50.0,
+    "pf": 1.5016949123755623,
+    "exp_r": 0.25000000000000083,
+    "outlier_dep": 0.04000000000000057,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.94,
+      1.8,
+      1.94,
+      1.86,
+      1.5
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Weak (<20)",
+    "trades": 33.0,
+    "pf": 1.4487593884655101,
+    "exp_r": 0.2121212121212115,
+    "outlier_dep": 0.06250000000000068,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      3.53,
+      2.47,
+      1.79,
+      2.09,
+      1.45
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 60.0,
+    "pf": 2.0445753307373087,
+    "exp_r": 0.41666666666666746,
+    "outlier_dep": 0.02941176470588268,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      3.12,
+      1.74,
+      1.88,
+      1.99,
+      2.04
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Low",
+    "adx_bucket": "Weak (<20)",
+    "trades": 39.0,
+    "pf": 1.2034652965512522,
+    "exp_r": 0.21794871794871995,
+    "outlier_dep": 0.05263157894736982,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.53,
+      1.19,
+      1.54,
+      1.35,
+      1.2
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Weak (<20)",
+    "trades": 33.0,
+    "pf": 1.5315826586798378,
+    "exp_r": 0.2878787878787903,
+    "outlier_dep": 0.05882352941176553,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.54,
+      2.26,
+      1.8,
+      1.07,
+      1.53
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 34.0,
+    "pf": 1.457446718441741,
+    "exp_r": 0.17647058823529388,
+    "outlier_dep": 0.06250000000000043,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      2.44,
+      1.51,
+      1.11,
+      1.67,
+      1.46
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "NEW_YORK",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 43.0,
+    "pf": 1.9963614812948678,
+    "exp_r": 0.3372093023255821,
+    "outlier_dep": 0.04347826086956545,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.84,
+      0.88,
+      1.59,
+      2.1,
+      2.0
+    ]
+  },
+  {
+    "symbol": "ETHUSD",
+    "session": "NEW_YORK",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 83.0,
+    "pf": 2.3153818025889907,
+    "exp_r": 0.536144578313253,
+    "outlier_dep": 0.019607843137255096,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.82,
+      1.88,
+      2.31,
+      2.65,
+      2.32
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Low",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 103.0,
+    "pf": 1.6702887891656097,
+    "exp_r": 0.3349514563106928,
+    "outlier_dep": 0.01818181818182233,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      2.83,
+      1.25,
+      1.67,
+      1.46,
+      1.67
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 58.0,
+    "pf": 2.9506402206828115,
+    "exp_r": 0.6379310344827642,
+    "outlier_dep": 0.026315789473687692,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.24,
+      1.54,
+      1.68,
+      2.27,
+      2.95
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 31.0,
+    "pf": 1.2196475328814576,
+    "exp_r": 0.1290322580645392,
+    "outlier_dep": 0.0714285714285775,
+    "verdict": "HIGH_VARIANCE",
+    "pfs_progression": [
+      6.5,
+      4.27,
+      2.28,
+      1.48,
+      1.22
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Weak (<20)",
+    "trades": 63.0,
+    "pf": 1.35743362501123,
+    "exp_r": 0.1904761904761969,
+    "outlier_dep": 0.03333333333333651,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.12,
+      0.93,
+      1.32,
+      1.27,
+      1.36
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 63.0,
+    "pf": 1.5325049452680395,
+    "exp_r": 0.2698412698412677,
+    "outlier_dep": 0.03125000000000338,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.02,
+      0.7,
+      0.72,
+      0.96,
+      1.53
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 95.0,
+    "pf": 1.3455269471187,
+    "exp_r": 0.18421052631577892,
+    "outlier_dep": 0.022222222222224718,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.12,
+      0.98,
+      1.17,
+      1.42,
+      1.35
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 34.0,
+    "pf": 1.5036896614652089,
+    "exp_r": 0.32352941176469274,
+    "outlier_dep": 0.05555555555556048,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.27,
+      1.97,
+      1.82,
+      1.51,
+      1.5
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Low",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 44.0,
+    "pf": 1.3351524231135705,
+    "exp_r": 0.19318181818183042,
+    "outlier_dep": 0.047619047619055985,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.74,
+      1.05,
+      0.68,
+      1.47,
+      1.34
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 112.0,
+    "pf": 1.239845198935593,
+    "exp_r": 0.11607142857142784,
+    "outlier_dep": 0.020000000000002547,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.88,
+      1.45,
+      1.1,
+      1.13,
+      1.24
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 40.0,
+    "pf": 1.2386331068586762,
+    "exp_r": 0.12500000000000905,
+    "outlier_dep": 0.05555555555556049,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      2.49,
+      1.9,
+      1.25,
+      1.35,
+      1.24
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 72.0,
+    "pf": 1.3842288022108886,
+    "exp_r": 0.14583333333334167,
+    "outlier_dep": 0.03030303030303231,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      2.54,
+      2.49,
+      1.77,
+      1.6,
+      1.38
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 51.0,
+    "pf": 1.263677535150467,
+    "exp_r": 0.1274509803921638,
+    "outlier_dep": 0.04347826086956817,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.66,
+      0.72,
+      0.79,
+      0.68,
+      1.26
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Weak (<20)",
+    "trades": 33.0,
+    "pf": 1.257383034352707,
+    "exp_r": 0.13636363636365922,
+    "outlier_dep": 0.06666666666667229,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      3.17,
+      1.1,
+      1.54,
+      1.3,
+      1.26
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Weak (<20)",
+    "trades": 59.0,
+    "pf": 1.3177818222888091,
+    "exp_r": 0.18644067796610675,
+    "outlier_dep": 0.03571428571428773,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.26,
+      1.38,
+      1.47,
+      1.45,
+      1.32
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 54.0,
+    "pf": 1.311219744904412,
+    "exp_r": 0.20370370370369617,
+    "outlier_dep": 0.0384615384615408,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.3,
+      1.58,
+      1.26,
+      1.34,
+      1.31
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "NEW_YORK",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 40.0,
+    "pf": 1.2785892181913294,
+    "exp_r": 0.1250000000000282,
+    "outlier_dep": 0.05555555555556202,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.53,
+      1.17,
+      0.77,
+      0.94,
+      1.28
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "NEW_YORK",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 30.0,
+    "pf": 1.8232239801651784,
+    "exp_r": 0.41666666666663876,
+    "outlier_dep": 0.0588235294117706,
+    "verdict": "HIGH_VARIANCE",
+    "pfs_progression": [
+      1.43,
+      4.14,
+      4.76,
+      2.79,
+      1.82
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "NEW_YORK",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 31.0,
+    "pf": 1.4571744779617244,
+    "exp_r": 0.2903225806451591,
+    "outlier_dep": 0.06250000000000516,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.69,
+      1.41,
+      1.4,
+      1.9,
+      1.46
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "NEW_YORK",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 31.0,
+    "pf": 1.335548903430328,
+    "exp_r": 0.12903225806450377,
+    "outlier_dep": 0.07142857142857598,
+    "verdict": "HIGH_VARIANCE",
+    "pfs_progression": [
+      3.87,
+      1.03,
+      1.02,
+      0.84,
+      1.34
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "OFF_SESSION",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Low",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 36.0,
+    "pf": 1.2731384504287604,
+    "exp_r": 0.04166666666660443,
+    "outlier_dep": 0.0666666666666834,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.24,
+      0.66,
+      0.75,
+      1.76,
+      1.27
+    ]
+  },
+  {
+    "symbol": "EURUSD",
+    "session": "OFF_SESSION",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Low",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 69.0,
+    "pf": 1.4105233612689936,
+    "exp_r": 0.2318840579709987,
+    "outlier_dep": 0.02941176470589365,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.75,
+      2.19,
+      1.56,
+      1.37,
+      1.41
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 57.0,
+    "pf": 1.3777429749636052,
+    "exp_r": 0.18421052631579587,
+    "outlier_dep": 0.03703703703704028,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.6,
+      0.45,
+      0.57,
+      0.98,
+      1.38
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 49.0,
+    "pf": 1.3237759944664258,
+    "exp_r": 0.17346938775511944,
+    "outlier_dep": 0.043478260869569116,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.73,
+      1.44,
+      0.99,
+      1.28,
+      1.32
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Low",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 41.0,
+    "pf": 1.6493052612315802,
+    "exp_r": 0.3414634146341307,
+    "outlier_dep": 0.0454545454545519,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.39,
+      1.76,
+      1.94,
+      1.78,
+      1.65
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Weak (<20)",
+    "trades": 109.0,
+    "pf": 1.3318083695602587,
+    "exp_r": 0.16972477064219696,
+    "outlier_dep": 0.019607843137257157,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      3.93,
+      2.28,
+      1.58,
+      1.66,
+      1.33
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 35.0,
+    "pf": 1.434192832549603,
+    "exp_r": 0.21428571428571028,
+    "outlier_dep": 0.05882352941176928,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.6,
+      0.8,
+      0.74,
+      1.29,
+      1.43
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 55.0,
+    "pf": 1.2053562765411256,
+    "exp_r": 0.09090909090908714,
+    "outlier_dep": 0.041666666666669246,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.05,
+      1.22,
+      1.46,
+      1.41,
+      1.21
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Low",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 39.0,
+    "pf": 1.3126065762890107,
+    "exp_r": 0.15384615384617023,
+    "outlier_dep": 0.055555555555562255,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      2.05,
+      2.09,
+      3.0,
+      2.02,
+      1.31
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Weak (<20)",
+    "trades": 41.0,
+    "pf": 1.4611085538194406,
+    "exp_r": 0.21951219512195486,
+    "outlier_dep": 0.05000000000000489,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      2.67,
+      1.54,
+      1.55,
+      1.97,
+      1.46
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Weak (<20)",
+    "trades": 71.0,
+    "pf": 1.5873461961076223,
+    "exp_r": 0.2676056338028085,
+    "outlier_dep": 0.027777777777780163,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.88,
+      1.17,
+      1.06,
+      1.34,
+      1.59
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 93.0,
+    "pf": 2.043689730804407,
+    "exp_r": 0.4516129032257971,
+    "outlier_dep": 0.018518518518520006,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.82,
+      2.26,
+      1.96,
+      1.82,
+      2.04
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 31.0,
+    "pf": 1.3759633148436088,
+    "exp_r": 0.20967741935482728,
+    "outlier_dep": 0.06666666666667191,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.42,
+      1.42,
+      2.27,
+      1.44,
+      1.38
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Weak (<20)",
+    "trades": 68.0,
+    "pf": 1.4118768017462313,
+    "exp_r": 0.2132352941176491,
+    "outlier_dep": 0.030303030303032722,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.9,
+      2.36,
+      1.73,
+      1.88,
+      1.41
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 66.0,
+    "pf": 1.4242042443769196,
+    "exp_r": 0.2121212121212074,
+    "outlier_dep": 0.0312500000000028,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.83,
+      1.79,
+      2.18,
+      1.91,
+      1.42
+    ]
+  },
+  {
+    "symbol": "GBPUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 70.0,
+    "pf": 1.3137572964375812,
+    "exp_r": 0.17857142857142624,
+    "outlier_dep": 0.03030303030303256,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.74,
+      1.17,
+      1.41,
+      1.27,
+      1.31
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Low",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 67.0,
+    "pf": 1.5569348545977453,
+    "exp_r": 0.2686567164179202,
+    "outlier_dep": 0.029411764705886228,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.6,
+      1.0,
+      1.12,
+      1.38,
+      1.56
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 93.0,
+    "pf": 1.8092383734885489,
+    "exp_r": 0.3440860215053759,
+    "outlier_dep": 0.02000000000000099,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      3.24,
+      2.76,
+      2.7,
+      1.91,
+      1.81
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 54.0,
+    "pf": 2.4349913235748395,
+    "exp_r": 0.527777777777774,
+    "outlier_dep": 0.03030303030303193,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      3.62,
+      1.59,
+      1.6,
+      2.62,
+      2.43
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 58.0,
+    "pf": 1.6447945153174848,
+    "exp_r": 0.2931034482758611,
+    "outlier_dep": 0.033333333333334346,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.63,
+      0.84,
+      0.96,
+      1.01,
+      1.64
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 112.0,
+    "pf": 1.2885904805209134,
+    "exp_r": 0.16071428571428692,
+    "outlier_dep": 0.0192307692307699,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.32,
+      0.9,
+      1.14,
+      1.23,
+      1.29
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Low",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 143.0,
+    "pf": 1.2689750857629083,
+    "exp_r": 0.2062937062937125,
+    "outlier_dep": 0.014492753623190273,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.67,
+      1.08,
+      1.24,
+      1.17,
+      1.27
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 94.0,
+    "pf": 1.3075735303179723,
+    "exp_r": 0.17021276595744478,
+    "outlier_dep": 0.022727272727273564,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.72,
+      0.8,
+      1.41,
+      1.56,
+      1.31
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Weak (<20)",
+    "trades": 121.0,
+    "pf": 1.3955556937999178,
+    "exp_r": 0.19834710743801268,
+    "outlier_dep": 0.01724137931034577,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.08,
+      0.97,
+      1.43,
+      1.28,
+      1.4
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 87.0,
+    "pf": 1.4289891609824539,
+    "exp_r": 0.20689655172414045,
+    "outlier_dep": 0.023809523809524977,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.32,
+      1.18,
+      1.51,
+      1.59,
+      1.43
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 162.0,
+    "pf": 1.2445273827308625,
+    "exp_r": 0.09567901234568074,
+    "outlier_dep": 0.014084507042254306,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.24,
+      0.89,
+      1.1,
+      1.06,
+      1.24
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "LONDON",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 33.0,
+    "pf": 1.4317315485691102,
+    "exp_r": 0.21212121212121443,
+    "outlier_dep": 0.06250000000000155,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.25,
+      0.72,
+      1.55,
+      1.82,
+      1.43
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 55.0,
+    "pf": 1.2661452965124846,
+    "exp_r": 0.13636363636362764,
+    "outlier_dep": 0.040000000000001625,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.23,
+      1.29,
+      1.66,
+      1.71,
+      1.27
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 60.0,
+    "pf": 1.3397122169529159,
+    "exp_r": 0.1666666666666681,
+    "outlier_dep": 0.03571428571428682,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.63,
+      2.21,
+      1.77,
+      1.85,
+      1.34
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Weak (<20)",
+    "trades": 68.0,
+    "pf": 1.2348304597388755,
+    "exp_r": 0.13970588235293563,
+    "outlier_dep": 0.03225806451613013,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.68,
+      1.08,
+      1.05,
+      1.26,
+      1.23
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 60.0,
+    "pf": 1.6127185226808087,
+    "exp_r": 0.2916666666666676,
+    "outlier_dep": 0.032258064516130155,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.53,
+      1.58,
+      1.92,
+      1.52,
+      1.61
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "NEW_YORK",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 48.0,
+    "pf": 1.3691826907484952,
+    "exp_r": 0.04166666666666726,
+    "outlier_dep": 0.050000000000000905,
+    "verdict": "HIGH_VARIANCE",
+    "pfs_progression": [
+      4.52,
+      1.58,
+      1.86,
+      2.1,
+      1.37
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "NEW_YORK",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 32.0,
+    "pf": 1.920079697838793,
+    "exp_r": 0.40625000000000416,
+    "outlier_dep": 0.05555555555555626,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.69,
+      1.37,
+      2.38,
+      2.11,
+      1.92
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "NEW_YORK",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Weak (<20)",
+    "trades": 43.0,
+    "pf": 2.259557713917214,
+    "exp_r": 0.5116279069767453,
+    "outlier_dep": 0.03846153846153929,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      2.48,
+      3.52,
+      2.21,
+      1.96,
+      2.26
+    ]
+  },
+  {
+    "symbol": "NAS100",
+    "session": "NEW_YORK",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 52.0,
+    "pf": 1.2282338575175304,
+    "exp_r": 0.1538461538461519,
+    "outlier_dep": 0.04166666666666805,
+    "verdict": "HIGH_VARIANCE",
+    "pfs_progression": [
+      3.22,
+      4.13,
+      1.88,
+      1.32,
+      1.23
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 89.0,
+    "pf": 1.522282881053981,
+    "exp_r": 0.2921348314606863,
+    "outlier_dep": 0.02173913043478481,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.42,
+      1.76,
+      1.61,
+      1.71,
+      1.52
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 37.0,
+    "pf": 1.2446398977779967,
+    "exp_r": 0.1486486486486555,
+    "outlier_dep": 0.058823529411772456,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.0,
+      0.76,
+      0.71,
+      1.26,
+      1.24
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Low",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 47.0,
+    "pf": 1.3576420851914448,
+    "exp_r": 0.1702127659574126,
+    "outlier_dep": 0.04545454545455298,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.22,
+      0.75,
+      0.98,
+      1.27,
+      1.36
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 66.0,
+    "pf": 1.3335618388340027,
+    "exp_r": 0.17424242424241004,
+    "outlier_dep": 0.03225806451613252,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.98,
+      1.3,
+      1.43,
+      1.51,
+      1.33
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 55.0,
+    "pf": 1.89372345407859,
+    "exp_r": 0.4090909090909259,
+    "outlier_dep": 0.03225806451613148,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      2.49,
+      2.59,
+      2.54,
+      2.34,
+      1.89
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Weak (<20)",
+    "trades": 61.0,
+    "pf": 1.2612835525685504,
+    "exp_r": 0.10655737704917914,
+    "outlier_dep": 0.03703703703703919,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.04,
+      2.11,
+      1.75,
+      1.69,
+      1.26
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 48.0,
+    "pf": 2.867246074706635,
+    "exp_r": 0.5104166666666795,
+    "outlier_dep": 0.03448275862069132,
+    "verdict": "HIGH_VARIANCE",
+    "pfs_progression": [
+      12.71,
+      13.2,
+      4.4,
+      2.34,
+      2.87
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Weak (<20)",
+    "trades": 70.0,
+    "pf": 1.472771850384887,
+    "exp_r": 0.2500000000000055,
+    "outlier_dep": 0.02857142857143091,
+    "verdict": "HIGH_VARIANCE",
+    "pfs_progression": [
+      17.69,
+      2.66,
+      2.18,
+      1.71,
+      1.47
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 49.0,
+    "pf": 1.3547719713417166,
+    "exp_r": 0.17346938775510468,
+    "outlier_dep": 0.04347826086956863,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.77,
+      1.5,
+      1.61,
+      1.52,
+      1.35
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 89.0,
+    "pf": 1.450352261533367,
+    "exp_r": 0.23595505617978002,
+    "outlier_dep": 0.022727272727274317,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.67,
+      1.92,
+      1.85,
+      1.58,
+      1.45
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 65.0,
+    "pf": 1.673143956208696,
+    "exp_r": 0.30769230769230493,
+    "outlier_dep": 0.02941176470588396,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.26,
+      0.86,
+      1.31,
+      2.25,
+      1.67
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 30.0,
+    "pf": 1.5043604580990932,
+    "exp_r": 0.3333333333333372,
+    "outlier_dep": 0.06250000000000376,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      3.55,
+      1.0,
+      1.57,
+      1.51,
+      1.5
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 45.0,
+    "pf": 1.5538195622450632,
+    "exp_r": 0.27777777777777124,
+    "outlier_dep": 0.04347826086957013,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.27,
+      1.85,
+      2.09,
+      1.62,
+      1.55
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 129.0,
+    "pf": 1.3456862086285333,
+    "exp_r": 0.18217054263565566,
+    "outlier_dep": 0.016393442622951858,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      2.44,
+      1.69,
+      1.54,
+      1.44,
+      1.35
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 50.0,
+    "pf": 1.59230309612928,
+    "exp_r": 0.299999999999993,
+    "outlier_dep": 0.03846153846154235,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.05,
+      0.99,
+      1.26,
+      1.75,
+      1.59
+    ]
+  },
+  {
+    "symbol": "USDJPY",
+    "session": "NEW_YORK",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 31.0,
+    "pf": 1.29798101625314,
+    "exp_r": 0.12903225806455712,
+    "outlier_dep": 0.07142857142857693,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.58,
+      1.14,
+      0.79,
+      1.34,
+      1.3
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Low",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 83.0,
+    "pf": 1.2851517645047896,
+    "exp_r": 0.14457831325302267,
+    "outlier_dep": 0.02631578947368548,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.44,
+      0.7,
+      0.87,
+      1.03,
+      1.29
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Low",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 45.0,
+    "pf": 1.2184140067280502,
+    "exp_r": 0.11111111111111502,
+    "outlier_dep": 0.05000000000000292,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      2.29,
+      1.58,
+      1.65,
+      1.27,
+      1.22
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 47.0,
+    "pf": 1.8704134936823262,
+    "exp_r": 0.38297872340425326,
+    "outlier_dep": 0.03846153846154026,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.33,
+      0.98,
+      1.34,
+      1.84,
+      1.87
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 95.0,
+    "pf": 1.6117764605432343,
+    "exp_r": 0.2894736842105254,
+    "outlier_dep": 0.020408163265306575,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.75,
+      1.97,
+      1.62,
+      1.59,
+      1.61
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 83.0,
+    "pf": 1.2531909260428584,
+    "exp_r": 0.1746987951807233,
+    "outlier_dep": 0.02564102564102734,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.18,
+      0.88,
+      1.14,
+      1.1,
+      1.25
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 78.0,
+    "pf": 1.3434279367383761,
+    "exp_r": 0.18589743589743168,
+    "outlier_dep": 0.0270270270270282,
+    "verdict": "HIGH_VARIANCE",
+    "pfs_progression": [
+      4.69,
+      1.6,
+      1.12,
+      1.51,
+      1.34
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "ASIA",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 104.0,
+    "pf": 1.5021562872327852,
+    "exp_r": 0.2500000000000002,
+    "outlier_dep": 0.019230769230770068,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.83,
+      1.14,
+      1.94,
+      1.68,
+      1.5
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 83.0,
+    "pf": 1.5484482334273197,
+    "exp_r": 0.2650602409638537,
+    "outlier_dep": 0.02380952380952483,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.11,
+      1.82,
+      1.73,
+      1.44,
+      1.55
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 68.0,
+    "pf": 1.565471301353432,
+    "exp_r": 0.13970588235294207,
+    "outlier_dep": 0.03225806451612996,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.95,
+      1.26,
+      1.76,
+      1.63,
+      1.57
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Low",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 80.0,
+    "pf": 1.6539326753707273,
+    "exp_r": 0.34375000000000056,
+    "outlier_dep": 0.023255813953489614,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.12,
+      2.05,
+      2.59,
+      2.57,
+      1.65
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Low",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 114.0,
+    "pf": 1.3397224828041243,
+    "exp_r": 0.1842105263157906,
+    "outlier_dep": 0.018518518518519628,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.25,
+      1.53,
+      1.8,
+      1.92,
+      1.34
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 60.0,
+    "pf": 1.2051315849014144,
+    "exp_r": 0.08333333333333102,
+    "outlier_dep": 0.03846153846153983,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.54,
+      1.14,
+      1.64,
+      1.25,
+      1.21
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "LONDON",
+    "strategy": "London Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 48.0,
+    "pf": 1.2291491426686554,
+    "exp_r": 0.1458333333333342,
+    "outlier_dep": 0.045454545454548176,
+    "verdict": "HIGH_VARIANCE",
+    "pfs_progression": [
+      5.48,
+      1.95,
+      1.68,
+      1.07,
+      1.23
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "LONDON",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Low",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 35.0,
+    "pf": 2.1060188133455573,
+    "exp_r": 0.5000000000000113,
+    "outlier_dep": 0.047619047619050385,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      3.84,
+      2.07,
+      2.04,
+      2.32,
+      2.11
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Rising (20-25)",
+    "trades": 40.0,
+    "pf": 1.8051283524252286,
+    "exp_r": 0.375,
+    "outlier_dep": 0.04545454545454774,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.57,
+      3.45,
+      1.82,
+      2.52,
+      1.81
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 63.0,
+    "pf": 1.2482381834654357,
+    "exp_r": 0.1507936507936489,
+    "outlier_dep": 0.034482758620690696,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.45,
+      0.7,
+      0.73,
+      0.88,
+      1.25
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "RANGE",
+    "atr_bucket": "High",
+    "adx_bucket": "Weak (<20)",
+    "trades": 57.0,
+    "pf": 1.2634021820516472,
+    "exp_r": 0.14035087719298364,
+    "outlier_dep": 0.03846153846153971,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.23,
+      0.88,
+      1.2,
+      1.24,
+      1.26
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Medium",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 90.0,
+    "pf": 1.301716728235949,
+    "exp_r": 0.19444444444444414,
+    "outlier_dep": 0.02325581395348923,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.86,
+      1.43,
+      1.14,
+      1.19,
+      1.3
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "LONDON_NY_OVERLAP",
+    "strategy": "NY Breakout",
+    "regime": "TREND",
+    "atr_bucket": "High",
+    "adx_bucket": "Weak (<20)",
+    "trades": 81.0,
+    "pf": 1.2167424440311367,
+    "exp_r": 0.11111111111110772,
+    "outlier_dep": 0.02777777777777881,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      0.96,
+      1.04,
+      1.2,
+      1.27,
+      1.22
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "NEW_YORK",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Low",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 59.0,
+    "pf": 1.2728353727339228,
+    "exp_r": 0.10169491525423643,
+    "outlier_dep": 0.038461538461540885,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      1.39,
+      2.35,
+      1.7,
+      1.4,
+      1.27
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "OFF_SESSION",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Low",
+    "adx_bucket": "Strong (25-40)",
+    "trades": 45.0,
+    "pf": 1.7754451658452794,
+    "exp_r": 0.3333333333333176,
+    "outlier_dep": 0.04166666666666872,
+    "verdict": "STABLE",
+    "pfs_progression": [
+      3.92,
+      2.48,
+      1.75,
+      1.3,
+      1.78
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "session": "OFF_SESSION",
+    "strategy": "Volatility Expansion Breakout",
+    "regime": "TREND",
+    "atr_bucket": "Extreme",
+    "adx_bucket": "Extreme (>40)",
+    "trades": 33.0,
+    "pf": 2.428028051397374,
+    "exp_r": 0.43939393939393845,
+    "outlier_dep": 0.05263157894736981,
+    "verdict": "HIGH_VARIANCE",
+    "pfs_progression": [
+      1.13,
+      4.82,
+      2.33,
+      2.42,
+      2.43
+    ]
+  }
+]

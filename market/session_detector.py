@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timezone
+import pandas as pd
 
 class SessionDetector:
     # Default boundaries (UTC)

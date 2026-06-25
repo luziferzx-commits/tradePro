@@ -7,13 +7,13 @@ from gqos.common.enums import TradeDirection
 from gqos.sizing.models import SizingRequest, SizingResult, RoundingPolicy, InvalidSizingRequestError
 from gqos.sizing.portfolio import PortfolioSnapshot
 
-def apply_rounding(quantity: Decimal, policy: RoundingPolicy) -> Decimal:
+def apply_rounding(quantity: Decimal, policy: RoundingPolicy, precision: Decimal = Decimal('0.01')) -> Decimal:
     if policy == RoundingPolicy.ROUND_DOWN:
-        return quantity.quantize(Decimal('1'), rounding=ROUND_DOWN)
+        return quantity.quantize(precision, rounding=ROUND_DOWN)
     elif policy == RoundingPolicy.ROUND_UP:
-        return quantity.quantize(Decimal('1'), rounding=ROUND_UP)
+        return quantity.quantize(precision, rounding=ROUND_UP)
     elif policy == RoundingPolicy.BANKERS:
-        return quantity.quantize(Decimal('1'), rounding=ROUND_HALF_EVEN)
+        return quantity.quantize(precision, rounding=ROUND_HALF_EVEN)
     else:
         return quantity
 
@@ -64,7 +64,8 @@ class FixedFractionalPolicy(ISizingPolicy):
         reason = f"FixedFractional(fraction={self.fraction}): Equity={portfolio.total_equity} -> TargetValue={capital_to_use} -> RawQty={raw_quantity} -> Qty={quantity}"
         
         if quantity <= Decimal('0'):
-            raise InvalidSizingRequestError("Calculated quantity is zero or negative.")
+            print(f"DEBUG SIZING: {reason}")
+            raise InvalidSizingRequestError(f"Calculated quantity is zero or negative. Details: {reason}")
             
         return SizingResult(
             quantity=quantity,

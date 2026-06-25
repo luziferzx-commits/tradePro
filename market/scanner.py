@@ -3,6 +3,7 @@ import logging
 import yaml
 import os
 import MetaTrader5 as mt5
+import pandas as pd
 from config.settings import settings
 from data.mt5_client import mt5_client
 from strategy.indicators import IndicatorCalculator

@@ -59,6 +59,8 @@ class TradingPipeline:
             if not result.continue_pipeline:
                 return f"Halted at {stage.__class__.__name__}: {result.reason}"
                 
-            current_envelope = result.envelope
-            
+            # Update the envelope in case the stage transformed it
+            if result.envelope is not None:
+                current_envelope = result.envelope
+                
         return "Completed pipeline execution."

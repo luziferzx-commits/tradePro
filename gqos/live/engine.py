@@ -10,7 +10,8 @@ from gqos.risk.events import ExecuteTradeCommand
 class LiveTradingEngine:
     def __init__(
         self, 
-        event_bus: IEventBus, 
+        event_bus: Any, 
+        cmd_bus: Any,
         oms: Any, 
         adapter: Any, 
         safety: Any, 
@@ -19,6 +20,7 @@ class LiveTradingEngine:
         portfolio: Any
     ):
         self._event_bus = event_bus
+        self._cmd_bus = cmd_bus
         self._oms = oms
         self._adapter = adapter
         self._safety = safety
@@ -28,7 +30,7 @@ class LiveTradingEngine:
         
         self.is_reconciled = False
         
-        self._event_bus.subscribe(ExecuteTradeCommand, self._handle_execute_command)
+        self._cmd_bus.register_handler(ExecuteTradeCommand, self._handle_execute_command)
         
     def start(self):
         print("Starting Live Trading Engine...")
@@ -98,7 +100,14 @@ class LiveTradingEngine:
         order_id = self._oms.create_order(cmd.symbol, cmd.direction, cmd.quantity, cmd.strategy_id)
         
         # Submit to broker
-        self._adapter.submit_order(order_id, cmd.symbol, cmd.direction, cmd.quantity, cmd.estimated_value / cmd.quantity if cmd.quantity > 0 else Decimal('0'))
+        price = cmd.estimated_value / cmd.quantity if cmd.quantity > 0 else Decimal('0')
+        
+        # Check if the adapter supports sl/tp by inspecting its signature, or just pass as kwargs if supported
+        try:
+            self._adapter.submit_order(order_id, cmd.symbol, cmd.direction, cmd.quantity, price, stop_loss=cmd.stop_loss, take_profit=cmd.take_profit)
+        except TypeError:
+            # Fallback for adapters that don't support SL/TP yet
+            self._adapter.submit_order(order_id, cmd.symbol, cmd.direction, cmd.quantity, price)
         
     def save_state(self):
         self._persistence.save_snapshot(self._accounting.state, self._portfolio.state)

@@ -193,7 +193,7 @@ def generate_market_intelligence_report(df_trades, base_dir):
                     "expectancy_r": float(expr),
                     "trade_count": int(trades),
                     "stability_verdict": verdict,
-                    "confidence_score": min(0.99, round(1 - outlier, 2)),
+                    "confidence_score": float(min(0.99, round(1 - outlier, 2))),
                     "promotion_status": "RESEARCH_VALIDATED",
                     "shadow_passed": False,
                     "live_passed": False,
@@ -207,7 +207,7 @@ def generate_market_intelligence_report(df_trades, base_dir):
                     router_rules[sym][sess]["allowed_regimes"] = [name[3]]
                     router_rules[sym][sess]["atr_bucket"] = name[4]
                     router_rules[sym][sess]["historical_pf"] = float(pf)
-                    router_rules[sym][sess]["confidence_score"] = min(0.99, round(1 - outlier, 2))
+                    router_rules[sym][sess]["confidence_score"] = float(min(0.99, round(1 - outlier, 2)))
         else:
             if trades >= 30:
                 reason = []
