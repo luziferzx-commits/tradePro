@@ -57,12 +57,6 @@ class ForexMetalsEvaluator(BaseSetupEvaluator):
             adx, plus_di, minus_di, close, prev['close'], recent_high, recent_low, regime
         ))
         
-        # 5. Asia Session Continuation (DISABLED - Needs rigorous backtesting on n>200 historical samples first)
-        # setups.append(self._evaluate_asia_continuation(
-        #     "Asia Continuation", hour in [17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4], 
-        #     close, ema50, regime.get('trend_state', 'UNKNOWN'), rsi=latest.get('rsi', 50)
-        # ))
-        
         return setups
 
     
@@ -176,21 +170,3 @@ class ForexMetalsEvaluator(BaseSetupEvaluator):
             
         score = min(score, 85)
         return {"setup_name": "Volatility Expansion Breakout", "direction": direction, "score": score, "reason": f"Expansion score {score}"}
-
-    def _evaluate_asia_continuation(self, name, time_cond, close, ema50, trend_state, rsi):
-        if not time_cond:
-            return {"setup_name": name, "direction": "NEUTRAL", "score": 0, "reason": "Not in session"}
-            
-        if trend_state == "RANGING":
-            return {"setup_name": name, "direction": "NEUTRAL", "score": 0, "reason": "Market is ranging"}
-            
-        direction = "NEUTRAL"
-        if trend_state == "TRENDING_UP" and close > ema50 and rsi < 70:
-            direction = "BUY"
-        elif trend_state == "TRENDING_DOWN" and close < ema50 and rsi > 30:
-            direction = "SELL"
-            
-        if direction == "NEUTRAL":
-            return {"setup_name": name, "direction": "NEUTRAL", "score": 0, "reason": "No continuation setup"}
-            
-        return {"setup_name": name, "direction": direction, "score": 65, "reason": "Asia Session Continuation matched"}
