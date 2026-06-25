@@ -27,6 +27,9 @@ class SignalDecision:
     edge_score: float = 0.0
     status: str = "NEUTRAL"  # "APPROVED", "REJECTED", "NEUTRAL"
     rejection_reason: str = ""
+    session_label: str = "UNKNOWN"
+    minutes_from_session_open: int = 0
+    is_overlap_session: bool = False
 
 class BaseStrategy(ABC):
     """Base interface for all independent strategies (A, B, C, etc.)."""

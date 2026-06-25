@@ -195,7 +195,18 @@ class MarketScanner:
             if strategy_engine == "abc_router":
                 registry = StrategyRegistry(symbol, "M5")
                 router = EnsembleRouter(trading_cost_r=0.1, min_ev_threshold=0.0)
-                signal_dec = router.route(df, regime, registry)
+                session_info = None
+                if os.getenv("SESSION_AWARE_ROUTER") == "true":
+                    try:
+                        from market.session_detector import SessionDetector
+                        if not df.empty and 'time' in df.columns:
+                            # Use the timestamp from the last available candle
+                            latest_timestamp = df.iloc[-1]['time'].timestamp() if isinstance(df.iloc[-1]['time'], pd.Timestamp) else df.iloc[-1]['time']
+                            session_info = SessionDetector.analyze_session(latest_timestamp)
+                    except Exception as e:
+                        logger.error(f"Failed to detect session: {e}")
+                        
+                signal_dec = router.route(df, regime, registry, session_info=session_info)
                 market_score = {
                     "final_direction": signal_dec.direction,
                     "final_score": signal_dec.edge_score * 100 if signal_dec.edge_score > 0 else 0,

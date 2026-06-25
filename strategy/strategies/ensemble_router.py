@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from typing import List
 from .base import SignalDecision
 from .registry import StrategyRegistry
@@ -13,17 +14,56 @@ class EnsembleRouter:
         self.trading_cost_r = trading_cost_r
         self.min_ev_threshold = min_ev_threshold
 
-    def route(self, df: pd.DataFrame, regime: dict, registry: StrategyRegistry, ml_predictions: dict = None) -> SignalDecision:
+    def route(self, df: pd.DataFrame, regime: dict, registry: StrategyRegistry, ml_predictions: dict = None, session_info: dict = None) -> SignalDecision:
         if df.empty:
             return self._neutral("Empty DataFrame")
             
         candidates: List[SignalDecision] = []
+        is_session_aware = os.getenv("SESSION_AWARE_ROUTER") == "true"
+        
+        session_label = session_info.get("session_label", "UNKNOWN") if session_info else "UNKNOWN"
+        is_overlap = session_info.get("is_overlap_session", False) if session_info else False
         
         # 1. Gather all candidate signals
         for strategy in registry.get_all_strategies():
             signal = strategy.generate_signal(df, regime)
+            
+            # Inject session info
+            if session_info:
+                signal.session_label = session_label
+                signal.minutes_from_session_open = session_info.get("minutes_from_session_open", 0)
+                signal.is_overlap_session = is_overlap
+
             if signal.direction != "NEUTRAL" and not strategy.is_disabled_by_evidence:
-                candidates.append(signal)
+                # Apply Session-Aware Rules
+                if is_session_aware:
+                    strategy_name = strategy.__class__.__name__
+                    if session_label == "OFF_SESSION":
+                        signal.status = "REJECTED"
+                        signal.rejection_reason = "OFF_SESSION disabled"
+                        signal.direction = "NEUTRAL"
+                    elif session_label == "ASIA":
+                        # ASIA: prefer range/reversion, block weak breakout
+                        if strategy_name == "StrategyABreakout" and regime.get("volatility") != "EXPANDING":
+                            signal.status = "REJECTED"
+                            signal.rejection_reason = "Breakout blocked in ASIA"
+                            signal.direction = "NEUTRAL"
+                    elif session_label == "LONDON":
+                        # LONDON: allow breakout + trend (no rejections needed, natural EV will sort it)
+                        pass
+                    elif session_label == "NEW_YORK":
+                        # NEW_YORK: allow trend + volatility expansion
+                        # block mean reversion if trend is strong
+                        if strategy_name == "StrategyCMeanReversion" and regime.get("trend") in ["STRONG_UP", "STRONG_DOWN"]:
+                            signal.status = "REJECTED"
+                            signal.rejection_reason = "Mean Reversion blocked in NY Strong Trend"
+                            signal.direction = "NEUTRAL"
+                    elif session_label == "LONDON_NY_OVERLAP":
+                        # OVERLAP: stricter filter, high EV only
+                        pass
+                
+                if signal.direction != "NEUTRAL":
+                    candidates.append(signal)
                 
         if not candidates:
             return self._neutral("No strategies generated active signals")
@@ -42,6 +82,10 @@ class EnsembleRouter:
             # EV = (Win% * Reward) - (Loss% * Risk) - Cost
             # Assuming risk_r is always 1.0 standard R unit
             expected_value_after_cost = (win_prob * sig.expected_rr) - (loss_prob * 1.0) - self.trading_cost_r
+            
+            # Apply session-specific EV penalties if any were marked earlier (e.g. overlap)
+            if sig.session_label == "LONDON_NY_OVERLAP":
+                expected_value_after_cost -= 0.05
             
             sig.edge_score = expected_value_after_cost
             sig.cost_estimate = self.trading_cost_r
