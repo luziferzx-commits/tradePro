@@ -1,0 +1,82 @@
+{
+    "description": "Multi-Market GBPUSDm Model",
+    "dataset": "datasets/GBPUSDm/GBPUSDm_dataset_atr_2_0_v001.csv",
+    "features": [
+        "final_score",
+        "trend_score",
+        "breakout_score",
+        "reversal_score",
+        "session_score",
+        "atr_pct",
+        "adx",
+        "ema50_slope",
+        "rsi",
+        "macd",
+        "hour_utc",
+        "is_high_volatility",
+        "is_buy",
+        "recent_high_20_distance_pct",
+        "recent_low_20_distance_pct"
+    ],
+    "config": {
+        "max_depth": 2,
+        "learning_rate": 0.01,
+        "n_estimators": 100,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.1,
+        "reg_lambda": 10
+    },
+    "drift_stats": {
+        "final_score": {
+            "mean": 85.0,
+            "std": 0.0
+        },
+        "trend_score": {
+            "mean": -3.025298098614244,
+            "std": 94.6887900792475
+        },
+        "breakout_score": {
+            "mean": 0.0,
+            "std": 0.0
+        },
+        "reversal_score": {
+            "mean": 0.7365332528720493,
+            "std": 33.32605891085615
+        },
+        "session_score": {
+            "mean": 55.86206896551724,
+            "std": 28.115503481618404
+        },
+        "atr_pct": {
+            "mean": 0.03978793417509955,
+            "std": 0.017880530851097955
+        },
+        "adx": {
+            "mean": 38.988366423983656,
+            "std": 7.918832098149187
+        },
+        "ema50_slope": {
+            "mean": -0.210693557443805,
+            "std": 7.288935612718255
+        },
+        "rsi": {
+            "mean": 49.29446958749967,
+            "std": 24.326369736188614
+        },
+        "macd": {
+            "mean": -3.340263427795133e-05,
+            "std": 0.000738902733021652
+        },
+        "recent_high_20_distance_pct": {
+            "mean": 0.1181473037053256,
+            "std": 0.17395583316850038
+        },
+        "recent_low_20_distance_pct": {
+            "mean": 0.10628111683420705,
+            "std": 0.16607190729402269
+        }
+    },
+    "model_version": "v20260624114351",
+    "registered_at": "2026-06-24T11:43:51.430073"
+}

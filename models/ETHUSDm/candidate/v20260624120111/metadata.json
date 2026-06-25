@@ -1,0 +1,82 @@
+{
+    "description": "Multi-Market ETHUSDm Model",
+    "dataset": "datasets/ETHUSDm/ETHUSDm_dataset_atr_2_0_v001.csv",
+    "features": [
+        "final_score",
+        "trend_score",
+        "breakout_score",
+        "reversal_score",
+        "session_score",
+        "atr_pct",
+        "adx",
+        "ema50_slope",
+        "rsi",
+        "macd",
+        "hour_utc",
+        "is_high_volatility",
+        "is_buy",
+        "recent_high_20_distance_pct",
+        "recent_low_20_distance_pct"
+    ],
+    "config": {
+        "max_depth": 2,
+        "learning_rate": 0.01,
+        "n_estimators": 100,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.1,
+        "reg_lambda": 10
+    },
+    "drift_stats": {
+        "final_score": {
+            "mean": 85.0,
+            "std": 0.0
+        },
+        "trend_score": {
+            "mean": -0.9621077560686797,
+            "std": 92.78953222445492
+        },
+        "breakout_score": {
+            "mean": 0.0,
+            "std": 0.0
+        },
+        "reversal_score": {
+            "mean": -1.8766570578634107,
+            "std": 38.20520287160058
+        },
+        "session_score": {
+            "mean": 80.0,
+            "std": 0.0
+        },
+        "atr_pct": {
+            "mean": 0.5504944139422024,
+            "std": 0.2742736493113844
+        },
+        "adx": {
+            "mean": 39.65392882005901,
+            "std": 8.503954078111123
+        },
+        "ema50_slope": {
+            "mean": 0.4573765979111499,
+            "std": 6.148665914245556
+        },
+        "rsi": {
+            "mean": 50.39300006807852,
+            "std": 24.945352119871025
+        },
+        "macd": {
+            "mean": 0.15579892365342762,
+            "std": 18.596630785460025
+        },
+        "recent_high_20_distance_pct": {
+            "mean": 1.4620884570706472,
+            "std": 2.4278339168536087
+        },
+        "recent_low_20_distance_pct": {
+            "mean": 1.301156258116319,
+            "std": 2.23592693327382
+        }
+    },
+    "model_version": "v20260624120111",
+    "registered_at": "2026-06-24T12:01:11.438884"
+}

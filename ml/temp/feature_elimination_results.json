@@ -1,0 +1,107 @@
+{
+    "final_score": {
+        "MDA": 0.0,
+        "SHAP_mean": 0.0,
+        "SHAP_consistency": 0.0,
+        "S_Score": 0.6,
+        "Classification": "WEAK_SIGNAL"
+    },
+    "trend_score": {
+        "MDA": 0.0,
+        "SHAP_mean": 0.00020216681878082454,
+        "SHAP_consistency": 0.13738069159755906,
+        "S_Score": 0.6549522766390236,
+        "Classification": "WEAK_SIGNAL"
+    },
+    "breakout_score": {
+        "MDA": 0.0,
+        "SHAP_mean": 0.0,
+        "SHAP_consistency": 0.0,
+        "S_Score": 0.6,
+        "Classification": "WEAK_SIGNAL"
+    },
+    "reversal_score": {
+        "MDA": 0.0,
+        "SHAP_mean": -0.000907562265638262,
+        "SHAP_consistency": 0.4939446096072602,
+        "S_Score": 0.7975778438429041,
+        "Classification": "KEEP"
+    },
+    "session_score": {
+        "MDA": 0.0,
+        "SHAP_mean": -0.001160640036687255,
+        "SHAP_consistency": 0.37621655452980757,
+        "S_Score": 0.7504866218119229,
+        "Classification": "KEEP"
+    },
+    "atr": {
+        "MDA": 0.0,
+        "SHAP_mean": -0.014968379400670528,
+        "SHAP_consistency": 0.5723986856516977,
+        "S_Score": 0.8289594742606791,
+        "Classification": "KEEP"
+    },
+    "adx": {
+        "MDA": 0.0,
+        "SHAP_mean": -0.00037424048059619963,
+        "SHAP_consistency": 0.29297449538413395,
+        "S_Score": 0.7171897981536536,
+        "Classification": "WEAK_SIGNAL"
+    },
+    "ema50_slope": {
+        "MDA": 0.0,
+        "SHAP_mean": 0.000619501865003258,
+        "SHAP_consistency": 0.6962603661398842,
+        "S_Score": 0.8785041464559536,
+        "Classification": "KEEP"
+    },
+    "rsi": {
+        "MDA": 0.0,
+        "SHAP_mean": -0.0022984270472079515,
+        "SHAP_consistency": 0.48139571272101395,
+        "S_Score": 0.7925582850884055,
+        "Classification": "KEEP"
+    },
+    "macd": {
+        "MDA": 0.0,
+        "SHAP_mean": -0.003787456313148141,
+        "SHAP_consistency": 0.6217493350023471,
+        "S_Score": 0.8486997340009389,
+        "Classification": "KEEP"
+    },
+    "hour_utc": {
+        "MDA": 0.0,
+        "SHAP_mean": -0.0021281419321894646,
+        "SHAP_consistency": 0.6368017524644031,
+        "S_Score": 0.8547207009857613,
+        "Classification": "KEEP"
+    },
+    "is_high_volatility": {
+        "MDA": 0.0,
+        "SHAP_mean": -5.057300768385176e-06,
+        "SHAP_consistency": 0.12232827413550305,
+        "S_Score": 0.6489313096542012,
+        "Classification": "WEAK_SIGNAL"
+    },
+    "is_buy": {
+        "MDA": 0.0,
+        "SHAP_mean": 0.0,
+        "SHAP_consistency": 0.0,
+        "S_Score": 0.6,
+        "Classification": "WEAK_SIGNAL"
+    },
+    "recent_high_20_distance": {
+        "MDA": 0.0,
+        "SHAP_mean": 1.2254424291313626e-05,
+        "SHAP_consistency": 0.55434204349867,
+        "S_Score": 0.821736817399468,
+        "Classification": "KEEP"
+    },
+    "recent_low_20_distance": {
+        "MDA": 0.0,
+        "SHAP_mean": 0.0011836342746391892,
+        "SHAP_consistency": 0.5594742606790799,
+        "S_Score": 0.8237897042716319,
+        "Classification": "KEEP"
+    }
+}

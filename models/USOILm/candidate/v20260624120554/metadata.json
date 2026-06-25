@@ -1,0 +1,82 @@
+{
+    "description": "Multi-Market USOILm Model",
+    "dataset": "datasets/USOILm/USOILm_dataset_atr_2_0_v001.csv",
+    "features": [
+        "final_score",
+        "trend_score",
+        "breakout_score",
+        "reversal_score",
+        "session_score",
+        "atr_pct",
+        "adx",
+        "ema50_slope",
+        "rsi",
+        "macd",
+        "hour_utc",
+        "is_high_volatility",
+        "is_buy",
+        "recent_high_20_distance_pct",
+        "recent_low_20_distance_pct"
+    ],
+    "config": {
+        "max_depth": 2,
+        "learning_rate": 0.01,
+        "n_estimators": 100,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.1,
+        "reg_lambda": 10
+    },
+    "drift_stats": {
+        "final_score": {
+            "mean": 85.0,
+            "std": 0.0
+        },
+        "trend_score": {
+            "mean": -0.8335859351318582,
+            "std": 93.7037051875851
+        },
+        "breakout_score": {
+            "mean": 0.0,
+            "std": 0.0
+        },
+        "reversal_score": {
+            "mean": 0.8955962405261788,
+            "std": 35.62216321002923
+        },
+        "session_score": {
+            "mean": 68.91482267353743,
+            "std": 24.251781333930676
+        },
+        "atr_pct": {
+            "mean": 0.32343702886836745,
+            "std": 0.20618149955298637
+        },
+        "adx": {
+            "mean": 38.77395774188902,
+            "std": 7.624938804472904
+        },
+        "ema50_slope": {
+            "mean": -0.07740065992182589,
+            "std": 7.424480058158862
+        },
+        "rsi": {
+            "mean": 49.73769534531872,
+            "std": 24.771230137223323
+        },
+        "macd": {
+            "mean": -0.012139728224591521,
+            "std": 0.39461243517538375
+        },
+        "recent_high_20_distance_pct": {
+            "mean": 1.010817746448422,
+            "std": 1.7402783328492781
+        },
+        "recent_low_20_distance_pct": {
+            "mean": 0.8269534434137603,
+            "std": 1.4691566306809718
+        }
+    },
+    "model_version": "v20260624120554",
+    "registered_at": "2026-06-24T12:05:54.314853"
+}

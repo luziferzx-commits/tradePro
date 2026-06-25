@@ -1,0 +1,82 @@
+{
+    "description": "Multi-Market US500m Model",
+    "dataset": "datasets/US500m/US500m_dataset_atr_2_0_v001.csv",
+    "features": [
+        "final_score",
+        "trend_score",
+        "breakout_score",
+        "reversal_score",
+        "session_score",
+        "atr_pct",
+        "adx",
+        "ema50_slope",
+        "rsi",
+        "macd",
+        "hour_utc",
+        "is_high_volatility",
+        "is_buy",
+        "recent_high_20_distance_pct",
+        "recent_low_20_distance_pct"
+    ],
+    "config": {
+        "max_depth": 2,
+        "learning_rate": 0.01,
+        "n_estimators": 100,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.1,
+        "reg_lambda": 10
+    },
+    "drift_stats": {
+        "final_score": {
+            "mean": 85.0,
+            "std": 0.0
+        },
+        "trend_score": {
+            "mean": 4.444667738478028,
+            "std": 93.87793965019023
+        },
+        "breakout_score": {
+            "mean": 0.0,
+            "std": 0.0
+        },
+        "reversal_score": {
+            "mean": -0.7842381311031306,
+            "std": 34.567987253961974
+        },
+        "session_score": {
+            "mean": 63.60128617363344,
+            "std": 33.80231451030955
+        },
+        "atr_pct": {
+            "mean": 0.06909149837979478,
+            "std": 0.055029505221035425
+        },
+        "adx": {
+            "mean": 39.26083770592144,
+            "std": 7.9198684537045105
+        },
+        "ema50_slope": {
+            "mean": 0.992676234876444,
+            "std": 7.650716636639279
+        },
+        "rsi": {
+            "mean": 51.269494912801704,
+            "std": 24.45391418944753
+        },
+        "macd": {
+            "mean": -0.1848314169266962,
+            "std": 6.600171406052388
+        },
+        "recent_high_20_distance_pct": {
+            "mean": 0.2125061619229976,
+            "std": 0.38028980482084246
+        },
+        "recent_low_20_distance_pct": {
+            "mean": 0.1818336716659347,
+            "std": 0.3356416074760066
+        }
+    },
+    "model_version": "v20260624115640",
+    "registered_at": "2026-06-24T11:56:40.213391"
+}

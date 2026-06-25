@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from ta.momentum import RSIIndicator
 from ta.trend import MACD, EMAIndicator, ADXIndicator
-from ta.volatility import AverageTrueRange
+from ta.volatility import AverageTrueRange, BollingerBands
 
 class IndicatorCalculator:
     @staticmethod
@@ -37,6 +37,11 @@ class IndicatorCalculator:
         df['plus_di'] = adx_ind.adx_pos()
         df['minus_di'] = adx_ind.adx_neg()
 
+        # Bollinger Bands
+        indicator_bb = BollingerBands(close=df['close'], window=20, window_dev=2)
+        df['bb_upper'] = indicator_bb.bollinger_hband()
+        df['bb_lower'] = indicator_bb.bollinger_lband()
+
         # EMA Slope (normalized per ATR over 5 candles to make it scale-independent)
         df['ema50_slope'] = (df['ema50'].diff(5) / df['atr']) * 10
 
@@ -69,5 +74,7 @@ class IndicatorCalculator:
             'minus_di': safe_val(latest['minus_di']),
             'ema50_slope': safe_val(latest['ema50_slope']),
             'recent_high_20': safe_val(latest['recent_high_20']),
-            'recent_low_20': safe_val(latest['recent_low_20'])
+            'recent_low_20': safe_val(latest['recent_low_20']),
+            'bb_upper': safe_val(latest.get('bb_upper', 0)),
+            'bb_lower': safe_val(latest.get('bb_lower', 0))
         }
