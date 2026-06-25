@@ -11,6 +11,7 @@ class Settings:
     AI_REVIEW_THRESHOLD: int = int(os.getenv("AI_REVIEW_THRESHOLD", 60))
     EXECUTION_THRESHOLD: int = int(os.getenv("EXECUTION_THRESHOLD", 75))
     MIN_AI_CONFIDENCE: int = int(os.getenv("MIN_AI_CONFIDENCE", 80))
+    GLOBAL_SIGNAL_THRESHOLD: float = float(os.getenv("GLOBAL_SIGNAL_THRESHOLD", 0.55))
     SHADOW_MODE: bool = os.getenv("SHADOW_MODE", "False").lower() == "true"
     MT5_PATH = os.getenv("MT5_PATH", "") # Optional path to terminal64.exe
     
@@ -64,12 +65,8 @@ class Settings:
     
     # AI Settings
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL = "gemini-2.5-flash"
-    MIN_AI_CONFIDENCE = 85
-    AI_REVIEW_THRESHOLD = 75
-    EXECUTION_THRESHOLD = 85
-    GLOBAL_SIGNAL_THRESHOLD = 0.55
-    BACKTEST_SPREAD_POINTS = 20
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    BACKTEST_SPREAD_POINTS = int(os.getenv("BACKTEST_SPREAD_POINTS", 20))
     
     # Database
     DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///trades.db")
