@@ -4,10 +4,10 @@ from data.mt5_client import mt5_client
 from strategy.indicators import IndicatorCalculator
 from market.regime_detector import RegimeDetector
 from strategy.scorer import MultiScorer
-from strategy.setups import SetupEvaluator
+from strategy.market_score import MarketScoreCalculator
 from config.settings import settings
 
-def build_dataset(symbol="XAUUSDm", timeframe="M5", atr_multiplier=2.0):
+def build_dataset(symbol="XAUUSDm", timeframe="M5", atr_multiplier=2.0, asset_class="FOREX"):
     import glob
     atr_str = str(atr_multiplier).replace('.', '_')
     base_file = f"{symbol}_dataset_atr_{atr_str}"
@@ -55,16 +55,21 @@ def build_dataset(symbol="XAUUSDm", timeframe="M5", atr_multiplier=2.0):
         regime_slice = df.iloc[i-50:i+1]
         
         regime = RegimeDetector.detect(regime_slice)
-        setups = SetupEvaluator.evaluate_all(df_slice, regime)
         
-        target = None
-        for s in setups:
-            if s['setup_name'] == target_setup:
-                target = s
-                break
-                
-        if not target or target['direction'] == "NEUTRAL":
+        # We need h4_trend. Let's just default to NEUTRAL here to speed up backtest label generation 
+        # (or ideally fetch H4 data, but for now NEUTRAL is okay for label generation focus)
+        h4_trend = "NEUTRAL"
+        
+        score_result = MarketScoreCalculator.calculate(df_slice, regime, h4_trend=h4_trend, asset_class=asset_class)
+        direction = score_result['final_direction']
+        
+        if direction == "NEUTRAL":
             continue
+            
+        target = {
+            "direction": direction,
+            "setup_name": score_result['setup_name']
+        }
             
         candle = records[i]
         direction = target['direction']
@@ -154,7 +159,7 @@ def build_dataset(symbol="XAUUSDm", timeframe="M5", atr_multiplier=2.0):
         
         row = {
             "timestamp": candle['time'],
-            "final_score": target['score'],
+            "final_score": score_result['final_score'],
             "trend_score": trend_score,
             "breakout_score": breakout_score,
             "reversal_score": reversal_score,

@@ -1,0 +1,82 @@
+{
+    "description": "Multi-Market BTCUSD Model",
+    "dataset": "datasets/BTCUSD/BTCUSD_dataset_atr_2_0_v001.csv",
+    "features": [
+        "final_score",
+        "trend_score",
+        "breakout_score",
+        "reversal_score",
+        "session_score",
+        "atr_pct",
+        "adx",
+        "ema50_slope",
+        "rsi",
+        "macd",
+        "hour_utc",
+        "is_high_volatility",
+        "is_buy",
+        "recent_high_20_distance_pct",
+        "recent_low_20_distance_pct"
+    ],
+    "config": {
+        "max_depth": 2,
+        "learning_rate": 0.01,
+        "n_estimators": 100,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "reg_alpha": 0.1,
+        "reg_lambda": 10
+    },
+    "drift_stats": {
+        "final_score": {
+            "mean": 73.91879457096849,
+            "std": 4.88198076816821
+        },
+        "trend_score": {
+            "mean": -3.4190246146767884,
+            "std": 94.09946893207773
+        },
+        "breakout_score": {
+            "mean": 0.0,
+            "std": 0.0
+        },
+        "reversal_score": {
+            "mean": 0.7237040994698055,
+            "std": 30.75533521885209
+        },
+        "session_score": {
+            "mean": 57.239475500345065,
+            "std": 28.38201264298677
+        },
+        "atr_pct": {
+            "mean": 0.21857966570215467,
+            "std": 0.1284041260965679
+        },
+        "adx": {
+            "mean": 34.77194371120198,
+            "std": 8.403489928782683
+        },
+        "ema50_slope": {
+            "mean": -0.09013342416300045,
+            "std": 5.94195106744223
+        },
+        "rsi": {
+            "mean": 49.159827910016475,
+            "std": 23.08735540008551
+        },
+        "macd": {
+            "mean": -11.272111929551025,
+            "std": 233.91868542481777
+        },
+        "recent_high_20_distance_pct": {
+            "mean": 0.5990807656925068,
+            "std": 0.949878753698734
+        },
+        "recent_low_20_distance_pct": {
+            "mean": 0.5194005554957353,
+            "std": 0.9177092724130332
+        }
+    },
+    "model_version": "v20260624202426",
+    "registered_at": "2026-06-24T20:24:26.843966"
+}

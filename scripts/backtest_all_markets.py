@@ -107,7 +107,8 @@ def main():
         if not dataset_file:
             print(f"Dataset not found for {symbol}. Building...")
             # We assume a default ATR of 2.0 for general datasets
-            build_dataset(symbol, cfg.get("primary_timeframe", "M5"), 2.0)
+            asset_class = cfg.get("asset_class", "FOREX")
+            build_dataset(symbol, cfg.get("primary_timeframe", "M5"), 2.0, asset_class=asset_class)
             dataset_file = get_latest_dataset(symbol)
             
         if not dataset_file:

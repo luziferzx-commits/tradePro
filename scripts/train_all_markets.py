@@ -26,7 +26,7 @@ def main():
     parser.add_argument("--candidate-only", action="store_true", help="Save models as candidate instead of production")
     args = parser.parse_args()
 
-    symbols_config = load_symbols()
+    symbols_config = load_symbols().get('symbols', {})
     
     if not mt5_client.connect():
         logger.error("Failed to connect to MT5. Aborting pipeline.")

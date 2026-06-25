@@ -160,8 +160,8 @@ class MultiAssetScanner:
         
         memory_data = market_memory_v2.get_memory(session, regime.get("trend_state", "UNKNOWN"), atr_bucket, final_dir)
         
-        # In Single Asset mode, predict took 1 argument. 
-        ml_result = self.predictor.predict(ml_features)
+        # In Multi Asset mode, pass the symbol to load specific model 
+        ml_result = self.predictor.predict(ml_features, symbol=symbol)
         
         # Memory AI Boosting Logic
         conf = memory_data.get("memory_confidence", "LOW")

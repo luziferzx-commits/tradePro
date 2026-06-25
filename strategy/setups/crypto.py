@@ -28,10 +28,9 @@ class CryptoEvaluator(BaseSetupEvaluator):
         bb_upper = latest.get('bb_upper', 0)
         bb_lower = latest.get('bb_lower', 0)
         
-        # Get live Sentiment (Temporarily disabled for backtest training to allow learning both directions)
-        # sentiment_data = CryptoSentimentAnalyzer.get_current_sentiment()
-        # sentiment = sentiment_data['sentiment']
-        sentiment = "NEUTRAL"
+        # Get live Sentiment
+        sentiment_data = CryptoSentimentAnalyzer.get_current_sentiment()
+        sentiment = sentiment_data['sentiment']
         
         # 1. Crypto Momentum Breakout
         setups.append(self._evaluate_momentum_breakout(
