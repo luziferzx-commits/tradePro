@@ -27,10 +27,18 @@ class OpportunityRanker:
             from config.settings import settings
             threshold = settings.GLOBAL_SIGNAL_THRESHOLD
             
+            # Temporary debug log
+            logger.debug(
+                f"[Ranker] {symbol} | prob={model_prob:.3f} "
+                f"| expected_r={expected_r:.2f} "
+                f"| spread={spread} "
+                f"| vol={vol_regime}"
+            )
+            
             if model_prob < threshold:
                 reject_reasons.append(f"Low model probability {model_prob:.2f} < {threshold}")
-            if expected_r <= 0:
-                reject_reasons.append(f"Expected R {expected_r:.2f} <= 0")
+            if expected_r < 0:
+                reject_reasons.append(f"Expected R {expected_r:.2f} < 0 (negative)")
             if spread > max_spread:
                 reject_reasons.append(f"Spread {spread} > Max {max_spread}")
             if liquidity < 0.5:
