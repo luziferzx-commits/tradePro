@@ -34,134 +34,7 @@ def simulate_trade(records, start_idx, direction, entry_price, sl, tp):
             if low <= tp: return abs(entry_price - tp), "WIN"
     return 0.0, "PENDING"
 
-def generate_report(df_trades, report_path):
-    logger.info("Generating multidimensional report...")
-    if df_trades.empty:
-        with open(report_path, 'w') as f:
-            f.write("# Research Campaign v2\nNo trades executed.")
-        return
 
-    # Calculate basics per group
-    def calc_metrics(g):
-        wins = g[g['result'] == 'WIN']
-        losses = g[g['result'] == 'LOSS']
-        gross_profit = wins['pnl'].sum()
-        gross_loss = abs(losses['pnl'].sum())
-        pf = gross_profit / gross_loss if gross_loss > 0 else 99.0
-        win_rate = len(wins) / len(g) * 100 if len(g) > 0 else 0
-        
-        # Max DD
-        cum_pnl = g['pnl'].cumsum()
-        peak = cum_pnl.cummax()
-        dd = peak - cum_pnl
-        max_dd = dd.max()
-        
-        r_mults = g.get('r_multiple', pd.Series([0]*len(g)))
-        exp_r = r_mults.mean() if not r_mults.empty else 0.0
-        avg_rr = r_mults[r_mults > 0].mean() if not r_mults[r_mults > 0].empty else 0.0
-
-        return pd.Series({
-            'Trades': len(g),
-            'PF': pf,
-            'Exp_R': exp_r,
-            'WinRate': win_rate,
-            'AvgRR': avg_rr,
-            'MaxDD': max_dd
-        })
-
-    def format_table(df_agg):
-        return df_agg.round(2).to_markdown()
-
-    # 1. Engine Comparison
-    engine_stats = df_trades.groupby('engine').apply(calc_metrics).reset_index()
-    
-    # Filter to ABC+Session for further dimensional analysis to find the edge
-    df_abc_session = df_trades[df_trades['engine'] == 'ABC+Session'].copy()
-    if df_abc_session.empty:
-        df_abc_session = df_trades # fallback
-
-    # 2. By Session
-    session_stats = df_abc_session.groupby('session').apply(calc_metrics).reset_index()
-    
-    # 3. By Symbol
-    symbol_stats = df_abc_session.groupby('symbol').apply(calc_metrics).reset_index()
-    
-    # 4. Symbol x Session PF
-    sym_sess = pd.pivot_table(df_abc_session, values='pnl', index='symbol', columns='session', aggfunc=lambda x: x[x>0].sum() / abs(x[x<0].sum()) if abs(x[x<0].sum())>0 else 99)
-    
-    # 5. Strategy x Session PF
-    strat_sess = pd.pivot_table(df_abc_session, values='pnl', index='strategy', columns='session', aggfunc=lambda x: x[x>0].sum() / abs(x[x<0].sum()) if abs(x[x<0].sum())>0 else 99)
-    
-    # 6. Regime x Session PF
-    regime_sess = pd.pivot_table(df_abc_session, values='pnl', index='regime', columns='session', aggfunc=lambda x: x[x>0].sum() / abs(x[x<0].sum()) if abs(x[x<0].sum())>0 else 99)
-    
-    # 7. Hour
-    hour_stats = df_abc_session.groupby('hour').apply(calc_metrics).reset_index()
-    
-    # 8. Weekday
-    weekday_stats = df_abc_session.groupby('weekday').apply(calc_metrics).reset_index()
-
-    # 9. Leaderboard (Symbol + Session + Strategy)
-    df_abc_session['combo'] = df_abc_session['symbol'] + " | " + df_abc_session['session'] + " | " + df_abc_session['strategy']
-    combo_stats = df_abc_session.groupby('combo').apply(calc_metrics).reset_index()
-    
-    # Filter out weak samples
-    valid_combos = combo_stats[combo_stats['Trades'] >= 30].sort_values('PF', ascending=False)
-    
-    leaderboard = valid_combos.head(10)
-    worstboard = valid_combos.tail(10).sort_values('PF', ascending=True)
-
-    content = f"""# Research Campaign v2: Dimensional Edge Analysis
-
-*Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}*
-**RESEARCH_EXECUTION_MODEL = candle_close_fill**
-*Note: This is a dimensional research simulation approximating execution at candle close. This is NOT a production-grade tick backtest. Profitability shown is for edge-discovery purposes only.*
-
-## 1. Router Engine Benchmark
-| Engine | Trades | PF | Exp R | Win Rate | Avg RR | Max DD |
-|---|---|---|---|---|---|---|
-"""
-    for _, r in engine_stats.iterrows():
-        content += f"| {r['engine']} | {r['Trades']:.0f} | {r['PF']:.2f} | {r['Exp_R']:.2f} | {r['WinRate']:.1f}% | {r['AvgRR']:.2f} | {r['MaxDD']:.2f} |\n"
-
-    content += f"""
----
-*The following dimensional analysis uses the `ABC+Session` engine.*
-
-## 2. Performance by Session
-{format_table(session_stats)}
-
-## 3. Performance by Symbol
-{format_table(symbol_stats)}
-
-## 4. Session × Symbol (PF Matrix)
-{sym_sess.round(2).to_markdown()}
-
-## 5. Strategy × Session (PF Matrix)
-{strat_sess.round(2).to_markdown()}
-
-## 6. Regime × Session (PF Matrix)
-{regime_sess.round(2).to_markdown()}
-
-## 7. Performance by Hour (UTC)
-{format_table(hour_stats)}
-
-## 8. Performance by Weekday (0=Mon, 4=Fri)
-{format_table(weekday_stats)}
-
----
-
-## 9. Best Combinations Leaderboard (Min 30 Trades)
-{format_table(leaderboard)}
-
-## 10. Worst Combinations Leaderboard (Min 30 Trades)
-{format_table(worstboard)}
-
-"""
-    os.makedirs(os.path.dirname(report_path), exist_ok=True)
-    with open(report_path, 'w', encoding='utf-8') as f:
-        f.write(content)
-    logger.info(f"Report saved to {report_path}")
 
 def main():
     parser = argparse.ArgumentParser(description="Research Backtest V2")
@@ -232,7 +105,9 @@ def main():
                     all_trades.append({
                         "engine": "Legacy", "symbol": symbol, "session": sess_label, "regime": "TREND" if regime['is_trending_up'] else "RANGE",
                         "strategy": legacy_score['setup_name'], "hour": c['hour'], "weekday": c['weekday'], 
-                        "pnl": pnl, "result": res, "r_multiple": pnl / sl_dist if sl_dist > 0 else 0
+                        "pnl_r": pnl / sl_dist if sl_dist > 0 else 0, "pnl": pnl, "result": res, "r_multiple": pnl / sl_dist if sl_dist > 0 else 0,
+                        "atr": c.get('atr', 0.0), "adx": c.get('adx', 0.0), "ema50_slope": c.get('ema50_slope', 0.0),
+                        "spread": c.get('atr', 0.0) * 0.1, "spread_model": "SIMULATED_DYNAMIC_ATR_BASED", "spread_is_simulated": True
                     })
                     
             # Generate ABC Signals
@@ -252,7 +127,9 @@ def main():
                     all_trades.append({
                         "engine": "ABC", "symbol": symbol, "session": sess_label, "regime": "TREND" if regime['is_trending_up'] else "RANGE",
                         "strategy": sig_abc.strategy_id, "hour": c['hour'], "weekday": c['weekday'], 
-                        "pnl": pnl, "result": res, "r_multiple": pnl / sl_dist if sl_dist > 0 else 0
+                        "pnl_r": pnl / sl_dist if sl_dist > 0 else 0, "pnl": pnl, "result": res, "r_multiple": pnl / sl_dist if sl_dist > 0 else 0,
+                        "atr": c.get('atr', 0.0), "adx": c.get('adx', 0.0), "ema50_slope": c.get('ema50_slope', 0.0),
+                        "spread": c.get('atr', 0.0) * 0.1, "spread_model": "SIMULATED_DYNAMIC_ATR_BASED", "spread_is_simulated": True
                     })
             
             # --- 3. ABC+Session ---
@@ -265,7 +142,9 @@ def main():
                     all_trades.append({
                         "engine": "ABC+Session", "symbol": symbol, "session": sess_label, "regime": "TREND" if regime['is_trending_up'] else "RANGE",
                         "strategy": sig_sess.strategy_id, "hour": c['hour'], "weekday": c['weekday'], 
-                        "pnl": pnl, "result": res, "r_multiple": pnl / sl_dist if sl_dist > 0 else 0
+                        "pnl_r": pnl / sl_dist if sl_dist > 0 else 0, "pnl": pnl, "result": res, "r_multiple": pnl / sl_dist if sl_dist > 0 else 0,
+                        "atr": c.get('atr', 0.0), "adx": c.get('adx', 0.0), "ema50_slope": c.get('ema50_slope', 0.0),
+                        "spread": c.get('atr', 0.0) * 0.1, "spread_model": "SIMULATED_DYNAMIC_ATR_BASED", "spread_is_simulated": True
                     })
 
             # --- 4. ABC+Session+Health ---
@@ -279,7 +158,9 @@ def main():
                     all_trades.append({
                         "engine": "ABC+Session+Health", "symbol": symbol, "session": sess_label, "regime": "TREND" if regime['is_trending_up'] else "RANGE",
                         "strategy": sig_health.strategy_id, "hour": c['hour'], "weekday": c['weekday'], 
-                        "pnl": pnl, "result": res, "r_multiple": r_mult
+                        "pnl_r": r_mult, "pnl": pnl, "result": res, "r_multiple": r_mult,
+                        "atr": c.get('atr', 0.0), "adx": c.get('adx', 0.0), "ema50_slope": c.get('ema50_slope', 0.0),
+                        "spread": c.get('atr', 0.0) * 0.1, "spread_model": "SIMULATED_DYNAMIC_ATR_BASED", "spread_is_simulated": True
                     })
                     # Feedback loop!
                     strat_trades = [t for t in all_trades if t['engine'] == "ABC+Session+Health" and t['strategy'] == sig_health.strategy_id]
@@ -299,8 +180,9 @@ def main():
     os.makedirs("results", exist_ok=True)
     df_trades.to_csv("results/research_backtest_v2_trades.csv", index=False)
     
-    report_path = "reports/RESEARCH_CAMPAIGN_V2_REPORT.md"
-    generate_report(df_trades, report_path)
+    logger.info("Triggering Root Cause Analysis...")
+    import subprocess
+    subprocess.run([sys.executable, "analysis/root_cause.py"], cwd=os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 if __name__ == '__main__':
     main()
