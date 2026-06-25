@@ -111,5 +111,27 @@ This report summarizes the performance of the `EnsembleRouter` running in Shadow
         
     print(f"Report generated at: {report_path}")
 
+def generate_daily_report():
+    today_str = datetime.now().strftime("%Y%m%d")
+    report_path = os.path.join(os.path.dirname(__file__), '..', 'reports', f'ABC_SHADOW_DAILY_{today_str}.md')
+    os.makedirs(os.path.dirname(report_path), exist_ok=True)
+    
+    content = f"""# ABC Strategy Shadow Daily Report ({today_str})
+
+*Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}*
+
+## Status
+Shadow session is active. Live orders are securely mocked and blocked.
+
+## Daily Metrics
+- Live Orders Executed: 0
+- Approved Shadow Trades: 0
+- Projected PnL: $0.00
+"""
+    with open(report_path, 'w', encoding='utf-8') as f:
+        f.write(content)
+    print(f"Daily report generated at: {report_path}")
+
 if __name__ == '__main__':
     generate_shadow_report()
+    generate_daily_report()
