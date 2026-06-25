@@ -77,18 +77,26 @@ class AlphaWorker:
                     entry_price = Decimal(str(sym_info.ask if direction == TradeDirection.BUY else sym_info.bid))
                     conviction = Decimal(str(sig.get('model_probability', 0.5)))
                     
+                    # Calculate SL from ATR passed from scanner
+                    point = Decimal(str(sym_info.point))
+                    atr = Decimal(str(sig.get('atr', 0.0)))
+                    sl_buffer = atr * Decimal('15') if atr > 0 else Decimal('500') * point
+                    
+                    sl_price = (entry_price - sl_buffer) if direction == TradeDirection.BUY \
+                               else (entry_price + sl_buffer)
+
                     cmd = SizePositionCommand(
                         strategy_id="gqos_alpha_v1",
                         symbol=symbol,
                         direction=direction,
                         entry_price=entry_price,
-                        stop_loss_price=None, # Will be calculated by sizing/risk if needed
+                        stop_loss_price=sl_price,
                         conviction=conviction,
                         metrics=None,
                         volatility=None
                     )
                     
-                    logger.info(f"AlphaWorker: Emitting SizePositionCommand for {symbol} {direction.name}")
+                    logger.info(f"AlphaWorker: Emitting SizePositionCommand for {symbol} {direction.name} SL={sl_price:.5f}")
                     self._cmd_bus.dispatch(MessageEnvelope.create(payload=cmd, version=1))
                 
                 # Sleep to prevent tight loop since is_new_candle returns True

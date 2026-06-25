@@ -183,13 +183,32 @@ class MultiAssetScanner:
         sym_info = mt5.symbol_info(resolved_symbol)
         spread = sym_info.spread if sym_info else 999
         
+        ml_approved = ml_result.get("approved", False)
+        ml_probability = ml_result.get("probability", 0.0)
+
+        if not ml_approved:
+            return {
+                'timestamp': datetime.now().isoformat(),
+                'symbol': symbol,
+                'side': final_dir,
+                'model_probability': ml_probability,
+                'market_score': market_score['final_score'],
+                'expected_r': 0.0,
+                'spread_points': spread,
+                'volatility_regime': regime.get('volatility_state', 'NORMAL'),
+                'status': 'REJECTED',
+                'reason': ml_result.get("reason", "ml_rejected")
+            }
+
         return {
             'timestamp': datetime.now().isoformat(),
             'symbol': symbol,
             'side': final_dir,
-            'model_probability': ml_result.get("candidate_probability", 0.0),
+            'model_probability': ml_probability,
             'market_score': market_score['final_score'],
             'expected_r': ml_result.get("expected_rr", 0.0),
             'spread_points': spread,
-            'volatility_regime': regime.get('volatility_state', 'NORMAL')
+            'volatility_regime': regime.get('volatility_state', 'NORMAL'),
+            'status': 'APPROVED',
+            'atr': atr
         }
