@@ -194,6 +194,10 @@ def generate_market_intelligence_report(df_trades, base_dir):
                     "trade_count": int(trades),
                     "stability_verdict": verdict,
                     "confidence_score": min(0.99, round(1 - outlier, 2)),
+                    "promotion_status": "RESEARCH_VALIDATED",
+                    "shadow_passed": False,
+                    "live_passed": False,
+                    "source_report": "MARKET_INTELLIGENCE_REPORT_V2",
                     "generated_at": datetime.now().isoformat()
                 }
             else:
