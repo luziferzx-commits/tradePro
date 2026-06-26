@@ -1,5 +1,6 @@
 import os
 import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import yaml
 import argparse
 import logging
@@ -24,9 +25,16 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Run without actually saving models over production")
     parser.add_argument("--skip-xauusd", action="store_true", help="Skip XAUUSDm to preserve existing model")
     parser.add_argument("--candidate-only", action="store_true", help="Save models as candidate instead of production")
+    parser.add_argument("--candles", type=int, default=200000, help="Number of candles to fetch for dataset building")
+    parser.add_argument("--symbols", nargs="+", help="List of specific symbols to train (e.g., --symbols XAUUSDm BTCUSDm)")
     args = parser.parse_args()
 
     symbols_config = load_symbols().get('symbols', {})
+    
+    if args.symbols:
+        # Filter config to only include requested symbols
+        symbols_config = {k: v for k, v in symbols_config.items() if k in args.symbols}
+        logger.info(f"Filtered to run only on: {args.symbols}")
     
     if not mt5_client.connect():
         logger.error("Failed to connect to MT5. Aborting pipeline.")
@@ -52,7 +60,7 @@ def main():
         timeframe = cfg.get("timeframe", "M5")
         try:
             logger.info(f"Building dataset for {symbol}...")
-            dataset_path = build_dataset(symbol, timeframe, atr_multiplier=2.0)
+            dataset_path = build_dataset(symbol, timeframe, atr_multiplier=2.0, max_candles=args.candles)
             if not dataset_path or not os.path.exists(dataset_path):
                 logger.error(f"Failed to generate dataset for {symbol}. Skipping.")
                 continue

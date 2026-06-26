@@ -112,6 +112,28 @@ class MultiAssetScanner:
                 'reason': 'Quant neutral'
             }
             
+        # 4.5 H1 Trend Confirmation
+        df_h1 = self.mt5_client.get_historical_data(symbol, "H1", 250)
+        if df_h1 is not None and len(df_h1) >= 200:
+            df_h1 = IndicatorCalculator.add_indicators(df_h1)
+            h1_ema50 = df_h1['ema50'].iloc[-1]
+            h1_ema200 = df_h1['ema200'].iloc[-1]
+            h1_trend = "LONG" if h1_ema50 > h1_ema200 else "SHORT"
+            
+            if final_dir != h1_trend:
+                return {
+                    'timestamp': datetime.now().isoformat(),
+                    'symbol': symbol,
+                    'side': final_dir,
+                    'model_probability': 0.0,
+                    'market_score': market_score['final_score'],
+                    'expected_r': 0.0,
+                    'spread_points': 9999,
+                    'volatility_regime': regime.get('volatility_state', 'NORMAL'),
+                    'status': 'REJECTED',
+                    'reason': f"H1 Trend Conflict (M15: {final_dir}, H1: {h1_trend})"
+                }
+            
         # 5. ML Features
         recent_high = df.iloc[-3]['recent_high_20'] if len(df) > 2 else df['high'].iloc[-1]
         recent_low = df.iloc[-3]['recent_low_20'] if len(df) > 2 else df['low'].iloc[-1]

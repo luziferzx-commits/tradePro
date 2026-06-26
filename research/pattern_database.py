@@ -84,7 +84,7 @@ class PatternDatabase:
         return pattern_hash, f"PD_{pattern_hash[:16]}"
 
     @staticmethod
-    def mine_patterns(df_merged, base_dir, sl_atr_mult, tp_atr_mult):
+    def mine_patterns(df_merged, base_dir, sl_atr_mult, tp_atr_mult, output_suffix=""):
         core_cols = ['symbol', 'session_label', 'regime', 'direction', 'atr_bucket', 'adx_bucket', 'trend_bucket', 'horizon']
         grouped = df_merged.groupby(core_cols, observed=False)
         
@@ -217,7 +217,8 @@ class PatternDatabase:
         os.makedirs(store_path, exist_ok=True)
         if all_patterns_db:
             df_patterns = pd.DataFrame(all_patterns_db).drop_duplicates(subset=['pattern_hash'])
-            db_path = os.path.join(store_path, 'pattern_database.parquet')
+            db_name = f'pattern_database_{output_suffix}.parquet' if output_suffix else 'pattern_database.parquet'
+            db_path = os.path.join(store_path, db_name)
             if os.path.exists(db_path):
                 existing_df = pd.read_parquet(db_path)
                 combined = pd.concat([existing_df, df_patterns]).drop_duplicates(subset=['pattern_hash'])
@@ -228,8 +229,10 @@ class PatternDatabase:
         # Save JSON files
         k_dir = os.path.join(base_dir, "knowledge")
         os.makedirs(k_dir, exist_ok=True)
-        with open(os.path.join(k_dir, "discovered_patterns.json"), "w") as f: json.dump(discovered_json, f, indent=2)
-        with open(os.path.join(k_dir, "pattern_blacklist.json"), "w") as f: json.dump(blacklist_json, f, indent=2)
+        disc_name = f"discovered_patterns_{output_suffix}.json" if output_suffix else "discovered_patterns.json"
+        blk_name = f"pattern_blacklist_{output_suffix}.json" if output_suffix else "pattern_blacklist.json"
+        with open(os.path.join(k_dir, disc_name), "w") as f: json.dump(discovered_json, f, indent=2)
+        with open(os.path.join(k_dir, blk_name), "w") as f: json.dump(blacklist_json, f, indent=2)
         
         # Universal Pattern Summary
         summary = {
@@ -242,6 +245,7 @@ class PatternDatabase:
         
         r_dir = os.path.join(base_dir, "generated_rules")
         os.makedirs(r_dir, exist_ok=True)
-        with open(os.path.join(r_dir, "pattern_router_rules.yaml"), "w") as f: yaml.dump(final_yaml_rules, f, sort_keys=False)
+        yaml_name = f"pattern_router_rules_{output_suffix}.yaml" if output_suffix else "pattern_router_rules.yaml"
+        with open(os.path.join(r_dir, yaml_name), "w") as f: yaml.dump(final_yaml_rules, f, sort_keys=False)
         
         return discovered_json, blacklist_json, final_yaml_rules, len(all_patterns_db)

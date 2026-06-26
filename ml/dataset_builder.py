@@ -7,7 +7,7 @@ from strategy.scorer import MultiScorer
 from strategy.market_score import MarketScoreCalculator
 from config.settings import settings
 
-def build_dataset(symbol="XAUUSDm", timeframe="M5", atr_multiplier=2.0, asset_class="FOREX"):
+def build_dataset(symbol="XAUUSDm", timeframe="M5", atr_multiplier=2.0, asset_class="FOREX", max_candles=200000):
     import glob
     atr_str = str(atr_multiplier).replace('.', '_')
     base_file = f"{symbol}_dataset_atr_{atr_str}"
@@ -26,14 +26,14 @@ def build_dataset(symbol="XAUUSDm", timeframe="M5", atr_multiplier=2.0, asset_cl
     version_str = f"v{v_num:03d}"
     out_file = f"{out_dir}/{base_file}_{version_str}.csv"
     
-    print(f"Building Dataset for {symbol} Version: {version_str}")
+    print(f"Building Dataset for {symbol} Version: {version_str} (Target Candles: {max_candles})")
         
     if not mt5_client.connect():
         print("Failed to connect to MT5.")
         return
         
     print(f"Fetching candles for {symbol} (ATR {atr_multiplier})...")
-    df = mt5_client.get_historical_data(symbol, timeframe, 200000)
+    df = mt5_client.get_historical_data(symbol, timeframe, max_candles)
     if df is None or df.empty:
         print("No data fetched.")
         return

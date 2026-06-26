@@ -24,8 +24,13 @@ def train_and_register_production(symbol="XAUUSDm", dataset_path="datasets/ml_vo
     X = df[features]
     y = df['label']
     
-    pos_count = sum(y)
-    neg_count = len(y) - pos_count
+    # Walk-Forward: 80/20 temporal split
+    split_idx = int(len(df) * 0.8)
+    X_train, y_train = X.iloc[:split_idx], y.iloc[:split_idx]
+    X_test, y_test = X.iloc[split_idx:], y.iloc[split_idx:]
+    
+    pos_count = sum(y_train)
+    neg_count = len(y_train) - pos_count
     scale_weight = neg_count / pos_count if pos_count > 0 else 1.0
     
     config = {
@@ -41,15 +46,32 @@ def train_and_register_production(symbol="XAUUSDm", dataset_path="datasets/ml_vo
         n_jobs=-1
     )
     
-    model.fit(X, y)
+    model.fit(X_train, y_train)
     
+    # OOS Evaluation
+    preds = model.predict(X_test)
+    wins = sum((preds == 1) & (y_test == 1))
+    losses = sum((preds == 1) & (y_test == 0))
+    oos_pf = (wins * 2.0) / losses if losses > 0 else (wins * 2.0)
+    print(f"OOS Evaluation: {wins}W {losses}L, PF: {oos_pf:.2f}")
+    
+    # Fetch Old Model PF
+    old_model, old_meta = registry.get_production_model(symbol)
+    old_pf = old_meta.get("oos_pf", 0.0) if old_meta else 0.0
+    
+    # Rollback Logic
+    if old_model and oos_pf < old_pf * 0.90:
+        print(f"ROLLBACK: New OOS PF ({oos_pf:.2f}) < 90% of Old PF ({old_pf:.2f}). Rejecting new model.")
+        registry.register_model(model, {"oos_pf": float(oos_pf)}, status="archive", symbol=symbol)
+        return old_meta.get("model_version", "unknown")
+        
     continuous_features = [f for f in features if f not in ["is_high_volatility", "is_buy", "hour_utc"]]
     
     drift_stats = {}
     for f in continuous_features:
         drift_stats[f] = {
-            "mean": float(X[f].mean()),
-            "std": float(X[f].std())
+            "mean": float(X_train[f].mean()),
+            "std": float(X_train[f].std())
         }
     
     metadata = {
@@ -57,11 +79,12 @@ def train_and_register_production(symbol="XAUUSDm", dataset_path="datasets/ml_vo
         "dataset": dataset_path,
         "features": features,
         "config": config,
-        "drift_stats": drift_stats
+        "drift_stats": drift_stats,
+        "oos_pf": float(oos_pf)
     }
     
     version = registry.register_model(model, metadata, status=status, symbol=symbol)
-    print(f"Model successfully registered in {status} as {version} for {symbol}!")
+    print(f"Model successfully registered in {status} as {version} for {symbol} (OOS PF: {oos_pf:.2f})!")
     return version
 
 if __name__ == "__main__":

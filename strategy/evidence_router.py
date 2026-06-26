@@ -77,7 +77,7 @@ class EvidenceRouter:
             return None
         if best_match['aggregate_pf'] < 1.10: 
             return None
-        if best_match['aggregate_expectancy_r'] < -0.05: 
+        if best_match['aggregate_expectancy_r'] < -0.20: 
             return None
         
         # If no valid promotion in the whole candidate group, reject it
@@ -88,6 +88,26 @@ class EvidenceRouter:
         if self.mode == "LIVE" and best_promo not in ['SHADOW_PASSED', 'LIVE_APPROVED', 'RESEARCH_VALIDATED', 'RESEARCH_DISCOVERED']:
             return None
             
+        # --- Apply COT Analysis ---
+        try:
+            from strategy.cot_analyzer import COTAnalyzer
+            cot_data = COTAnalyzer.get_net_position(symbol)
+            if cot_data:
+                # If hedge funds are Bullish and we are Long -> boost confidence
+                if cot_data['direction'] == "BULLISH" and best_direction == "LONG":
+                    best_match['evidence_score'] = min(0.99, best_match['evidence_score'] * 1.2)
+                    logger.info(f"📈 [COT Boost] {symbol} LONG aligns with Hedge Funds (Net: {cot_data['net_position']})")
+                elif cot_data['direction'] == "BEARISH" and best_direction == "SHORT":
+                    best_match['evidence_score'] = min(0.99, best_match['evidence_score'] * 1.2)
+                    logger.info(f"📉 [COT Boost] {symbol} SHORT aligns with Hedge Funds (Net: {cot_data['net_position']})")
+                else:
+                    # Conflict
+                    best_match['evidence_score'] = best_match['evidence_score'] * 0.8
+                    logger.info(f"⚠️ [COT Conflict] {symbol} {best_direction} conflicts with Hedge Funds ({cot_data['direction']})")
+        except Exception as e:
+            logger.warning(f"Failed to apply COT Analysis for {symbol}: {e}")
+        # --------------------------
+
         return {
             "symbol": symbol,
             "direction": best_direction,

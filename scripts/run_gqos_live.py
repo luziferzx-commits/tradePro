@@ -25,9 +25,11 @@ from gqos.live.safety import GlobalKillSwitch, HeartbeatMonitor
 from gqos.live.persistence import LedgerSnapshotService
 from gqos.live.engine import LiveTradingEngine
 from gqos.live.alpha_worker import AlphaWorker
+from gqos.live.position_monitor import PositionMonitor
+from gqos.live.daily_scheduler import DailyReportScheduler
 
 from gqos.sizing.engine import PositionSizingEngine
-from gqos.sizing.policies import FixedFractionalPolicy
+from gqos.sizing.policies import FixedFractionalPolicy, FixedRiskPolicy, DynamicScalingPolicy
 from gqos.sizing.events import SizePositionCommand
 
 from gqos.risk.circuit_breaker import CircuitBreaker
@@ -78,8 +80,8 @@ def main():
     evt_bus = LocalEventBus(logger)
     
     accounting = AccountingEngine(evt_bus, DefaultFeeModel(), DefaultFxConverter())
-    portfolio  = PortfolioManager("LivePort", initial_capital)
-    portfolio.allocate_capital("gqos_alpha_v1", initial_capital)
+    portfolio  = PortfolioManager("LivePort", initial_capital * 10)
+    portfolio.allocate_capital("gqos_alpha_v1", initial_capital * 10)
     logger.info("Allocated virtual capital to strategies.")
     
     oms = OrderManagementSystem(evt_bus)
@@ -102,11 +104,14 @@ def main():
     )
     
     sizing_engine = PositionSizingEngine()
-    policy        = FixedFractionalPolicy(fraction=Decimal('0.01'))
+    policy        = DynamicScalingPolicy(base_risk_fraction=Decimal('0.01'))
     cb_engine     = CircuitBreakerEngine()
     
     asset_dir = AssetDirectory()
-    for sym in ["XAUUSD", "XAGUSD", "BTCUSD", "ETHUSD", "US500", "EURUSD", "GBPUSD", "USDJPY", "NAS100", "GER40"]:
+    for sym in ["XAUUSD", "XAGUSD", "BTCUSD", "ETHUSD", "US500",
+                "EURUSD", "GBPUSD", "USDJPY", "NAS100", "GER40", "USTEC",
+                "AUDUSD", "USDCAD", "USOIL", "XRPUSD", "SOLUSD",
+                "US30", "NZDUSD", "EURGBP", "AUDCAD"]:
         asset_dir.register_asset(AssetMetadata(sym,       "MIXED", "FX", sym))
         asset_dir.register_asset(AssetMetadata(f"{sym}m", "MIXED", "FX", sym))
         asset_dir.register_asset(AssetMetadata(f"{sym}.m","MIXED", "FX", sym))
@@ -114,13 +119,13 @@ def main():
     exposure = ExposureEngine(asset_dir, ExposureLimits(
         max_gross_exposure=initial_capital * 10,
         max_net_exposure=initial_capital * 10,
-        max_symbol_exposure=initial_capital * 5,
+        max_symbol_exposure=initial_capital * 10,
         max_sector_exposure=initial_capital * 10,
         max_correlation_group_exposure=initial_capital * 10
     ))
     
     store = RiskBudgetStore()
-    store.save(RiskBudget("gqos_alpha_v1", total_capacity=initial_capital, utilized_capacity=Decimal('0')))
+    store.save(RiskBudget("gqos_alpha_v1", total_capacity=initial_capital * 20, utilized_capacity=Decimal('0')))
     risk_engine = RiskBudgetEngine(store)
     
     from gqos.risk.news_filter import NewsFilter
@@ -133,7 +138,7 @@ def main():
         PortfolioSnapshotStage(portfolio),
         SizingStage(sizing_engine, policy),
         CircuitBreakerStage(cb_engine),
-        ExposureStage(exposure, max_positions=3, max_portfolio_risk_pct=0.06),
+        ExposureStage(exposure, max_positions=20, max_portfolio_risk_pct=0.30),
         RiskBudgetStage(risk_engine),
         PortfolioReservationStage(portfolio),
         ExecutionStage(cmd_bus, portfolio)
@@ -148,6 +153,30 @@ def main():
     
     alpha_worker = AlphaWorker(cmd_bus)
     alpha_worker.start()
+
+    # ─── Dynamic Position Management ──────────────────────────────
+    from strategy.indicators import IndicatorCalculator
+    position_monitor = PositionMonitor(
+        evidence_router=alpha_worker.evidence_router,
+        mt5_client=alpha_worker.mt5_client,
+        indicator_calculator=IndicatorCalculator,
+        magic_number=settings.MAGIC_NUMBER,
+        reduce_threshold=0.50,     # REDUCE เมื่อ edge เหลือ < 50%
+        flip_confirm_candles=1,    # รอ 1 candle confirm ก่อน FLIP
+        news_filter=news_filter    # Pass news filter for active management
+    )
+    position_monitor.set_cmd_bus(cmd_bus)
+    position_monitor.start()
+    
+    alpha_worker.position_monitor = position_monitor
+    
+    # ─── Daily Report Scheduler ───────────────────────────────────
+    scheduler = DailyReportScheduler(report_hour_utc=8)
+    scheduler.start()
+    # ──────────────────────────────────────────────────────────────
+    
+    logger.info("Dynamic Position Management started.")
+    # ──────────────────────────────────────────────────────────────
 
     # ─── Retrain Callback: reload ML model หลัง retrain เสร็จ ────────
     def on_retrain_complete():
@@ -166,6 +195,11 @@ def main():
     # ────────────────────────────────────────────────────────────────
 
     from notifications.telegram_notifier import notify_trade_executed, notify_trade_closed, notify_bot_started
+    from database.logger import DatabaseLogger
+    import uuid
+    from datetime import datetime
+    
+    last_opened_ticket = {}
     
     def on_trade_executed(env: MessageEnvelope):
         cmd = env.payload
@@ -179,6 +213,23 @@ def main():
             ticket="GQOS",
             probability=0.0
         )
+        # Log to Database
+        try:
+            ticket = str(uuid.uuid4())
+            last_opened_ticket[cmd.symbol] = ticket
+            DatabaseLogger.log_trade_execution(
+                signal_id=None,
+                ticket=ticket,
+                symbol=cmd.symbol,
+                direction=cmd.direction.name if hasattr(cmd.direction, 'name') else str(cmd.direction),
+                volume=float(cmd.quantity),
+                open_price=float(cmd.execution_price),
+                sl=0.0,
+                tp=0.0,
+                open_time=datetime.utcnow()
+            )
+        except Exception as e:
+            logger.error(f"Failed to log trade execution to DB: {e}")
         
     last_closed_dir   = {}
     last_closed_price = {}   # ← เก็บ exit_price สำหรับ Learning Loop
@@ -207,6 +258,20 @@ def main():
             rr=0.0,
             balance=float(balance)
         )
+        
+        # Log to Database
+        try:
+            ticket = last_opened_ticket.get(cmd.symbol)
+            if ticket:
+                exit_price = last_closed_price.get(cmd.symbol, 0.0)
+                DatabaseLogger.log_trade_close(
+                    ticket=ticket,
+                    close_price=exit_price,
+                    close_time=datetime.utcnow(),
+                    pnl=float(cmd.realized_pnl)
+                )
+        except Exception as e:
+            logger.error(f"Failed to log trade close to DB: {e}")
 
         # ─── Learning Loop: บันทึก outcome ───────────────────────────
         try:
@@ -240,6 +305,16 @@ def main():
     evt_bus.subscribe(PositionClosedEvent,    on_position_closed)
     evt_bus.subscribe(RealizedPnLEmittedEvent, on_realized_pnl)
     
+    from notifications.telegram_listener import TelegramCommandListener
+    
+    def shutdown_bot():
+        import os
+        logger.warning("🚨 EMERGENCY SHUTDOWN INITIATED")
+        os._exit(0)
+        
+    cmd_listener = TelegramCommandListener(alpha_worker=alpha_worker, shutdown_callback=shutdown_bot)
+    cmd_listener.start()
+
     notify_bot_started()
     live_engine.start()
     
@@ -250,6 +325,8 @@ def main():
             time.sleep(1)
     except KeyboardInterrupt:
         logger.info("Shutting down GQOS...")
+        scheduler.stop()
+        position_monitor.stop()
         alpha_worker.stop()
         live_engine.stop()
         mt5.shutdown()

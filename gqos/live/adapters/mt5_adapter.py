@@ -71,22 +71,41 @@ class MT5BrokerAdapter(IBrokerAdapter):
             self._oms_callback(order_id, OrderStatus.REJECTED.value, Decimal('0'), Decimal('0'), f"Symbol {resolved_symbol} not found")
             return
 
-        # 3. Round volume to broker's volume_step
+        # 3. Calculate mathematically correct volume based on 1% Risk and Tick Value
         vol_step = sym_info.volume_step
-        raw_volume = float(quantity)
+        acc_info = mt5.account_info()
+        if acc_info is None:
+            self._oms_callback(order_id, OrderStatus.REJECTED.value, Decimal('0'), Decimal('0'), "No account info")
+            return
+            
+        balance = acc_info.balance
+        risk_amount = balance * 0.01 # 1% risk per trade
+        
+        tick = mt5.symbol_info_tick(resolved_symbol)
+        if tick is None:
+            self._oms_callback(order_id, OrderStatus.REJECTED.value, Decimal('0'), Decimal('0'), "Symbol tick not found")
+            return
+            
+        exec_price = tick.ask if direction == TradeDirection.BUY else tick.bid
+        
+        calculated_volume = float(sym_info.volume_min)
+        if stop_loss is not None and float(stop_loss) > 0:
+            loss_points = abs(exec_price - float(stop_loss))
+            tick_value = sym_info.trade_tick_value
+            tick_size = sym_info.trade_tick_size
+            
+            if tick_size > 0 and tick_value > 0:
+                loss_value_per_lot = (loss_points / tick_size) * tick_value
+                if loss_value_per_lot > 0:
+                    calculated_volume = risk_amount / loss_value_per_lot
+
+        raw_volume = calculated_volume
         volume = round(round(raw_volume / vol_step) * vol_step, 8)
         volume = max(sym_info.volume_min, min(sym_info.volume_max, volume))
         
         logger.info(f"Volume: raw={raw_volume:.4f} -> rounded={volume:.2f} (step={vol_step}, min={sym_info.volume_min}, max={sym_info.volume_max})")
 
         order_type = mt5.ORDER_TYPE_BUY if direction == TradeDirection.BUY else mt5.ORDER_TYPE_SELL
-
-        tick = mt5.symbol_info_tick(resolved_symbol)
-        if tick is None:
-            self._oms_callback(order_id, OrderStatus.REJECTED.value, Decimal('0'), Decimal('0'), "Symbol tick not found")
-            return
-
-        exec_price = tick.ask if direction == TradeDirection.BUY else tick.bid
 
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
@@ -103,16 +122,35 @@ class MT5BrokerAdapter(IBrokerAdapter):
             "type_filling": mt5.ORDER_FILLING_IOC,
         }
 
+        import time
+        start_time = time.time()
         result = mt5.order_send(request)
+        exec_time_ms = (time.time() - start_time) * 1000.0
+
         if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
             err_comment = getattr(result, 'comment', 'Unknown MT5 Error')
             logger.error(f"MT5 order_send failed for {order_id}: {err_comment}")
             self._oms_callback(order_id, OrderStatus.REJECTED.value, Decimal('0'), Decimal('0'), f"MT5 Error: {err_comment}")
             return
 
-        logger.info(f"MT5 Order Executed: {result.order}")
+        logger.info(f"MT5 Order Executed: {result.order} in {exec_time_ms:.1f}ms")
         filled_qty = Decimal(str(result.volume))
         filled_price = Decimal(str(result.price))
+        
+        # Log slippage
+        try:
+            from gqos.execution.slippage_tracker import slippage_tracker
+            slippage_tracker.log_slippage(
+                symbol=resolved_symbol,
+                direction=direction,
+                expected_price=exec_price,
+                actual_price=float(filled_price),
+                execution_time_ms=exec_time_ms,
+                volume=float(filled_qty)
+            )
+        except Exception as e:
+            logger.warning(f"Failed to log slippage: {e}")
+
         self._oms_callback(order_id, OrderStatus.ACK.value, Decimal('0'), Decimal('0'), "MT5 Accepted")
         self._oms_callback(order_id, "FILL", filled_qty, filled_price, f"MT5 Ticket: {result.order}")
 

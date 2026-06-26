@@ -54,6 +54,28 @@ class NewsFilter:
         except Exception as e:
             logger.error(f"Failed to fetch news from ForexFactory: {e}")
 
+    def is_high_impact_news_coming(self, symbol, within_minutes=30) -> bool:
+        """
+        Check if high-impact news is upcoming within the specified minutes for the given symbol.
+        Used by PositionMonitor to proactively reduce positions before news spikes.
+        """
+        now = datetime.utcnow()
+        if self.last_fetch is None or (now - self.last_fetch).total_seconds() > 12 * 3600:
+            self.fetch_news()
+            
+        base_sym = symbol.replace("m", "").replace(".m", "")
+        currencies = self.symbol_currency_map.get(base_sym)
+        if not currencies:
+            return False
+            
+        for event in self.news_events:
+            if event["country"] in currencies:
+                time_diff = (event["time"] - now).total_seconds() / 60.0
+                if 0 < time_diff <= within_minutes:
+                    logger.warning(f"🚨 High-Impact News coming for {base_sym} in {time_diff:.1f} mins: {event['title']}")
+                    return True
+        return False
+
     def is_safe_to_trade(self, symbol=None):
         now = datetime.utcnow()
         # Refresh news if older than 12 hours

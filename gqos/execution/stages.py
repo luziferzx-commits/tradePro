@@ -28,26 +28,16 @@ class PortfolioSnapshotStage(IPipelineStage):
         
         unrealized_pnl = Decimal('0')
         if self._valuation_engine:
-            # We need settled cash to calculate NAV, but the snapshot already separates them.
-            # PortfolioManager tracks allocated_capital (settled + realized).
-            # We just need unrealized_pnl to add to total_equity.
             try:
-                # We can calculate strategy NAV or just get unrealized PnL.
                 alloc = self._manager.state.allocations.get(strategy_id)
                 settled_cash = alloc.allocated_capital if alloc else Decimal('0')
                 val = self._valuation_engine.calculate_strategy_nav(strategy_id, settled_cash)
                 unrealized_pnl = val.total_unrealized_pnl
             except Exception as e:
-                # If pricing fails, we might want to halt or proceed with 0 MTM.
-                # For safety, let's halt if MTM fails, since Kelly sizing depends on accurate MTM.
                 return StageResult.halt(f"Valuation Failed: {str(e)}", events=[])
                 
         snapshot = self._manager.generate_snapshot(strategy_id, unrealized_pnl)
-        
-        # Inject into context
         context.snapshot = snapshot
-        
-        # We don't emit an event here by default to reduce noise, unless needed.
         return StageResult.continue_with(envelope)
 
 class SizingStage(IPipelineStage):
@@ -142,14 +132,48 @@ import logging
 logger = logging.getLogger(__name__)
 
 CORRELATION_GROUPS = {
-    "METALS":    ["XAUUSDm", "XAGUSDm"],
-    "US_EQUITY": ["NAS100m", "US500m", "USTECm"],
-    "EUR_BLOCK": ["EURUSDm", "GBPUSDm"],
-    "CRYPTO":    ["BTCUSDm", "ETHUSDm"],
+    "METALS":      ["XAUUSDm", "XAGUSDm"],
+    "US_EQUITY":   ["NAS100m", "US500m", "USTECm", "US30m"],
+    "EUR_BLOCK":   ["EURUSDm", "GBPUSDm", "EURGBPm"],
+    "CRYPTO":      ["BTCUSDm", "ETHUSDm", "XRPUSDm", "SOLUSDm"],
+    "AUD_BLOCK":   ["AUDUSDm", "AUDCADm", "NZDUSDm"],
+    "OIL_BLOCK":   ["USOILm",  "USDCADm"],
 }
 
+
+def _calc_risk_usd(symbol: str, sl_distance: float, volume: float) -> float:
+    """
+    คำนวณความเสี่ยงเป็น USD โดยใช้ tick_value จริงจาก MT5
+    แทน hardcode * 100 ที่ผิดสำหรับ Indices/Crypto
+
+    Formula: risk_usd = (sl_distance / tick_size) * tick_value * volume
+    """
+    try:
+        info = mt5.symbol_info(symbol)
+        if info is None:
+            # fallback สำหรับ symbol ที่หาไม่เจอ
+            return sl_distance * volume * 100
+
+        tick_size  = info.trade_tick_size   # minimum price move
+        tick_value = info.trade_tick_value  # USD per tick per lot
+
+        if tick_size <= 0 or tick_value <= 0:
+            return sl_distance * volume * 100
+
+        risk = (sl_distance / tick_size) * tick_value * volume
+        return risk
+
+    except Exception:
+        return sl_distance * volume * 100
+
+
 class ExposureStage(IPipelineStage):
-    def __init__(self, exposure_engine: ExposureEngine, max_positions: int = 3, max_portfolio_risk_pct: float = 0.06):
+    def __init__(
+        self,
+        exposure_engine: ExposureEngine,
+        max_positions: int = 3,
+        max_portfolio_risk_pct: float = 0.06,
+    ):
         self._exposure = exposure_engine
         self._max_positions = max_positions
         self._max_portfolio_risk_pct = max_portfolio_risk_pct
@@ -159,12 +183,11 @@ class ExposureStage(IPipelineStage):
             return StageResult.continue_with(envelope)
 
         cmd = envelope.payload
-
-        # ---- PORTFOLIO-LEVEL RISK GUARD ----
         pos = mt5.positions_get() or []
         acc = mt5.account_info()
 
         if acc is not None:
+
             # Rule 1: Max Open Positions
             if len(pos) >= self._max_positions:
                 reject_event = TradeRejectedByExposureLimit(
@@ -173,34 +196,67 @@ class ExposureStage(IPipelineStage):
                     limit_type="MAX_POSITIONS",
                     reason=f"Max {self._max_positions} positions reached"
                 )
-                logger.warning(f"[ExposureStage] BLOCKED {cmd.symbol}: max positions {len(pos)}/{self._max_positions}")
+                logger.warning(
+                    f"[ExposureStage] BLOCKED {cmd.symbol}: "
+                    f"max positions {len(pos)}/{self._max_positions}"
+                )
                 return StageResult.halt("Max positions reached", events=[reject_event])
 
-            # Rule 2: Total Portfolio Risk Cap (6%)
+            # Rule 2: Total Portfolio Risk Cap
+            # ─── แก้: ใช้ _calc_risk_usd แทน hardcode * 100 ───────────
             total_risk = sum(
-                abs(p.price_open - p.sl) * p.volume * 100
+                _calc_risk_usd(
+                    p.symbol,
+                    abs(p.price_open - p.sl),
+                    p.volume
+                )
                 for p in pos if p.sl > 0
             )
+            
+            logger.warning(f"[ExposureStage DEBUG] total_risk={total_risk} from {len(pos)} positions")
+
             incoming_risk = 0.0
             if cmd.stop_loss and cmd.quantity:
                 try:
                     from data.mt5_client import mt5_client
-                    resolved = mt5_client.resolve_symbol(cmd.symbol)
-                    tick = mt5.symbol_info_tick(resolved)
+                    resolved   = mt5_client.resolve_symbol(cmd.symbol)
+                    tick       = mt5.symbol_info_tick(resolved)
                     if tick:
-                        exec_price = tick.ask if "BUY" in str(cmd.direction) else tick.bid
-                        incoming_risk = abs(exec_price - float(cmd.stop_loss)) * float(cmd.quantity) * 100
+                        exec_price    = tick.ask if "BUY" in str(cmd.direction) else tick.bid
+                        sl_distance   = abs(exec_price - float(cmd.stop_loss))
+                        incoming_risk = _calc_risk_usd(
+                            resolved,
+                            sl_distance,
+                            float(cmd.quantity)
+                        )
+                        logger.warning(f"[ExposureStage DEBUG] {cmd.symbol} incoming_risk={incoming_risk} (sl_dist={sl_distance}, qty={cmd.quantity})")
                 except Exception as e:
                     logger.warning(f"[ExposureStage] Could not estimate incoming risk: {e}")
+            # ────────────────────────────────────────────────────────────
 
-            if (total_risk + incoming_risk) > (acc.balance * self._max_portfolio_risk_pct):
+            max_risk = acc.balance * self._max_portfolio_risk_pct
+            logger.warning(
+                f"[ExposureStage] {cmd.symbol} | "
+                f"existing_risk=${total_risk:.2f} "
+                f"incoming=${incoming_risk:.2f} "
+                f"max=${max_risk:.2f}"
+            )
+
+            if (total_risk + incoming_risk) > max_risk:
                 reject_event = TradeRejectedByExposureLimit(
                     strategy_id=cmd.strategy_id, symbol=cmd.symbol,
                     requested_value=cmd.estimated_value,
                     limit_type="MAX_PORTFOLIO_RISK",
-                    reason=f"Portfolio risk {total_risk+incoming_risk:.0f} > {acc.balance * self._max_portfolio_risk_pct:.0f} (6%)"
+                    reason=(
+                        f"Portfolio risk ${total_risk+incoming_risk:.0f} "
+                        f"> ${max_risk:.0f} "
+                        f"({self._max_portfolio_risk_pct*100:.0f}%)"
+                    )
                 )
-                logger.warning(f"[ExposureStage] BLOCKED {cmd.symbol}: portfolio risk cap")
+                logger.warning(
+                    f"[ExposureStage] BLOCKED {cmd.symbol}: "
+                    f"risk ${total_risk+incoming_risk:.0f} > max ${max_risk:.0f}"
+                )
                 return StageResult.halt("Portfolio risk cap exceeded", events=[reject_event])
 
             # Rule 3: Correlation Group Cap
@@ -211,22 +267,28 @@ class ExposureStage(IPipelineStage):
                 mt5_symbol = cmd.symbol
 
             open_symbols = {p.symbol for p in pos}
-            for group_name, group_symbols in CORRELATION_GROUPS.items():
-                if mt5_symbol in group_symbols:
-                    conflict = open_symbols.intersection(set(group_symbols))
-                    if conflict:
-                        reject_event = TradeRejectedByExposureLimit(
-                            strategy_id=cmd.strategy_id, symbol=cmd.symbol,
-                            requested_value=cmd.estimated_value,
-                            limit_type="CORRELATION_GROUP",
-                            reason=f"Correlated position already open in {group_name}: {conflict}"
-                        )
-                        logger.warning(f"[ExposureStage] BLOCKED {cmd.symbol}: correlation with {conflict}")
-                        return StageResult.halt("Correlation group limit", events=[reject_event])
+            # DEMO MODE: correlation check disabled for data collection
+            # for group_name, group_symbols in CORRELATION_GROUPS.items():
+            #     if mt5_symbol in group_symbols:
+            #         conflict = open_symbols.intersection(set(group_symbols))
+            #         if conflict:
+            #             reject_event = TradeRejectedByExposureLimit(
+            #                 strategy_id=cmd.strategy_id, symbol=cmd.symbol,
+            #                 requested_value=cmd.estimated_value,
+            #                 limit_type="CORRELATION_GROUP",
+            #                 reason=f"Correlated position in {group_name}: {conflict}"
+            #             )
+            #             logger.warning(
+            #                 f"[ExposureStage] BLOCKED {cmd.symbol}: "
+            #                 f"correlation with {conflict}"
+            #             )
+            #             return StageResult.halt("Correlation group limit", events=[reject_event])
+            pass
 
-        # ---- PER-TRADE EXPOSURE CHECK (existing) ----
+        # Per-trade exposure check (existing engine)
         is_allowed, code, reason = self._exposure.evaluate_trade(cmd)
         if not is_allowed:
+            logger.warning(f"[ExposureStage] {cmd.symbol} BLOCKED by {code}: {reason}")
             reject_event = TradeRejectedByExposureLimit(
                 strategy_id=cmd.strategy_id, symbol=cmd.symbol,
                 requested_value=cmd.estimated_value,
@@ -276,6 +338,7 @@ class RiskBudgetStage(IPipelineStage):
                 requested_value=cmd.estimated_value,
                 reason=f"Insufficient Risk Budget: {result.reason}"
             )
+            logger.warning(f"[RiskBudgetStage] {cmd.symbol} BLOCKED: {result.reason}")
             return StageResult.halt("Insufficient Risk Budget", events=[reject_event])
 
 
@@ -328,7 +391,6 @@ class ExecutionStage(IPipelineStage):
             self._execution_bus.dispatch(envelope)
             return StageResult.continue_with(envelope)
         except Exception as e:
-            # Execution failed, release reserved cash
             alloc_id = context.data.get('portfolio_allocation_id', 'unknown')
             self._manager.release_cash(cmd.strategy_id, cmd.estimated_value)
             

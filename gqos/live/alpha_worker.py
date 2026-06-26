@@ -34,6 +34,7 @@ class AlphaWorker:
         self._cmd_bus = cmd_bus
         self._running = False
         self._thread = None
+        self.is_paused = False
         
         self.registry = SymbolRegistry("config/symbols.yaml")
         self.metadata = MarketMetadata(self.registry)
@@ -63,6 +64,10 @@ class AlphaWorker:
     def _run_loop(self):
         while self._running:
             try:
+                if self.is_paused:
+                    time.sleep(1)
+                    continue
+                    
                 if not self.mt5_client.is_new_candle():
                     time.sleep(1)
                     continue
@@ -129,10 +134,48 @@ class AlphaWorker:
                 # Combine all signals
                 approved.extend(evidence_signals)
                 approved.extend(abc_signals)
+
+                # --- 4. Apply Social Sentiment (Fear & Greed) for Crypto ---
+                try:
+                    from strategy.crypto_sentiment import CryptoSentiment
+                    crypto_symbols = ["BTCUSD", "ETHUSD", "XRPUSD", "SOLUSD", "BTCUSDm", "ETHUSDm", "XRPUSDm", "SOLUSDm"]
+                    has_crypto_signals = any(sig['symbol'] in crypto_symbols for sig in approved + rejected)
+                    if has_crypto_signals:
+                        fng = CryptoSentiment.get_fear_greed_index()
+                        fng_val = fng['value']
+                        
+                        # Contrarian Force Approve: Extreme Fear (< 20) -> Force BUY
+                        if fng_val < 20:
+                            for sig in rejected:
+                                if sig['symbol'] in crypto_symbols and sig['side'] in ["BUY", "LONG"]:
+                                    sig['model_probability'] = 0.85
+                                    sig['status'] = 'APPROVED'
+                                    sig['reason'] = 'Force Approved (Extreme Fear Contrarian)'
+                                    if 'metadata' not in sig:
+                                        sig['metadata'] = {}
+                                    approved.append(sig)
+                                    logger.info(f"🚀 [Contrarian Force] {sig['symbol']} BUY rescued from Rejection due to Extreme Fear ({fng_val})!")
+                                    
+                        for sig in approved:
+                            if sig['symbol'] in crypto_symbols:
+                                side = sig['side']
+                                # Fear < 25 + BUY -> boost confidence
+                                if fng_val < 25 and side in ["BUY", "LONG"]:
+                                    old_conf = sig['model_probability']
+                                    sig['model_probability'] = min(0.99, old_conf * 1.2)
+                                    logger.info(f"🚀 [Sentiment Boost] {sig['symbol']} BUY + Extreme Fear ({fng_val}): Conf {old_conf:.2f} -> {sig['model_probability']:.2f}")
+                                # Greed > 75 + SELL -> boost confidence
+                                elif fng_val > 75 and side in ["SELL", "SHORT"]:
+                                    old_conf = sig['model_probability']
+                                    sig['model_probability'] = min(0.99, old_conf * 1.2)
+                                    logger.info(f"🚀 [Sentiment Boost] {sig['symbol']} SELL + Extreme Greed ({fng_val}): Conf {old_conf:.2f} -> {sig['model_probability']:.2f}")
+                except Exception as e:
+                    logger.warning(f"Failed to apply Crypto Sentiment: {e}")
+                # ------------------------------------------------------------
                 
                 logger.info(
                     f"AlphaWorker: Scan complete. {len(approved)} signals approved "
-                    f"({len(evidence_signals)} from Evidence). Sleeping 60s..."
+                    f"({len(evidence_signals)} from Evidence). Processing signals..."
                 )
 
                 for sig in approved:
@@ -186,6 +229,15 @@ class AlphaWorker:
                         logger.warning(f"[Learning] on_trade_opened failed: {e}")
                     # ────────────────────────────────────────────────────────
 
+                    if hasattr(self, 'position_monitor'):
+                        try:
+                            self.position_monitor.register_open(
+                                symbol=resolved_symbol,
+                                edge_score=float(conviction)
+                            )
+                        except Exception as e:
+                            logger.warning(f"[PositionMonitor] register_open failed: {e}")
+
                     cmd = SizePositionCommand(
                         strategy_id="gqos_alpha_v1",
                         symbol=resolved_symbol,
@@ -199,11 +251,12 @@ class AlphaWorker:
                     )
                     
                     logger.info(
-                        f"AlphaWorker: Emitting SizePositionCommand for {symbol} "
+                        f"AlphaWorker: Emitting SizePositionCommand for {resolved_symbol} "
                         f"{direction.name} SL={sl_price:.5f}"
                     )
                     self._cmd_bus.dispatch(MessageEnvelope.create(payload=cmd, version=1))
                 
+                logger.info("AlphaWorker: Sleeping 60s...")
                 for _ in range(60):
                     if not self._running:
                         break

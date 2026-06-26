@@ -140,14 +140,15 @@ class MarketScanner:
                 symbol_info = mt5.symbol_info(resolved_symbol)
                 
             spread = symbol_info.spread
-            max_spread = cfg.get("max_spread", 50)
+            max_spread = cfg.get("max_spread_points", 500)
             if spread > max_spread:
                 pipeline_stats.log_reject("spread_too_high", symbol)
                 logger.warning(f"[Scanner] {symbol} skipped: spread too high ({spread} > {max_spread})")
                 log_explainability("REJECT", "spread_filter", [f"spread_filter ({spread} > {max_spread})"])
                 continue
                 
-            timeframe = cfg.get("timeframe", "M5")
+            from config.settings import settings
+            timeframe = settings.TIMEFRAME
             df = mt5_client.get_historical_data(symbol, timeframe, 500)
             if df is None or df.empty:
                 logger.warning(f"[Scanner] Failed to get data for {symbol}")

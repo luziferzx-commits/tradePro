@@ -53,6 +53,17 @@ class TradeOutcomeLogger:
         strategy_id: str,
     ):
         """เรียกเมื่อ order ถูก fill — บันทึก metadata ไว้รอ outcome"""
+        
+        # Calculate session based on current UTC hour if not provided
+        if not session or session == "Unknown":
+            hour_utc = datetime.utcnow().hour
+            if 7 <= hour_utc < 10: session = "London"
+            elif 13 <= hour_utc < 16: session = "NY"
+            elif 16 <= hour_utc < 24: session = "Asia_Early"
+            elif 0 <= hour_utc < 4: session = "Asia_Late"
+            elif 4 <= hour_utc < 7: session = "Dead_PreLondon"
+            else: session = "Dead_Lunch"
+            
         with self._lock:
             self._pending[symbol] = {
                 "symbol": symbol,

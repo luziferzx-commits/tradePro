@@ -1,0 +1,3878 @@
+BTCUSD:
+  ASIA:
+  - rule_id: PD_429d0efcf09051c1
+    source_pattern_id: PD_429d0efcf09051c1
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: ASIA
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Rising (20-25)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.429037699756727
+    expectancy_r: 0.16730486646677054
+    win_rate: 53.84615384615385
+    occurrences: 78
+    source_feature_count: 78
+    source_outcome_count: 78
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:32:49.111129'
+  - rule_id: PD_033ede6948150e89
+    source_pattern_id: PD_033ede6948150e89
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: ASIA
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5943363090597888
+    expectancy_r: 0.2479430857935595
+    win_rate: 51.798561151079134
+    occurrences: 139
+    source_feature_count: 139
+    source_outcome_count: 139
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:32:54.999154'
+  - rule_id: PD_eeea92e747918d37
+    source_pattern_id: PD_eeea92e747918d37
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: ASIA
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.510673965911901
+    expectancy_r: 0.18653581281925158
+    win_rate: 54.08163265306123
+    occurrences: 98
+    source_feature_count: 98
+    source_outcome_count: 98
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:32:58.634180'
+  - rule_id: PD_7073b10e2fbe77fb
+    source_pattern_id: PD_7073b10e2fbe77fb
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: ASIA
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.7142857142857144
+    expectancy_r: 0.6101694915254238
+    win_rate: 64.40677966101694
+    occurrences: 59
+    source_feature_count: 59
+    source_outcome_count: 59
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:01.201178'
+  LONDON:
+  - rule_id: PD_fcb56574141bc723
+    source_pattern_id: PD_fcb56574141bc723
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: LONDON
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Rising (20-25)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5576923076923077
+    expectancy_r: 0.27358490566037735
+    win_rate: 50.943396226415096
+    occurrences: 53
+    source_feature_count: 53
+    source_outcome_count: 53
+    confidence_score: 0.96
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:03.424980'
+  - rule_id: PD_e1d3a075c1efe653
+    source_pattern_id: PD_e1d3a075c1efe653
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: LONDON
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.3181818181818183
+    expectancy_r: 0.5178571428571429
+    win_rate: 60.71428571428571
+    occurrences: 84
+    source_feature_count: 84
+    source_outcome_count: 84
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:08.740037'
+  - rule_id: PD_28c1734a412b0059
+    source_pattern_id: PD_28c1734a412b0059
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: LONDON
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4627216024310985
+    expectancy_r: 0.19123498518060297
+    win_rate: 54.6875
+    occurrences: 64
+    source_feature_count: 64
+    source_outcome_count: 64
+    confidence_score: 0.96
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:10.879743'
+  - rule_id: PD_a201fe6782957d46
+    source_pattern_id: PD_a201fe6782957d46
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: LONDON
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.608695652173913
+    expectancy_r: 0.5873015873015873
+    win_rate: 63.49206349206349
+    occurrences: 63
+    source_feature_count: 63
+    source_outcome_count: 63
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:14.557622'
+  LONDON_NY_OVERLAP:
+  - rule_id: PD_ac9c9fb29b50033d
+    source_pattern_id: PD_ac9c9fb29b50033d
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.285062130439801
+    expectancy_r: 0.1374869459627575
+    win_rate: 50.0
+    occurrences: 98
+    source_feature_count: 98
+    source_outcome_count: 98
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:15.529684'
+  - rule_id: PD_6dbe0a915b0fd2b5
+    source_pattern_id: PD_6dbe0a915b0fd2b5
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Weak (<20)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.3729374638958327
+    expectancy_r: 0.19208454186003562
+    win_rate: 47.14285714285714
+    occurrences: 70
+    source_feature_count: 70
+    source_outcome_count: 70
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:21.029847'
+  - rule_id: PD_400b7d8b99930828
+    source_pattern_id: PD_400b7d8b99930828
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6048120924511906
+    expectancy_r: 0.2371123435785139
+    win_rate: 53.57142857142857
+    occurrences: 56
+    source_feature_count: 56
+    source_outcome_count: 56
+    confidence_score: 0.96
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:25.731599'
+  - rule_id: PD_45102f5a1553a1eb
+    source_pattern_id: PD_45102f5a1553a1eb
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.9772727272727273
+    expectancy_r: 0.4215686274509804
+    win_rate: 56.86274509803921
+    occurrences: 51
+    source_feature_count: 51
+    source_outcome_count: 51
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:27.672453'
+  NEW_YORK:
+  - rule_id: PD_37fcb41973703241
+    source_pattern_id: PD_37fcb41973703241
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5360762327199446
+    expectancy_r: 0.18230977496664427
+    win_rate: 57.89473684210527
+    occurrences: 152
+    source_feature_count: 152
+    source_outcome_count: 152
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:29.426148'
+  - rule_id: PD_45d9e07bf965d46c
+    source_pattern_id: PD_45d9e07bf965d46c
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5
+    expectancy_r: 0.25
+    win_rate: 50.0
+    occurrences: 114
+    source_feature_count: 114
+    source_outcome_count: 114
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:34.790336'
+  - rule_id: PD_cd12dfaaefeb362e
+    source_pattern_id: PD_cd12dfaaefeb362e
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: NEW_YORK
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6103185701220342
+    expectancy_r: 0.25231186522414245
+    win_rate: 52.52525252525253
+    occurrences: 198
+    source_feature_count: 198
+    source_outcome_count: 198
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:37.548028'
+  - rule_id: PD_7e9a8f12d009a7f3
+    source_pattern_id: PD_7e9a8f12d009a7f3
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: NEW_YORK
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4544270286741372
+    expectancy_r: 0.2221343650607602
+    win_rate: 50.0
+    occurrences: 74
+    source_feature_count: 74
+    source_outcome_count: 74
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:39.594266'
+  OFF_SESSION:
+  - rule_id: PD_095d57013b86fc3a
+    source_pattern_id: PD_095d57013b86fc3a
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.9049600143851368
+    expectancy_r: 0.27102709147632453
+    win_rate: 65.88235294117646
+    occurrences: 85
+    source_feature_count: 85
+    source_outcome_count: 85
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:42.656050'
+  - rule_id: PD_9c4f94b096e53e1f
+    source_pattern_id: PD_9c4f94b096e53e1f
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.608695652173913
+    expectancy_r: 0.5873015873015873
+    win_rate: 63.49206349206349
+    occurrences: 63
+    source_feature_count: 63
+    source_outcome_count: 63
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:46.172961'
+  - rule_id: PD_b8c60a13d8ad1b24
+    source_pattern_id: PD_b8c60a13d8ad1b24
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.089188872899149
+    expectancy_r: 0.40114587624136966
+    win_rate: 62.71186440677966
+    occurrences: 59
+    source_feature_count: 59
+    source_outcome_count: 59
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:47.656392'
+  - rule_id: PD_a1814a28d888fe12
+    source_pattern_id: PD_a1814a28d888fe12
+    version: '1.0'
+    symbol: BTCUSD
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.9066347899426257
+    expectancy_r: 0.3817523354162962
+    win_rate: 56.666666666666664
+    occurrences: 60
+    source_feature_count: 60
+    source_outcome_count: 60
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:51.811171'
+ETHUSD:
+  ASIA:
+  - rule_id: PD_f7945257bd31fee2
+    source_pattern_id: PD_f7945257bd31fee2
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: ASIA
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.8210090677995805
+    expectancy_r: 0.3538832188791295
+    win_rate: 56.896551724137936
+    occurrences: 58
+    source_feature_count: 58
+    source_outcome_count: 58
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:52.259350'
+  - rule_id: PD_d532a075c35dd122
+    source_pattern_id: PD_d532a075c35dd122
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: ASIA
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Weak (<20)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6945434194247315
+    expectancy_r: 0.3233918305696201
+    win_rate: 53.284671532846716
+    occurrences: 411
+    source_feature_count: 411
+    source_outcome_count: 411
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:33:57.551241'
+  - rule_id: PD_ba61b020cdd41f6d
+    source_pattern_id: PD_ba61b020cdd41f6d
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: ASIA
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5717987105306044
+    expectancy_r: 0.27446338105469015
+    win_rate: 52.0
+    occurrences: 50
+    source_feature_count: 50
+    source_outcome_count: 50
+    confidence_score: 0.96
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:00.387956'
+  - rule_id: PD_5fe466dd81d83df2
+    source_pattern_id: PD_5fe466dd81d83df2
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: ASIA
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.8008114985691572
+    expectancy_r: 0.21947958847410728
+    win_rate: 52.22222222222223
+    occurrences: 90
+    source_feature_count: 90
+    source_outcome_count: 90
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:03.023044'
+  LONDON:
+  - rule_id: PD_3079bfea69903ec1
+    source_pattern_id: PD_3079bfea69903ec1
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: LONDON
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4411179821105797
+    expectancy_r: 0.14315619182770417
+    win_rate: 55.12820512820513
+    occurrences: 78
+    source_feature_count: 78
+    source_outcome_count: 78
+    confidence_score: 0.96
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:04.018198'
+  - rule_id: PD_bd68ac5f2027cd53
+    source_pattern_id: PD_bd68ac5f2027cd53
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: LONDON
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.248929004376241
+    expectancy_r: 0.42960764501634574
+    win_rate: 61.79775280898876
+    occurrences: 178
+    source_feature_count: 178
+    source_outcome_count: 178
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:10.518010'
+  - rule_id: PD_60e731cc83ff775b
+    source_pattern_id: PD_60e731cc83ff775b
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: LONDON
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.7568862401035419
+    expectancy_r: 0.29596948045580923
+    win_rate: 55.172413793103445
+    occurrences: 58
+    source_feature_count: 58
+    source_outcome_count: 58
+    confidence_score: 0.96
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:13.657908'
+  - rule_id: PD_ed15dd9e5e0591ef
+    source_pattern_id: PD_ed15dd9e5e0591ef
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: LONDON
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.7567005744455753
+    expectancy_r: 0.27604696903961334
+    win_rate: 58.03571428571429
+    occurrences: 112
+    source_feature_count: 112
+    source_outcome_count: 112
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:17.889295'
+  LONDON_NY_OVERLAP:
+  - rule_id: PD_fc41de679ddac587
+    source_pattern_id: PD_fc41de679ddac587
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6157017550860684
+    expectancy_r: 0.2584929376253576
+    win_rate: 56.17977528089888
+    occurrences: 89
+    source_feature_count: 89
+    source_outcome_count: 89
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:18.587755'
+  - rule_id: PD_09a8131d28429b36
+    source_pattern_id: PD_09a8131d28429b36
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Weak (<20)
+      trend_bucket: Down
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.7881687023787474
+    expectancy_r: 0.34452049016672076
+    win_rate: 55.4054054054054
+    occurrences: 148
+    source_feature_count: 148
+    source_outcome_count: 148
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:21.984924'
+  - rule_id: PD_4e55d793c1c833f1
+    source_pattern_id: PD_4e55d793c1c833f1
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.423076923076923
+    expectancy_r: 0.5441176470588235
+    win_rate: 61.76470588235294
+    occurrences: 68
+    source_feature_count: 68
+    source_outcome_count: 68
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:25.797173'
+  - rule_id: PD_ef49170adcd2f90e
+    source_pattern_id: PD_ef49170adcd2f90e
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.122854245844631
+    expectancy_r: 0.38471563357732996
+    win_rate: 57.3170731707317
+    occurrences: 82
+    source_feature_count: 82
+    source_outcome_count: 82
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:29.558427'
+  NEW_YORK:
+  - rule_id: PD_512eefef72bb8d1f
+    source_pattern_id: PD_512eefef72bb8d1f
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.081560387509546
+    expectancy_r: 0.43781535151405143
+    win_rate: 58.119658119658126
+    occurrences: 117
+    source_feature_count: 117
+    source_outcome_count: 117
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:31.727604'
+  - rule_id: PD_af7d69114adf9644
+    source_pattern_id: PD_af7d69114adf9644
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.7304835653770716
+    expectancy_r: 0.2500738008141408
+    win_rate: 51.94805194805194
+    occurrences: 154
+    source_feature_count: 154
+    source_outcome_count: 154
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:34.283711'
+  - rule_id: PD_9199707bbc178e45
+    source_pattern_id: PD_9199707bbc178e45
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: NEW_YORK
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.5492894642627046
+    expectancy_r: 0.39935765591947503
+    win_rate: 67.0
+    occurrences: 100
+    source_feature_count: 100
+    source_outcome_count: 100
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:38.321673'
+  - rule_id: PD_6a78ba719631b8e9
+    source_pattern_id: PD_6a78ba719631b8e9
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: NEW_YORK
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.0237111038914493
+    expectancy_r: 0.3134894357354804
+    win_rate: 59.64912280701754
+    occurrences: 57
+    source_feature_count: 57
+    source_outcome_count: 57
+    confidence_score: 0.96
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:42.062336'
+  OFF_SESSION:
+  - rule_id: PD_933e24c4f1e72775
+    source_pattern_id: PD_933e24c4f1e72775
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.773958733421149
+    expectancy_r: 0.35179942428234046
+    win_rate: 54.54545454545454
+    occurrences: 77
+    source_feature_count: 77
+    source_outcome_count: 77
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:44.721704'
+  - rule_id: PD_25c4936c66898cbb
+    source_pattern_id: PD_25c4936c66898cbb
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Weak (<20)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.7663933452318827
+    expectancy_r: 0.2487438395361319
+    win_rate: 57.69944341372912
+    occurrences: 539
+    source_feature_count: 539
+    source_outcome_count: 539
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:48.541307'
+  - rule_id: PD_8b68472caa632741
+    source_pattern_id: PD_8b68472caa632741
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.046282600443085
+    expectancy_r: 0.4389576427146275
+    win_rate: 58.04597701149425
+    occurrences: 348
+    source_feature_count: 348
+    source_outcome_count: 348
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:49.461667'
+  - rule_id: PD_c28539bccfd482a2
+    source_pattern_id: PD_c28539bccfd482a2
+    version: '1.0'
+    symbol: ETHUSD
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.404445650175823
+    expectancy_r: 0.5241273961068755
+    win_rate: 60.78431372549019
+    occurrences: 51
+    source_feature_count: 51
+    source_outcome_count: 51
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:52.182791'
+EURUSD:
+  ASIA:
+  - rule_id: PD_17aa2e116f0659f0
+    source_pattern_id: PD_17aa2e116f0659f0
+    version: '1.0'
+    symbol: EURUSD
+    session_label: ASIA
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.7921966906016809
+    expectancy_r: 0.3327340980455193
+    win_rate: 55.55555555555556
+    occurrences: 63
+    source_feature_count: 63
+    source_outcome_count: 63
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:54.516965'
+  - rule_id: PD_28392fc1d100fd49
+    source_pattern_id: PD_28392fc1d100fd49
+    version: '1.0'
+    symbol: EURUSD
+    session_label: ASIA
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Weak (<20)
+      trend_bucket: Up
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.3928571428571428
+    expectancy_r: 0.2037037037037037
+    win_rate: 48.148148148148145
+    occurrences: 459
+    source_feature_count: 459
+    source_outcome_count: 459
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:59.710983'
+  - rule_id: PD_5c93623fd6c4e9be
+    source_pattern_id: PD_5c93623fd6c4e9be
+    version: '1.0'
+    symbol: EURUSD
+    session_label: ASIA
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4309357341871776
+    expectancy_r: 0.18907539371689502
+    win_rate: 52.488687782805435
+    occurrences: 221
+    source_feature_count: 221
+    source_outcome_count: 221
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:34:59.849134'
+  - rule_id: PD_2e9992c1be75a8f2
+    source_pattern_id: PD_2e9992c1be75a8f2
+    version: '1.0'
+    symbol: EURUSD
+    session_label: ASIA
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5692502967716018
+    expectancy_r: 0.21685072812997253
+    win_rate: 57.345971563981045
+    occurrences: 211
+    source_feature_count: 211
+    source_outcome_count: 211
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:03.868979'
+  LONDON:
+  - rule_id: PD_da8c5bcba9bf2aed
+    source_pattern_id: PD_da8c5bcba9bf2aed
+    version: '1.0'
+    symbol: EURUSD
+    session_label: LONDON
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.019339003134082
+    expectancy_r: 0.37617610873921004
+    win_rate: 59.3984962406015
+    occurrences: 133
+    source_feature_count: 133
+    source_outcome_count: 133
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:06.797022'
+  - rule_id: PD_7fd87f7a54cf0828
+    source_pattern_id: PD_7fd87f7a54cf0828
+    version: '1.0'
+    symbol: EURUSD
+    session_label: LONDON
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Weak (<20)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4983675555449016
+    expectancy_r: 0.24577030136460898
+    win_rate: 50.68493150684932
+    occurrences: 146
+    source_feature_count: 146
+    source_outcome_count: 146
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:09.674855'
+  - rule_id: PD_b3861552f1d95859
+    source_pattern_id: PD_b3861552f1d95859
+    version: '1.0'
+    symbol: EURUSD
+    session_label: LONDON
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4532309403177273
+    expectancy_r: 0.21000380451727635
+    win_rate: 53.333333333333336
+    occurrences: 60
+    source_feature_count: 60
+    source_outcome_count: 60
+    confidence_score: 0.96
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:13.462082'
+  - rule_id: PD_2b3190c4ec0e4f63
+    source_pattern_id: PD_2b3190c4ec0e4f63
+    version: '1.0'
+    symbol: EURUSD
+    session_label: LONDON
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4558823529411764
+    expectancy_r: 0.23134328358208955
+    win_rate: 49.25373134328358
+    occurrences: 67
+    source_feature_count: 67
+    source_outcome_count: 67
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:14.956760'
+  LONDON_NY_OVERLAP:
+  - rule_id: PD_d57a91fa46bc71fb
+    source_pattern_id: PD_d57a91fa46bc71fb
+    version: '1.0'
+    symbol: EURUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.3256352007107601
+    expectancy_r: 0.1713869477425053
+    win_rate: 47.368421052631575
+    occurrences: 133
+    source_feature_count: 133
+    source_outcome_count: 133
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:17.084398'
+  - rule_id: PD_e41d8e3d7a04c287
+    source_pattern_id: PD_e41d8e3d7a04c287
+    version: '1.0'
+    symbol: EURUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Weak (<20)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5769397815012496
+    expectancy_r: 0.24459712728558156
+    win_rate: 51.85185185185185
+    occurrences: 108
+    source_feature_count: 108
+    source_outcome_count: 108
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:21.014000'
+  - rule_id: PD_23abd55647b69884
+    source_pattern_id: PD_23abd55647b69884
+    version: '1.0'
+    symbol: EURUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.7151940503881524
+    expectancy_r: 0.3167120881775222
+    win_rate: 54.54545454545454
+    occurrences: 66
+    source_feature_count: 66
+    source_outcome_count: 66
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:24.725972'
+  - rule_id: PD_430c1f2f250156b3
+    source_pattern_id: PD_430c1f2f250156b3
+    version: '1.0'
+    symbol: EURUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5029739695546616
+    expectancy_r: 0.23457959292479713
+    win_rate: 50.0
+    occurrences: 62
+    source_feature_count: 62
+    source_outcome_count: 62
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:26.345895'
+  NEW_YORK:
+  - rule_id: PD_c3f3d0b96fcf90f9
+    source_pattern_id: PD_c3f3d0b96fcf90f9
+    version: '1.0'
+    symbol: EURUSD
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Weak (<20)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5
+    expectancy_r: 0.25
+    win_rate: 50.0
+    occurrences: 162
+    source_feature_count: 162
+    source_outcome_count: 162
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:29.570948'
+  - rule_id: PD_e5cdeecd7ceff5a2
+    source_pattern_id: PD_e5cdeecd7ceff5a2
+    version: '1.0'
+    symbol: EURUSD
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 3.145870541724515
+    expectancy_r: 0.43400915724855005
+    win_rate: 61.72839506172839
+    occurrences: 81
+    source_feature_count: 81
+    source_outcome_count: 81
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:32.225660'
+  - rule_id: PD_3897ca48707e6376
+    source_pattern_id: PD_3897ca48707e6376
+    version: '1.0'
+    symbol: EURUSD
+    session_label: NEW_YORK
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.2331472397504797
+    expectancy_r: 0.07325279685467019
+    win_rate: 50.2262443438914
+    occurrences: 663
+    source_feature_count: 663
+    source_outcome_count: 663
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:33.590393'
+  - rule_id: PD_be135407fefcbef1
+    source_pattern_id: PD_be135407fefcbef1
+    version: '1.0'
+    symbol: EURUSD
+    session_label: NEW_YORK
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.0667938259188863
+    expectancy_r: 0.2163913527005825
+    win_rate: 59.84848484848485
+    occurrences: 132
+    source_feature_count: 132
+    source_outcome_count: 132
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:37.152683'
+  OFF_SESSION:
+  - rule_id: PD_bf80afbaa99d4a2c
+    source_pattern_id: PD_bf80afbaa99d4a2c
+    version: '1.0'
+    symbol: EURUSD
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Weak (<20)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 3.7346301728668516
+    expectancy_r: 0.4076913397467165
+    win_rate: 71.23287671232876
+    occurrences: 73
+    source_feature_count: 73
+    source_outcome_count: 73
+    confidence_score: 0.96
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:38.090769'
+  - rule_id: PD_c54ae1dbf91fa058
+    source_pattern_id: PD_c54ae1dbf91fa058
+    version: '1.0'
+    symbol: EURUSD
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Weak (<20)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.2128857952877288
+    expectancy_r: 0.08553028948999235
+    win_rate: 48.837209302325576
+    occurrences: 129
+    source_feature_count: 129
+    source_outcome_count: 129
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:42.151467'
+  - rule_id: PD_3f6ddcf15ef6a02d
+    source_pattern_id: PD_3f6ddcf15ef6a02d
+    version: '1.0'
+    symbol: EURUSD
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.6647679171841747
+    expectancy_r: 0.39948888706514585
+    win_rate: 64.1891891891892
+    occurrences: 148
+    source_feature_count: 148
+    source_outcome_count: 148
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:44.224486'
+  - rule_id: PD_eb60b3649c69f6df
+    source_pattern_id: PD_eb60b3649c69f6df
+    version: '1.0'
+    symbol: EURUSD
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.7696218151005376
+    expectancy_r: 0.3427400749507418
+    win_rate: 53.57142857142857
+    occurrences: 140
+    source_feature_count: 140
+    source_outcome_count: 140
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:45.209412'
+GBPUSD:
+  ASIA:
+  - rule_id: PD_a539ba88f7754c82
+    source_pattern_id: PD_a539ba88f7754c82
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: ASIA
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5794208441569546
+    expectancy_r: 0.22520241490038967
+    win_rate: 52.071005917159766
+    occurrences: 169
+    source_feature_count: 169
+    source_outcome_count: 169
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:46.976630'
+  - rule_id: PD_629c1eadc1357290
+    source_pattern_id: PD_629c1eadc1357290
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: ASIA
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6700044451681235
+    expectancy_r: 0.24973957616386805
+    win_rate: 53.46534653465347
+    occurrences: 101
+    source_feature_count: 101
+    source_outcome_count: 101
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:52.706161'
+  - rule_id: PD_bdc2dcf0f8b9de72
+    source_pattern_id: PD_bdc2dcf0f8b9de72
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: ASIA
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.1424992997895496
+    expectancy_r: 0.46444824294613246
+    win_rate: 58.06451612903226
+    occurrences: 124
+    source_feature_count: 124
+    source_outcome_count: 124
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:53.300159'
+  - rule_id: PD_d9d246c3d671fef2
+    source_pattern_id: PD_d9d246c3d671fef2
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: ASIA
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.542857142857143
+    expectancy_r: 0.2676056338028169
+    win_rate: 50.70422535211267
+    occurrences: 71
+    source_feature_count: 71
+    source_outcome_count: 71
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:56.442352'
+  LONDON:
+  - rule_id: PD_f9b117fded588967
+    source_pattern_id: PD_f9b117fded588967
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: LONDON
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.3199391427948435
+    expectancy_r: 0.15726985458243833
+    win_rate: 48.13278008298755
+    occurrences: 241
+    source_feature_count: 241
+    source_outcome_count: 241
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:35:59.092885'
+  - rule_id: PD_7e77fa6247a3fe30
+    source_pattern_id: PD_7e77fa6247a3fe30
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: LONDON
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.361349103511285
+    expectancy_r: 0.17061489300658353
+    win_rate: 50.67567567567568
+    occurrences: 148
+    source_feature_count: 148
+    source_outcome_count: 148
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:01.346335'
+  - rule_id: PD_356f16370eea511c
+    source_pattern_id: PD_356f16370eea511c
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: LONDON
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.2380670749050897
+    expectancy_r: 0.12840074434945645
+    win_rate: 45.0
+    occurrences: 80
+    source_feature_count: 80
+    source_outcome_count: 80
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:04.148370'
+  - rule_id: PD_e8744a3f925318ad
+    source_pattern_id: PD_e8744a3f925318ad
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: LONDON
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5540034111757286
+    expectancy_r: 0.26806616669793315
+    win_rate: 51.61290322580645
+    occurrences: 93
+    source_feature_count: 93
+    source_outcome_count: 93
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:06.917672'
+  LONDON_NY_OVERLAP:
+  - rule_id: PD_98a564a177d0763e
+    source_pattern_id: PD_98a564a177d0763e
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Weak (<20)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.0742699111123057
+    expectancy_r: 0.39322907756969966
+    win_rate: 60.0
+    occurrences: 55
+    source_feature_count: 55
+    source_outcome_count: 55
+    confidence_score: 0.96
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:10.746092'
+  - rule_id: PD_a88609165f845357
+    source_pattern_id: PD_a88609165f845357
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Rising (20-25)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.642278920461032
+    expectancy_r: 0.2967774507187995
+    win_rate: 51.67785234899329
+    occurrences: 149
+    source_feature_count: 149
+    source_outcome_count: 149
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:13.495726'
+  - rule_id: PD_fd41769e4c5320bc
+    source_pattern_id: PD_fd41769e4c5320bc
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.9784718486443311
+    expectancy_r: 0.3725884117280669
+    win_rate: 58.51063829787234
+    occurrences: 94
+    source_feature_count: 94
+    source_outcome_count: 94
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:14.438460'
+  - rule_id: PD_3c7b2b8636de2406
+    source_pattern_id: PD_3c7b2b8636de2406
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.3718679950061166
+    expectancy_r: 0.4245178553614022
+    win_rate: 64.61538461538461
+    occurrences: 65
+    source_feature_count: 65
+    source_outcome_count: 65
+    confidence_score: 0.97
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:17.362743'
+  NEW_YORK:
+  - rule_id: PD_df6d7ff29deb904a
+    source_pattern_id: PD_df6d7ff29deb904a
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Weak (<20)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5123293156205557
+    expectancy_r: 0.25240892129347814
+    win_rate: 50.318471337579616
+    occurrences: 157
+    source_feature_count: 157
+    source_outcome_count: 157
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:18.467726'
+  - rule_id: PD_bbdaafc6fac03740
+    source_pattern_id: PD_bbdaafc6fac03740
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 5.228483191106033
+    expectancy_r: 0.6530931399326612
+    win_rate: 75.6578947368421
+    occurrences: 152
+    source_feature_count: 152
+    source_outcome_count: 152
+    confidence_score: 0.99
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:22.920698'
+  - rule_id: PD_9ea141d2a208916e
+    source_pattern_id: PD_9ea141d2a208916e
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: NEW_YORK
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6500709645088567
+    expectancy_r: 0.2629125470184309
+    win_rate: 53.84615384615385
+    occurrences: 52
+    source_feature_count: 52
+    source_outcome_count: 52
+    confidence_score: 0.96
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:24.961595'
+  - rule_id: PD_525c6fda05f348b4
+    source_pattern_id: PD_525c6fda05f348b4
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: NEW_YORK
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 3.5848312562504687
+    expectancy_r: 0.6699634456924448
+    win_rate: 69.5187165775401
+    occurrences: 187
+    source_feature_count: 187
+    source_outcome_count: 187
+    confidence_score: 0.99
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:27.988971'
+  OFF_SESSION:
+  - rule_id: PD_179f0c218581004b
+    source_pattern_id: PD_179f0c218581004b
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Rising (20-25)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 3.054709682582144
+    expectancy_r: 0.414864099073658
+    win_rate: 68.77637130801688
+    occurrences: 237
+    source_feature_count: 237
+    source_outcome_count: 237
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:29.819364'
+  - rule_id: PD_480ba7af5d02d300
+    source_pattern_id: PD_480ba7af5d02d300
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.597198057206195
+    expectancy_r: 0.15794813573061026
+    win_rate: 57.3170731707317
+    occurrences: 82
+    source_feature_count: 82
+    source_outcome_count: 82
+    confidence_score: 0.96
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:32.555859'
+  - rule_id: PD_09bf14f9d34681ab
+    source_pattern_id: PD_09bf14f9d34681ab
+    version: '1.0'
+    symbol: GBPUSD
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.1774317565773478
+    expectancy_r: 0.3871456489202895
+    win_rate: 60.83333333333333
+    occurrences: 120
+    source_feature_count: 120
+    source_outcome_count: 120
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:38.318410'
+NAS100:
+  ASIA:
+  - rule_id: PD_4d865a8388cf4df1
+    source_pattern_id: PD_4d865a8388cf4df1
+    version: '1.0'
+    symbol: NAS100
+    session_label: ASIA
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Weak (<20)
+      trend_bucket: Up
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.1874401342992584
+    expectancy_r: 0.48063053054969984
+    win_rate: 59.523809523809526
+    occurrences: 168
+    source_feature_count: 168
+    source_outcome_count: 168
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:41.610417'
+  - rule_id: PD_8a17bedc39b5ea5d
+    source_pattern_id: PD_8a17bedc39b5ea5d
+    version: '1.0'
+    symbol: NAS100
+    session_label: ASIA
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6551724137931034
+    expectancy_r: 0.3114754098360656
+    win_rate: 52.459016393442624
+    occurrences: 61
+    source_feature_count: 61
+    source_outcome_count: 61
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:46.670329'
+  - rule_id: PD_f8011be61f5d8c03
+    source_pattern_id: PD_f8011be61f5d8c03
+    version: '1.0'
+    symbol: NAS100
+    session_label: ASIA
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.217391304347826
+    expectancy_r: 0.49122807017543857
+    win_rate: 59.64912280701754
+    occurrences: 57
+    source_feature_count: 57
+    source_outcome_count: 57
+    confidence_score: 0.97
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:50.171336'
+  - rule_id: PD_0855dfb6a7cab49b
+    source_pattern_id: PD_0855dfb6a7cab49b
+    version: '1.0'
+    symbol: NAS100
+    session_label: ASIA
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.979113619351839
+    expectancy_r: 0.20893522487067334
+    win_rate: 58.82352941176471
+    occurrences: 136
+    source_feature_count: 136
+    source_outcome_count: 136
+    confidence_score: 0.97
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:50.671260'
+  LONDON:
+  - rule_id: PD_779d2266f416ed4c
+    source_pattern_id: PD_779d2266f416ed4c
+    version: '1.0'
+    symbol: NAS100
+    session_label: LONDON
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.828125
+    expectancy_r: 0.3732394366197183
+    win_rate: 54.929577464788736
+    occurrences: 71
+    source_feature_count: 71
+    source_outcome_count: 71
+    confidence_score: 0.97
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:54.686328'
+  - rule_id: PD_e3af656aecdf3c5e
+    source_pattern_id: PD_e3af656aecdf3c5e
+    version: '1.0'
+    symbol: NAS100
+    session_label: LONDON
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4794666695598895
+    expectancy_r: 0.22880059871276745
+    win_rate: 50.0
+    occurrences: 176
+    source_feature_count: 176
+    source_outcome_count: 176
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:36:57.772097'
+  - rule_id: PD_e580ae031511e30d
+    source_pattern_id: PD_e580ae031511e30d
+    version: '1.0'
+    symbol: NAS100
+    session_label: LONDON
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.3011318216855905
+    expectancy_r: 0.1607985455602668
+    win_rate: 46.601941747572816
+    occurrences: 103
+    source_feature_count: 103
+    source_outcome_count: 103
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:03.064391'
+  - rule_id: PD_908e9d4e8f95d59e
+    source_pattern_id: PD_908e9d4e8f95d59e
+    version: '1.0'
+    symbol: NAS100
+    session_label: LONDON
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.2962962962962963
+    expectancy_r: 0.15894039735099338
+    win_rate: 46.35761589403973
+    occurrences: 302
+    source_feature_count: 302
+    source_outcome_count: 302
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:04.387013'
+  LONDON_NY_OVERLAP:
+  - rule_id: PD_72d1deb2aa8a8ff7
+    source_pattern_id: PD_72d1deb2aa8a8ff7
+    version: '1.0'
+    symbol: NAS100
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.423134682149079
+    expectancy_r: 0.21156734107453953
+    win_rate: 50.0
+    occurrences: 68
+    source_feature_count: 68
+    source_outcome_count: 68
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:08.380637'
+  - rule_id: PD_9e2569ff7974b025
+    source_pattern_id: PD_9e2569ff7974b025
+    version: '1.0'
+    symbol: NAS100
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Weak (<20)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6759013910294742
+    expectancy_r: 0.2996431874913261
+    win_rate: 51.94805194805194
+    occurrences: 77
+    source_feature_count: 77
+    source_outcome_count: 77
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:11.545246'
+  NEW_YORK:
+  - rule_id: PD_85e9c1408ab5fc54
+    source_pattern_id: PD_85e9c1408ab5fc54
+    version: '1.0'
+    symbol: NAS100
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Weak (<20)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.3985177426439632
+    expectancy_r: 0.5105699695366849
+    win_rate: 63.49206349206349
+    occurrences: 63
+    source_feature_count: 63
+    source_outcome_count: 63
+    confidence_score: 0.97
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:21.123917'
+  - rule_id: PD_f2a1840536431ea7
+    source_pattern_id: PD_f2a1840536431ea7
+    version: '1.0'
+    symbol: NAS100
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Rising (20-25)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.3089531129410392
+    expectancy_r: 0.1553913029085646
+    win_rate: 47.44897959183674
+    occurrences: 196
+    source_feature_count: 196
+    source_outcome_count: 196
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:23.942096'
+  - rule_id: PD_1d08e8eaebfc3648
+    source_pattern_id: PD_1d08e8eaebfc3648
+    version: '1.0'
+    symbol: NAS100
+    session_label: NEW_YORK
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.0138728117183327
+    expectancy_r: 0.3455692248930026
+    win_rate: 60.43956043956044
+    occurrences: 91
+    source_feature_count: 91
+    source_outcome_count: 91
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:26.612879'
+  - rule_id: PD_736f2d3b90859de3
+    source_pattern_id: PD_736f2d3b90859de3
+    version: '1.0'
+    symbol: NAS100
+    session_label: NEW_YORK
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.287041720897107
+    expectancy_r: 0.15273847544239005
+    win_rate: 46.56172328086164
+    occurrences: 1207
+    source_feature_count: 1207
+    source_outcome_count: 1207
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:27.463934'
+  OFF_SESSION:
+  - rule_id: PD_871f69b02e00b8e3
+    source_pattern_id: PD_871f69b02e00b8e3
+    version: '1.0'
+    symbol: NAS100
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.8501455470846264
+    expectancy_r: 0.2780015276679998
+    win_rate: 56.896551724137936
+    occurrences: 58
+    source_feature_count: 58
+    source_outcome_count: 58
+    confidence_score: 0.96
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:30.102500'
+  - rule_id: PD_f6b3f712e3f04297
+    source_pattern_id: PD_f6b3f712e3f04297
+    version: '1.0'
+    symbol: NAS100
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Weak (<20)
+      trend_bucket: Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 4.169165315179632
+    expectancy_r: 0.6742595553657427
+    win_rate: 72.05882352941177
+    occurrences: 68
+    source_feature_count: 68
+    source_outcome_count: 68
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:35.030715'
+  - rule_id: PD_ffbb8f10e555d3b8
+    source_pattern_id: PD_ffbb8f10e555d3b8
+    version: '1.0'
+    symbol: NAS100
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Strong (25-40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.0257449597319126
+    expectancy_r: 0.32221491602085944
+    win_rate: 60.89108910891089
+    occurrences: 404
+    source_feature_count: 404
+    source_outcome_count: 404
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:37.654732'
+  - rule_id: PD_966b09196f734106
+    source_pattern_id: PD_966b09196f734106
+    version: '1.0'
+    symbol: NAS100
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.2067731502340187
+    expectancy_r: 0.23415522950382361
+    win_rate: 65.15151515151516
+    occurrences: 66
+    source_feature_count: 66
+    source_outcome_count: 66
+    confidence_score: 0.95
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:41.541729'
+USDJPY:
+  ASIA:
+  - rule_id: PD_e09e89336a03cfe7
+    source_pattern_id: PD_e09e89336a03cfe7
+    version: '1.0'
+    symbol: USDJPY
+    session_label: ASIA
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5175823131029977
+    expectancy_r: 0.2544048657624904
+    win_rate: 50.847457627118644
+    occurrences: 118
+    source_feature_count: 118
+    source_outcome_count: 118
+    confidence_score: 0.98
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:43.340299'
+  - rule_id: PD_375e1f9de52afb81
+    source_pattern_id: PD_375e1f9de52afb81
+    version: '1.0'
+    symbol: USDJPY
+    session_label: ASIA
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5834513559528391
+    expectancy_r: 0.2708462314448037
+    win_rate: 51.31578947368421
+    occurrences: 76
+    source_feature_count: 76
+    source_outcome_count: 76
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:48.592221'
+  - rule_id: PD_3c49d0dcd622e9c6
+    source_pattern_id: PD_3c49d0dcd622e9c6
+    version: '1.0'
+    symbol: USDJPY
+    session_label: ASIA
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5554370563112294
+    expectancy_r: 0.2678204113391448
+    win_rate: 50.0
+    occurrences: 52
+    source_feature_count: 52
+    source_outcome_count: 52
+    confidence_score: 0.96
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:52.523460'
+  - rule_id: PD_cd642eeb158a9c93
+    source_pattern_id: PD_cd642eeb158a9c93
+    version: '1.0'
+    symbol: USDJPY
+    session_label: ASIA
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6844756185980114
+    expectancy_r: 0.2975983867713466
+    win_rate: 53.266331658291456
+    occurrences: 199
+    source_feature_count: 199
+    source_outcome_count: 199
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:53.664229'
+  LONDON:
+  - rule_id: PD_65611e97f8286026
+    source_pattern_id: PD_65611e97f8286026
+    version: '1.0'
+    symbol: USDJPY
+    session_label: LONDON
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Weak (<20)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5241946379484872
+    expectancy_r: 0.20481832255644974
+    win_rate: 54.25531914893617
+    occurrences: 188
+    source_feature_count: 188
+    source_outcome_count: 188
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:37:57.463313'
+  - rule_id: PD_9ab8301424b507c0
+    source_pattern_id: PD_9ab8301424b507c0
+    version: '1.0'
+    symbol: USDJPY
+    session_label: LONDON
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Weak (<20)
+      trend_bucket: Down
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4522292993630572
+    expectancy_r: 0.2297734627831715
+    win_rate: 49.19093851132686
+    occurrences: 309
+    source_feature_count: 309
+    source_outcome_count: 309
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:03.188430'
+  - rule_id: PD_21bc7685926b31b3
+    source_pattern_id: PD_21bc7685926b31b3
+    version: '1.0'
+    symbol: USDJPY
+    session_label: LONDON
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.9166666666666665
+    expectancy_r: 0.6509433962264151
+    win_rate: 66.0377358490566
+    occurrences: 53
+    source_feature_count: 53
+    source_outcome_count: 53
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:06.268391'
+  - rule_id: PD_0ddb2317652d8ff2
+    source_pattern_id: PD_0ddb2317652d8ff2
+    version: '1.0'
+    symbol: USDJPY
+    session_label: LONDON
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5
+    expectancy_r: 0.25
+    win_rate: 50.0
+    occurrences: 188
+    source_feature_count: 188
+    source_outcome_count: 188
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:08.488201'
+  LONDON_NY_OVERLAP:
+  - rule_id: PD_d76dfe79d61beca7
+    source_pattern_id: PD_d76dfe79d61beca7
+    version: '1.0'
+    symbol: USDJPY
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.748585076470158
+    expectancy_r: 0.5043911085111292
+    win_rate: 67.6923076923077
+    occurrences: 65
+    source_feature_count: 65
+    source_outcome_count: 65
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:11.164298'
+  - rule_id: PD_f56cfe4fb0a4e289
+    source_pattern_id: PD_f56cfe4fb0a4e289
+    version: '1.0'
+    symbol: USDJPY
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Weak (<20)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5218167475965985
+    expectancy_r: 0.25616458518378465
+    win_rate: 50.90909090909091
+    occurrences: 55
+    source_feature_count: 55
+    source_outcome_count: 55
+    confidence_score: 0.96
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:13.638105'
+  - rule_id: PD_a371bd116806f160
+    source_pattern_id: PD_a371bd116806f160
+    version: '1.0'
+    symbol: USDJPY
+    session_label: LONDON_NY_OVERLAP
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.466427059933097
+    expectancy_r: 0.16742296936115508
+    win_rate: 55.82329317269076
+    occurrences: 249
+    source_feature_count: 249
+    source_outcome_count: 249
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:15.512977'
+  - rule_id: PD_1f7eab9ee00ac76b
+    source_pattern_id: PD_1f7eab9ee00ac76b
+    version: '1.0'
+    symbol: USDJPY
+    session_label: LONDON_NY_OVERLAP
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.3188237029426029
+    expectancy_r: 0.13531358088278655
+    win_rate: 51.24999999999999
+    occurrences: 80
+    source_feature_count: 80
+    source_outcome_count: 80
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:18.109918'
+  NEW_YORK:
+  - rule_id: PD_94d5bd6aedf111ab
+    source_pattern_id: PD_94d5bd6aedf111ab
+    version: '1.0'
+    symbol: USDJPY
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.075504988112006
+    expectancy_r: 0.28642094854690353
+    win_rate: 60.46511627906976
+    occurrences: 86
+    source_feature_count: 86
+    source_outcome_count: 86
+    confidence_score: 0.97
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:20.724166'
+  - rule_id: PD_2782539c2a5fbe42
+    source_pattern_id: PD_2782539c2a5fbe42
+    version: '1.0'
+    symbol: USDJPY
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.7706248614175237
+    expectancy_r: 0.6140633314896193
+    win_rate: 64.99162479061977
+    occurrences: 597
+    source_feature_count: 597
+    source_outcome_count: 597
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:27.576682'
+  - rule_id: PD_93776af9833ccd48
+    source_pattern_id: PD_93776af9833ccd48
+    version: '1.0'
+    symbol: USDJPY
+    session_label: NEW_YORK
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.2543353410262266
+    expectancy_r: 0.39674345941261646
+    win_rate: 64.0
+    occurrences: 50
+    source_feature_count: 50
+    source_outcome_count: 50
+    confidence_score: 0.96
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:30.221819'
+  - rule_id: PD_a5848b962b06e20c
+    source_pattern_id: PD_a5848b962b06e20c
+    version: '1.0'
+    symbol: USDJPY
+    session_label: NEW_YORK
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.5789473684210527
+    expectancy_r: 0.5806451612903226
+    win_rate: 63.2258064516129
+    occurrences: 155
+    source_feature_count: 155
+    source_outcome_count: 155
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:33.146704'
+  OFF_SESSION:
+  - rule_id: PD_83b45b8927cb4cc6
+    source_pattern_id: PD_83b45b8927cb4cc6
+    version: '1.0'
+    symbol: USDJPY
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Weak (<20)
+      trend_bucket: Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.9875
+    expectancy_r: 0.42473118279569894
+    win_rate: 56.98924731182796
+    occurrences: 93
+    source_feature_count: 93
+    source_outcome_count: 93
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:35.393129'
+  - rule_id: PD_8da470cf523854bc
+    source_pattern_id: PD_8da470cf523854bc
+    version: '1.0'
+    symbol: USDJPY
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Weak (<20)
+      trend_bucket: Down
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.16
+    expectancy_r: 0.47540983606557374
+    win_rate: 59.01639344262295
+    occurrences: 61
+    source_feature_count: 61
+    source_outcome_count: 61
+    confidence_score: 0.97
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:37.171135'
+  - rule_id: PD_354ea9f0936220fb
+    source_pattern_id: PD_354ea9f0936220fb
+    version: '1.0'
+    symbol: USDJPY
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.7398017629894873
+    expectancy_r: 0.3261604594560013
+    win_rate: 54.54545454545454
+    occurrences: 66
+    source_feature_count: 66
+    source_outcome_count: 66
+    confidence_score: 0.97
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:41.164502'
+  - rule_id: PD_fd22d84a77cbdb68
+    source_pattern_id: PD_fd22d84a77cbdb68
+    version: '1.0'
+    symbol: USDJPY
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.608695652173913
+    expectancy_r: 0.5873015873015873
+    win_rate: 63.49206349206349
+    occurrences: 63
+    source_feature_count: 63
+    source_outcome_count: 63
+    confidence_score: 0.98
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:42.279444'
+XAUUSD:
+  ASIA:
+  - rule_id: PD_49d74e53de201a86
+    source_pattern_id: PD_49d74e53de201a86
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: ASIA
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5274279530686201
+    expectancy_r: 0.1827397843285273
+    win_rate: 59.2814371257485
+    occurrences: 167
+    source_feature_count: 167
+    source_outcome_count: 167
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:45.020886'
+  - rule_id: PD_ab7950eb809fd228
+    source_pattern_id: PD_ab7950eb809fd228
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: ASIA
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6872960235031844
+    expectancy_r: 0.23244780233953638
+    win_rate: 52.121212121212125
+    occurrences: 165
+    source_feature_count: 165
+    source_outcome_count: 165
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:47.300615'
+  - rule_id: PD_67d0b1ee62c7533c
+    source_pattern_id: PD_67d0b1ee62c7533c
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: ASIA
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.3698465298138252
+    expectancy_r: 0.13748301256556292
+    win_rate: 56.16438356164384
+    occurrences: 146
+    source_feature_count: 146
+    source_outcome_count: 146
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:51.350867'
+  - rule_id: PD_c747c9dd3fbe1e33
+    source_pattern_id: PD_c747c9dd3fbe1e33
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: ASIA
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Strong (25-40)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.9705002329379226
+    expectancy_r: 0.6201127136042497
+    win_rate: 65.625
+    occurrences: 64
+    source_feature_count: 64
+    source_outcome_count: 64
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:53.381292'
+  LONDON:
+  - rule_id: PD_ee82fc98f8a9f5d1
+    source_pattern_id: PD_ee82fc98f8a9f5d1
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: LONDON
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4023181724339444
+    expectancy_r: 0.2076480889981649
+    win_rate: 48.38709677419355
+    occurrences: 248
+    source_feature_count: 248
+    source_outcome_count: 248
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:56.504495'
+  - rule_id: PD_efffdaf6ec79d954
+    source_pattern_id: PD_efffdaf6ec79d954
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: LONDON
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4063985855050347
+    expectancy_r: 0.16916926382034134
+    win_rate: 50.326797385620914
+    occurrences: 153
+    source_feature_count: 153
+    source_outcome_count: 153
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:38:58.859699'
+  - rule_id: PD_220066d594d13c6a
+    source_pattern_id: PD_220066d594d13c6a
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: LONDON
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6949877415087182
+    expectancy_r: 0.32029869826053975
+    win_rate: 53.91304347826087
+    occurrences: 115
+    source_feature_count: 115
+    source_outcome_count: 115
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:03.265453'
+  - rule_id: PD_8f68b5476d6a1079
+    source_pattern_id: PD_8f68b5476d6a1079
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: LONDON
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.602112676056338
+    expectancy_r: 0.29114642451759365
+    win_rate: 51.64585698070374
+    occurrences: 881
+    source_feature_count: 881
+    source_outcome_count: 881
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:05.146075'
+  LONDON_NY_OVERLAP:
+  - rule_id: PD_1e012f40d29ed8e0
+    source_pattern_id: PD_1e012f40d29ed8e0
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.3762975536481798
+    expectancy_r: 0.17976002073833444
+    win_rate: 50.0
+    occurrences: 74
+    source_feature_count: 74
+    source_outcome_count: 74
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:07.860222'
+  - rule_id: PD_3593f55edd365b3f
+    source_pattern_id: PD_3593f55edd365b3f
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Rising (20-25)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.570782739093616
+    expectancy_r: 0.22460760853896095
+    win_rate: 51.515151515151516
+    occurrences: 99
+    source_feature_count: 99
+    source_outcome_count: 99
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:11.796254'
+  - rule_id: PD_811b6755636098a7
+    source_pattern_id: PD_811b6755636098a7
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6111982882581197
+    expectancy_r: 0.27097520664214425
+    win_rate: 52.054794520547944
+    occurrences: 73
+    source_feature_count: 73
+    source_outcome_count: 73
+    confidence_score: 0.97
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:13.188876'
+  - rule_id: PD_6e22db4958363f9a
+    source_pattern_id: PD_6e22db4958363f9a
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: LONDON_NY_OVERLAP
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Low
+      adx_bucket: Strong (25-40)
+      trend_bucket: Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.0684878475181967
+    expectancy_r: 0.3839648225064379
+    win_rate: 55.73770491803278
+    occurrences: 61
+    source_feature_count: 61
+    source_outcome_count: 61
+    confidence_score: 0.97
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:16.254082'
+  NEW_YORK:
+  - rule_id: PD_d42dfff43cf0a6a3
+    source_pattern_id: PD_d42dfff43cf0a6a3
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Rising (20-25)
+      trend_bucket: Down
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6188700669070013
+    expectancy_r: 0.2926439851265665
+    win_rate: 52.71317829457365
+    occurrences: 129
+    source_feature_count: 129
+    source_outcome_count: 129
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:19.216746'
+  - rule_id: PD_1efadf49d9f23d1c
+    source_pattern_id: PD_1efadf49d9f23d1c
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: NEW_YORK
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Weak (<20)
+      trend_bucket: Flat
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.566287747980095
+    expectancy_r: 0.19547000214529736
+    win_rate: 59.900990099009896
+    occurrences: 202
+    source_feature_count: 202
+    source_outcome_count: 202
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:22.639128'
+  - rule_id: PD_718444973136066a
+    source_pattern_id: PD_718444973136066a
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: NEW_YORK
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.6339827831738059
+    expectancy_r: 0.16819826178740366
+    win_rate: 58.333333333333336
+    occurrences: 72
+    source_feature_count: 72
+    source_outcome_count: 72
+    confidence_score: 0.95
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_DISCOVERED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:24.765976'
+  - rule_id: PD_47eb905521809a26
+    source_pattern_id: PD_47eb905521809a26
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: NEW_YORK
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: High
+      adx_bucket: Strong (25-40)
+      trend_bucket: Down
+    execution_model:
+      horizon: 10
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4799909199101011
+    expectancy_r: 0.16945799445615806
+    win_rate: 53.14685314685315
+    occurrences: 143
+    source_feature_count: 143
+    source_outcome_count: 143
+    confidence_score: 0.98
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:25.885991'
+  OFF_SESSION:
+  - rule_id: PD_56f1cfaef56ead3e
+    source_pattern_id: PD_56f1cfaef56ead3e
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Rising (20-25)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 20
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.8445422135692982
+    expectancy_r: 0.3652036872238013
+    win_rate: 56.28140703517588
+    occurrences: 199
+    source_feature_count: 199
+    source_outcome_count: 199
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:27.534689'
+  - rule_id: PD_affee93f1e1d95d8
+    source_pattern_id: PD_affee93f1e1d95d8
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: OFF_SESSION
+    regime: RANGE
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Extreme
+      adx_bucket: Weak (<20)
+      trend_bucket: Up
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 2.153225806451613
+    expectancy_r: 0.4735099337748344
+    win_rate: 58.94039735099338
+    occurrences: 151
+    source_feature_count: 151
+    source_outcome_count: 151
+    confidence_score: 0.99
+    stability_verdict: HIGH_VARIANCE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:30.980686'
+  - rule_id: PD_6c821dc8185667a2
+    source_pattern_id: PD_6c821dc8185667a2
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: LONG
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Down
+    execution_model:
+      horizon: 50
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.5725806451612903
+    expectancy_r: 0.2795275590551181
+    win_rate: 51.181102362204726
+    occurrences: 254
+    source_feature_count: 254
+    source_outcome_count: 254
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:34.763789'
+  - rule_id: PD_ef7d10bb6786e196
+    source_pattern_id: PD_ef7d10bb6786e196
+    version: '1.0'
+    symbol: XAUUSD
+    session_label: OFF_SESSION
+    regime: TREND
+    direction: SHORT
+    required_feature_buckets:
+      atr_bucket: Medium
+      adx_bucket: Extreme (>40)
+      trend_bucket: Strong Up
+    execution_model:
+      horizon: 5
+      sl_atr_mult: 1.0
+      tp_atr_mult: 1.5
+    historical_pf: 1.4491264552892864
+    expectancy_r: 0.14248346854872102
+    win_rate: 54.406130268199234
+    occurrences: 261
+    source_feature_count: 261
+    source_outcome_count: 261
+    confidence_score: 0.99
+    stability_verdict: STABLE
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: PATTERN_DISCOVERY_REPORT
+    generated_at: '2026-06-26T19:39:36.650467'

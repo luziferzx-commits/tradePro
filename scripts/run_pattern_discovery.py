@@ -29,6 +29,7 @@ def main():
     parser.add_argument("--symbols", type=str, nargs='+', default=["XAUUSD"])
     parser.add_argument("--sl_mult", type=float, default=1.0)
     parser.add_argument("--tp_mult", type=float, default=1.5)
+    parser.add_argument("--output_suffix", type=str, default="")
     args = parser.parse_args()
 
     if not mt5_client.connect():
@@ -89,7 +90,7 @@ def main():
     df_merged = pd.concat(all_outcomes, ignore_index=True)
     logger.info(f"Mining patterns across {len(df_merged)} total simulated pairs...")
     
-    disc_json, blk_json, final_yaml, total_patterns_mined = PatternDatabase.mine_patterns(df_merged, base_dir, args.sl_mult, args.tp_mult)
+    disc_json, blk_json, final_yaml, total_patterns_mined = PatternDatabase.mine_patterns(df_merged, base_dir, args.sl_mult, args.tp_mult, args.output_suffix)
     
     # Load ABC baseline
     track_a_stats = "No baseline data found."
