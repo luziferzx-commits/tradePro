@@ -14,6 +14,7 @@ import os
 from datetime import datetime
 import pandas as pd
 import numpy as np
+from config.settings import settings
 
 logger = logging.getLogger("GQOS.PatternUpdater")
 
@@ -30,6 +31,7 @@ class PatternConfidenceUpdater:
         self,
         historical_weight: float = 0.7,
         min_live_trades: int = 5,
+        allowed_sources: str | None = None,
     ):
         """
         historical_weight: น้ำหนัก historical data (0.7 = 70%)
@@ -38,6 +40,10 @@ class PatternConfidenceUpdater:
         self.historical_weight = historical_weight
         self.live_weight = 1.0 - historical_weight
         self.min_live_trades = min_live_trades
+        raw_sources = allowed_sources or settings.LEARNING_ALLOWED_SOURCES
+        self.allowed_sources = {s.strip().upper() for s in str(raw_sources).split(",") if s.strip()}
+        self.auto_demote_live_pf_threshold = settings.AUTO_DEMOTE_LIVE_PF_THRESHOLD
+        self.auto_demote_min_live_trades = settings.AUTO_DEMOTE_MIN_LIVE_TRADES
 
     def update(self, outcomes_df: pd.DataFrame) -> dict:
         """
@@ -48,6 +54,15 @@ class PatternConfidenceUpdater:
         if outcomes_df.empty or "pattern_id" not in outcomes_df.columns:
             logger.info("[PatternUpdater] No outcomes to process.")
             return {"updated": 0, "skipped": 0}
+
+        if "source" in outcomes_df.columns:
+            before = len(outcomes_df)
+            outcomes_df = outcomes_df[
+                outcomes_df["source"].fillna("LIVE").astype(str).str.upper().isin(self.allowed_sources)
+            ]
+            logger.info("[PatternUpdater] Source filter kept %s/%s outcome rows.", len(outcomes_df), before)
+            if outcomes_df.empty:
+                return {"updated": 0, "skipped": 0}
 
         if not os.path.exists(PATTERN_DB_PATH):
             logger.error(f"[PatternUpdater] Pattern DB not found: {PATTERN_DB_PATH}")
@@ -63,6 +78,7 @@ class PatternConfidenceUpdater:
 
         updated = 0
         skipped = 0
+        pending_promotions = []
 
         for pattern_id, stats in live_stats.items():
             if stats["n"] < self.min_live_trades:
@@ -77,9 +93,15 @@ class PatternConfidenceUpdater:
             old_pf = float(df_patterns.loc[mask, "profit_factor"].iloc[0])
             old_wr = float(df_patterns.loc[mask, "win_rate"].iloc[0])
 
-            # Rolling update
-            new_pf = (old_pf * self.historical_weight) + (stats["pf"] * self.live_weight)
-            new_wr = (old_wr * self.historical_weight) + (stats["win_rate"] * self.live_weight)
+            # Bayesian Edge Decay
+            prior_n = 50
+            prior_wins = old_wr * prior_n
+            
+            total_n = prior_n + stats["n"]
+            new_wr = (prior_wins + stats["wins"]) / total_n
+            
+            # For profit factor, we use a simple weighted average based on sample sizes
+            new_pf = (old_pf * prior_n + stats["pf"] * stats["n"]) / total_n
 
             df_patterns.loc[mask, "profit_factor"] = round(new_pf, 4)
             df_patterns.loc[mask, "win_rate"] = round(new_wr, 4)
@@ -87,10 +109,46 @@ class PatternConfidenceUpdater:
                 df_patterns.loc[mask, "occurrences"] + stats["n"]
             )
 
+            old_status = df_patterns.loc[mask, "promotion_status"].iloc[0]
+            
             # Re-evaluate promotion status
-            df_patterns.loc[mask, "promotion_status"] = self._evaluate_promotion(
-                new_pf, new_wr, int(df_patterns.loc[mask, "occurrences"].iloc[0])
-            )
+            if (
+                str(old_status) == "LIVE_APPROVED"
+                and stats["n"] >= self.auto_demote_min_live_trades
+                and stats["pf"] < self.auto_demote_live_pf_threshold
+            ):
+                new_status_eval = "SHADOW_PASSED"
+                logger.warning(
+                    "[PatternUpdater] Auto-demoting %s from LIVE_APPROVED: live PF %.2f < %.2f over %s trades",
+                    pattern_id,
+                    stats["pf"],
+                    self.auto_demote_live_pf_threshold,
+                    stats["n"],
+                )
+            elif stats["n"] >= self.auto_demote_min_live_trades and stats["pf"] < 0.85:
+                new_status_eval = "DEMOTED"
+                logger.warning(
+                    "[PatternUpdater] Auto-demoting %s: live PF %.2f over %s trades",
+                    pattern_id,
+                    stats["pf"],
+                    stats["n"],
+                )
+            else:
+                new_status_eval = self._evaluate_promotion(
+                    new_pf, new_wr, int(df_patterns.loc[mask, "occurrences"].iloc[0]), str(old_status)
+                )
+            
+            if new_status_eval == "PENDING_APPROVAL":
+                pending_promotions.append({
+                    "pattern_id": pattern_id,
+                    "old_pf": old_pf,
+                    "new_pf": new_pf,
+                    "win_rate": new_wr,
+                    "n": total_n
+                })
+                # Leave old status in place until confirmed
+            else:
+                df_patterns.loc[mask, "promotion_status"] = new_status_eval
 
             updated += 1
             logger.info(
@@ -103,9 +161,9 @@ class PatternConfidenceUpdater:
         # Save updated DB
         df_patterns.to_parquet(PATTERN_DB_PATH)
         logger.info(
-            f"[PatternUpdater] Done. Updated={updated}, Skipped={skipped}"
+            f"[PatternUpdater] Done. Updated={updated}, Skipped={skipped}, Pending={len(pending_promotions)}"
         )
-        return {"updated": updated, "skipped": skipped}
+        return {"updated": updated, "skipped": skipped, "pending_promotions": pending_promotions}
 
     def _compute_live_stats(self, df: pd.DataFrame) -> dict:
         """คำนวณสถิติต่อ pattern จาก live outcomes"""
@@ -131,11 +189,13 @@ class PatternConfidenceUpdater:
             }
         return stats
 
-    def _evaluate_promotion(self, pf: float, win_rate: float, n: int) -> str:
+    def _evaluate_promotion(self, pf: float, win_rate: float, n: int, old_status: str) -> str:
         """Re-evaluate promotion status based on updated metrics"""
         if pf < 0.8 and n >= 20:
             return "DEMOTED"
         if pf >= 1.3 and win_rate >= 0.45 and n >= 50:
+            if old_status != "LIVE_APPROVED":
+                return "PENDING_APPROVAL"
             return "LIVE_APPROVED"
         if pf >= 1.2 and n >= 20:
             return "SHADOW_PASSED"

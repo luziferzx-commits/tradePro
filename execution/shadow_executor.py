@@ -9,7 +9,7 @@ logger = logging.getLogger("GoldBot.ShadowExecutor")
 
 class ShadowExecutor:
     @staticmethod
-    def execute_trade(signal_id, symbol, direction, volume, sl_points):
+    def execute_trade(signal_id, symbol, direction, volume, sl_points, tp_points=None):
         """
         Executes a virtual trade in SHADOW_MODE. 
         Never calls MT5 order_send.
@@ -34,7 +34,7 @@ class ShadowExecutor:
         point = sym_info.point if sym_info else 0.01
         
         sl_diff = sl_points * point
-        tp_diff = sl_diff * 2.5 # RR = 2.5
+        tp_diff = (tp_points * point) if tp_points is not None else sl_diff * 2.5
         
         if direction == "BUY":
             sl = entry_price - sl_diff

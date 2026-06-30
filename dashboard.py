@@ -19,7 +19,9 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+from streamlit_autorefresh import st_autorefresh
  
 # ── Page config ────────────────────────────────────────────────
 st.set_page_config(
@@ -28,7 +30,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
- 
+
+st_autorefresh(interval=60000, key="data_refresh")
+
 # ── Dark quant theme ───────────────────────────────────────────
 st.markdown("""
 <style>
@@ -91,7 +95,25 @@ st.markdown("""
 # ── Data loaders ───────────────────────────────────────────────
 PATTERN_DB_PATH = "data/pattern_store/pattern_database.parquet"
 OUTCOMES_PATH   = "data/learning/live_outcomes.jsonl"
+PENDING_PATH    = "data/learning/pending_trades.json"
 SLIPPAGE_PATH   = "data/learning/slippage_log.jsonl"
+MISSED_PENDING_PATH = "data/learning/missed_opportunities.json"
+MISSED_OUTCOMES_PATH = "data/learning/missed_opportunity_outcomes.jsonl"
+VIRTUAL_PENDING_PATH = "data/learning/virtual_trades.json"
+VIRTUAL_OUTCOMES_PATH = "data/learning/virtual_trade_outcomes.jsonl"
+MARKET_OBS_PATH = "data/learning/market_observations.jsonl"
+SIM_RECOMMENDATIONS_PATH = "data/learning/simulation_recommendations.json"
+
+
+def parse_datetime_series(values):
+    try:
+        parsed = pd.to_datetime(values, errors="coerce", format="mixed", utc=True)
+    except TypeError:
+        parsed = pd.to_datetime(values, errors="coerce", utc=True)
+    try:
+        return parsed.dt.tz_convert(None)
+    except AttributeError:
+        return parsed
 
 @st.cache_data(ttl=30)
 def load_slippage():
@@ -125,7 +147,174 @@ def load_outcomes():
         return pd.DataFrame()
     df = pd.DataFrame(rows)
     if "close_time" in df.columns:
-        df["close_time"] = pd.to_datetime(df["close_time"])
+        df["close_time"] = parse_datetime_series(df["close_time"])
+    return df
+
+@st.cache_data(ttl=10)
+def load_pending_trades():
+    if not os.path.exists(PENDING_PATH):
+        return pd.DataFrame()
+    try:
+        with open(PENDING_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return pd.DataFrame()
+    if not isinstance(data, dict) or not data:
+        return pd.DataFrame()
+    rows = []
+    for decision_id, item in data.items():
+        if isinstance(item, dict):
+            row = item.copy()
+            row.setdefault("decision_id", decision_id)
+            rows.append(row)
+    df = pd.DataFrame(rows)
+    if "open_time" in df.columns:
+        df["open_time"] = parse_datetime_series(df["open_time"])
+    return df
+
+@st.cache_data(ttl=10)
+def load_retrain_state():
+    path = os.getenv("GQOS_RETRAIN_STATE_PATH", "data/learning/retrain_state.json")
+    threshold = int(os.getenv("GQOS_RETRAIN_THRESHOLD", "50"))
+    if not os.path.exists(path):
+        return {
+            "trades_since_retrain": 0,
+            "next_retrain_in": threshold,
+            "threshold": threshold,
+        }
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            state = json.load(f)
+    except Exception:
+        state = {}
+    progress = int(state.get("trades_since_retrain", 0) or 0)
+    state["threshold"] = threshold
+    state["next_retrain_in"] = max(0, threshold - progress)
+    return state
+
+@st.cache_data(ttl=10)
+def load_missed_opportunities():
+    pending = {}
+    if os.path.exists(MISSED_PENDING_PATH):
+        try:
+            with open(MISSED_PENDING_PATH, "r", encoding="utf-8") as f:
+                pending = json.load(f)
+        except Exception:
+            pending = {}
+    rows = []
+    if os.path.exists(MISSED_OUTCOMES_PATH):
+        with open(MISSED_OUTCOMES_PATH, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                try:
+                    rows.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    df = pd.DataFrame(rows)
+    if not df.empty and "close_time" in df.columns:
+        df["close_time"] = parse_datetime_series(df["close_time"])
+    return pending if isinstance(pending, dict) else {}, df
+
+@st.cache_data(ttl=10)
+def load_continuous_sim():
+    pending = {}
+    if os.path.exists(VIRTUAL_PENDING_PATH):
+        try:
+            with open(VIRTUAL_PENDING_PATH, "r", encoding="utf-8") as f:
+                pending = json.load(f)
+        except Exception:
+            pending = {}
+    rows = []
+    if os.path.exists(VIRTUAL_OUTCOMES_PATH):
+        with open(VIRTUAL_OUTCOMES_PATH, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                try:
+                    rows.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    obs_count = 0
+    if os.path.exists(MARKET_OBS_PATH):
+        try:
+            with open(MARKET_OBS_PATH, "r", encoding="utf-8", errors="ignore") as f:
+                obs_count = sum(1 for line in f if line.strip())
+        except Exception:
+            obs_count = 0
+    df = pd.DataFrame(rows)
+    if not df.empty and "close_time" in df.columns:
+        df["close_time"] = parse_datetime_series(df["close_time"])
+    return pending if isinstance(pending, dict) else {}, df, obs_count
+
+@st.cache_data(ttl=10)
+def load_sim_recommendations():
+    if not os.path.exists(SIM_RECOMMENDATIONS_PATH):
+        return {}
+    try:
+        with open(SIM_RECOMMENDATIONS_PATH, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+        if not isinstance(payload, dict):
+            return {}, {}
+        return payload.get("recommendations", {}), payload.get("context_recommendations", {})
+    except Exception:
+        return {}, {}
+
+def build_live_trade_history(df_out, pos, df_pending):
+    rows = []
+    if not df_out.empty:
+        closed = df_out.copy()
+        closed["status"] = "CLOSED"
+        rows.append(closed)
+
+    pending_by_symbol = {}
+    if not df_pending.empty and "symbol" in df_pending.columns:
+        for _, row in df_pending.iterrows():
+            pending_by_symbol.setdefault(str(row.get("symbol", "")), row)
+
+    open_rows = []
+    for p in pos or []:
+        side = "BUY" if p.type == 0 else "SELL"
+        meta = pending_by_symbol.get(p.symbol)
+        open_rows.append({
+            "status": "OPEN",
+            "symbol": p.symbol,
+            "direction": side,
+            "entry_price": p.price_open,
+            "sl_price": p.sl,
+            "tp_price": p.tp,
+            "pattern_id": "" if meta is None else meta.get("pattern_id", ""),
+            "pattern_pf": None if meta is None else meta.get("pattern_pf"),
+            "pattern_similarity": None if meta is None else meta.get("pattern_similarity"),
+            "session": "" if meta is None else meta.get("session", ""),
+            "strategy_id": "" if meta is None else meta.get("strategy_id", ""),
+            "decision_id": "" if meta is None else meta.get("decision_id", ""),
+            "open_time": getattr(p, "time", None),
+            "ticket": p.ticket,
+            "close_price": None,
+            "realized_pnl": None,
+            "floating_pnl": p.profit,
+            "actual_r": None,
+            "outcome": "OPEN",
+            "close_time": None,
+        })
+    if open_rows:
+        rows.append(pd.DataFrame(open_rows))
+
+    if not rows:
+        return pd.DataFrame()
+    df = pd.concat(rows, ignore_index=True, sort=False)
+    if "open_time" in df.columns:
+        numeric_mask = pd.to_numeric(df["open_time"], errors="coerce").notna()
+        if numeric_mask.any():
+            df.loc[numeric_mask, "open_time"] = pd.to_datetime(
+                pd.to_numeric(df.loc[numeric_mask, "open_time"], errors="coerce"),
+                unit="s",
+                errors="coerce",
+            )
+        df["open_time"] = parse_datetime_series(df["open_time"])
+    if "close_time" in df.columns:
+        df["close_time"] = parse_datetime_series(df["close_time"])
     return df
  
 def load_mt5_positions():
@@ -138,6 +327,60 @@ def load_mt5_positions():
         return acc, pos
     except Exception:
         return None, []
+
+@st.cache_data(ttl=10)
+def load_mt5_closed_deals_today():
+    try:
+        import MetaTrader5 as mt5
+        from config.settings import settings
+        from execution.mt5_direction import closing_deal_position_direction
+
+        if not mt5.terminal_info():
+            mt5.initialize(
+                login=settings.MT5_LOGIN,
+                password=settings.MT5_PASSWORD,
+                server=settings.MT5_SERVER,
+            )
+
+        guard_tz = ZoneInfo(getattr(settings, "DAILY_GUARD_TIMEZONE", "Asia/Bangkok"))
+        now_local = datetime.now(guard_tz)
+        start_utc = now_local.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc).replace(tzinfo=None)
+        end_utc = now_local.astimezone(timezone.utc).replace(tzinfo=None)
+        deals = mt5.history_deals_get(start_utc, end_utc) or []
+
+        rows = []
+        for d in deals:
+            if getattr(d, "entry", None) != mt5.DEAL_ENTRY_OUT:
+                continue
+            profit = float(getattr(d, "profit", 0.0))
+            if profit == 0.0:
+                continue
+            rows.append({
+                "status": "CLOSED",
+                "symbol": d.symbol,
+                "direction": closing_deal_position_direction(d.type),
+                "entry_price": None,
+                "sl_price": None,
+                "tp_price": None,
+                "pattern_id": "",
+                "pattern_pf": None,
+                "pattern_similarity": None,
+                "session": "MT5_HISTORY",
+                "strategy_id": "mt5_history",
+                "decision_id": f"MT5-{getattr(d, 'position_id', getattr(d, 'ticket', ''))}",
+                "open_time": None,
+                "ticket": getattr(d, "position_id", getattr(d, "ticket", "")),
+                "deal_ticket": getattr(d, "ticket", ""),
+                "floating_pnl": None,
+                "close_price": getattr(d, "price", None),
+                "realized_pnl": profit,
+                "actual_r": None,
+                "outcome": "WIN" if profit > 0 else "LOSS",
+                "close_time": datetime.fromtimestamp(d.time, guard_tz),
+            })
+        return pd.DataFrame(rows)
+    except Exception:
+        return pd.DataFrame()
  
 def promo_color(status: str) -> str:
     m = {
@@ -149,6 +392,24 @@ def promo_color(status: str) -> str:
         "REJECTED":            "#f87171",
     }
     return m.get(status, "#94a3b8")
+
+def merge_closed_trades(df_out, df_mt5_closed):
+    frames = []
+    if not df_out.empty:
+        closed = df_out.copy()
+        closed["status"] = closed.get("status", "CLOSED")
+        frames.append(closed)
+    if not df_mt5_closed.empty:
+        frames.append(df_mt5_closed.copy())
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, ignore_index=True, sort=False)
+    if "ticket" in df.columns:
+        df["_ticket_key"] = df["ticket"].astype(str)
+        df = df.drop_duplicates("_ticket_key", keep="first").drop(columns=["_ticket_key"])
+    if "close_time" in df.columns:
+        df["close_time"] = parse_datetime_series(df["close_time"])
+    return df
  
 # ── Sidebar ────────────────────────────────────────────────────
 with st.sidebar:
@@ -156,7 +417,7 @@ with st.sidebar:
     st.markdown("---")
     page = st.radio(
         "Navigation",
-        ["📊 Overview", "🧠 Pattern Knowledge Base", "📈 Live Outcomes"],
+        ["📊 Overview", "🚫 Rejection Analytics", "🧠 Pattern Knowledge Base", "📈 Live Outcomes", "❤️ Edge Health"],
         label_visibility="collapsed",
     )
     st.markdown("---")
@@ -188,6 +449,9 @@ st.markdown("""
  
 df_pat = load_pattern_db()
 df_out = load_outcomes()
+df_pending = load_pending_trades()
+df_mt5_closed = load_mt5_closed_deals_today()
+df_closed = merge_closed_trades(df_out, df_mt5_closed)
  
 # ══════════════════════════════════════════════════════════════
 # PAGE 1 — OVERVIEW
@@ -238,9 +502,16 @@ if page == "📊 Overview":
             st.metric("Fear & Greed Index", "N/A")
             
     with c_m2:
-        trades_done = len(df_out)
-        progress = trades_done % 50
-        st.metric("Retrain Progress", f"{progress} / 50", delta=f"{50 - progress} trades until next retrain", delta_color="off")
+        retrain_state = load_retrain_state()
+        progress = int(retrain_state.get("trades_since_retrain", 0) or 0)
+        threshold = int(retrain_state.get("threshold", 50) or 50)
+        next_retrain = int(retrain_state.get("next_retrain_in", max(0, threshold - progress)) or 0)
+        st.metric(
+            "Retrain Progress",
+            f"{progress} / {threshold}",
+            delta=f"{next_retrain} trades until next retrain",
+            delta_color="off",
+        )
         
     with c_m3:
         try:
@@ -256,20 +527,23 @@ if page == "📊 Overview":
     st.markdown("---")
  
     # ── Live outcomes stats ───────────────────────────────────
-    col_a, col_b, col_c, col_d = st.columns(4)
-    if not df_out.empty:
-        wins   = len(df_out[df_out["outcome"] == "WIN"])
-        losses = len(df_out[df_out["outcome"] == "LOSS"])
-        total  = len(df_out)
+    col_a, col_b, col_c, col_d, col_e = st.columns(5)
+    if not df_closed.empty:
+        wins   = len(df_closed[df_closed["outcome"] == "WIN"])
+        losses = len(df_closed[df_closed["outcome"] == "LOSS"])
+        total  = len(df_closed)
         wr     = wins / total * 100 if total > 0 else 0
-        total_pnl = df_out["realized_pnl"].sum() if "realized_pnl" in df_out else 0
-        avg_r  = df_out["actual_r"].dropna().mean() if "actual_r" in df_out else 0
+        total_pnl = df_closed["realized_pnl"].sum() if "realized_pnl" in df_closed else 0
+        avg_r  = df_closed["actual_r"].dropna().mean() if "actual_r" in df_closed else 0
+        pattern_count = df_closed["pattern_id"].fillna("").astype(str).str.len().gt(0).sum() if "pattern_id" in df_closed else 0
+        learning_quality = pattern_count / total * 100 if total else 0
  
         with col_a: st.metric("Live Trades", total)
         with col_b: st.metric("Win Rate", f"{wr:.1f}%",
                               delta=f"{wins}W {losses}L")
         with col_c: st.metric("Total PnL", f"${total_pnl:+.2f}")
         with col_d: st.metric("Avg R", f"{avg_r:.2f}R")
+        with col_e: st.metric("Learning Quality", f"{learning_quality:.0f}%", delta=f"{pattern_count}/{total} tagged")
     else:
         with col_a: st.metric("Live Trades", 0)
         with col_b: st.metric("Win Rate", "—")
@@ -277,13 +551,48 @@ if page == "📊 Overview":
         with col_d: st.metric("Avg R", "—")
  
     st.markdown("---")
+    missed_pending, missed_df = load_missed_opportunities()
+    sim_pending, sim_df, sim_obs_count = load_continuous_sim()
+    sim_recs, sim_context_recs = load_sim_recommendations()
+    sim_total = len(sim_df)
+    sim_wins = 0
+    sim_wr = 0.0
+    sim_avg_r = 0.0
+    if sim_total:
+        outcomes_str = sim_df["outcome"].fillna("").astype(str) if "outcome" in sim_df.columns else pd.Series([], dtype=str)
+        sim_wins = outcomes_str.str.startswith("WIN").sum() + outcomes_str.str.startswith("TIMEOUT_WIN").sum()
+        sim_wr = sim_wins / sim_total * 100
+        sim_avg_r = sim_df["actual_r"].fillna(0).astype(float).mean() if "actual_r" in sim_df.columns else 0.0
+
+    s1, s2, s3, s4 = st.columns(4)
+    with s1: st.metric("M1 Observations", sim_obs_count)
+    with s2: st.metric("Virtual Open", len(sim_pending) if isinstance(sim_pending, dict) else 0)
+    with s3: st.metric("Virtual Closed", sim_total, delta=f"{sim_wr:.1f}% would-win")
+    with s4: st.metric("Virtual Avg R", f"{sim_avg_r:+.2f}R", delta=f"{len(sim_recs)} sim recs")
+
+    if sim_context_recs:
+        rec_rows = sorted(
+            sim_context_recs.values(),
+            key=lambda row: abs(float(row.get("avg_r", 0.0) or 0.0)),
+            reverse=True,
+        )[:8]
+        st.dataframe(
+            pd.DataFrame(rec_rows)[[
+                "symbol", "side", "session", "market_session", "spread_bucket", "volatility_bucket",
+                "samples", "win_rate", "avg_r", "action",
+            ]],
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    st.markdown("---")
     col_left, col_right = st.columns([2, 1])
  
     # ── PnL Curve ─────────────────────────────────────────────
     with col_left:
         st.markdown("### Cumulative PnL")
-        if not df_out.empty and "realized_pnl" in df_out.columns:
-            df_curve = df_out.sort_values("close_time").copy()
+        if not df_closed.empty and "realized_pnl" in df_closed.columns:
+            df_curve = df_closed.sort_values("close_time").copy()
             df_curve["cumulative_pnl"] = df_curve["realized_pnl"].cumsum()
             fig = px.area(
                 df_curve, x="close_time", y="cumulative_pnl",
@@ -355,6 +664,266 @@ if page == "📊 Overview":
             use_container_width=True, hide_index=True,
         )
  
+    # ── PnL by Symbol ─────────────────────────────────────────
+    if not df_closed.empty and "realized_pnl" in df_closed.columns and "symbol" in df_closed.columns:
+        st.markdown("### PnL by Symbol")
+        df_sym = df_closed.groupby("symbol")["realized_pnl"].sum().reset_index()
+        df_sym = df_sym.sort_values("realized_pnl", ascending=True) # Ascending for horizontal bar, or False for vertical
+        fig_sym = px.bar(
+            df_sym, x="symbol", y="realized_pnl",
+            color="realized_pnl",
+            color_continuous_scale=["#f87171", "#1e293b", "#4ade80"],
+            color_continuous_midpoint=0,
+            template="plotly_dark",
+            text="realized_pnl"
+        )
+        fig_sym.update_traces(texttemplate='%{text:$.2f}', textposition='outside')
+        fig_sym.update_layout(
+            paper_bgcolor="#0a0e1a", plot_bgcolor="#0f1629",
+            margin=dict(l=0, r=0, t=10, b=0),
+            xaxis_title="", yaxis_title="USD PnL",
+            coloraxis_showscale=False
+        )
+        st.plotly_chart(fig_sym, use_container_width=True)
+
+    # ── Trade History ─────────────────────────────────────────
+    df_trade_history = build_live_trade_history(df_closed, pos, df_pending)
+    if not df_trade_history.empty:
+        st.markdown("### Trade History")
+        sort_col = "close_time" if "close_time" in df_trade_history.columns else "open_time"
+        display_cols = [
+            "status", "symbol", "direction", "entry_price", "sl_price", "tp_price",
+            "pattern_id", "pattern_pf", "pattern_similarity", "session",
+            "strategy_id", "decision_id", "open_time", "ticket",
+            "floating_pnl", "close_price", "realized_pnl", "actual_r", "outcome", "close_time",
+        ]
+        display_cols = [c for c in display_cols if c in df_trade_history.columns]
+        st.dataframe(
+            df_trade_history.sort_values(sort_col, ascending=False, na_position="first")[display_cols].style.map(
+                lambda v: "color: #4ade80" if isinstance(v, str) and v in {"WIN", "OPEN"}
+                else ("color: #f87171" if isinstance(v, str) and v == "LOSS" else ""),
+                subset=["outcome"]
+            ),
+            use_container_width=True, hide_index=True
+        )
+# ══════════════════════════════════════════════════════════════
+# PAGE 1.5 — REJECTION ANALYTICS
+# ══════════════════════════════════════════════════════════════
+elif page == "🚫 Rejection Analytics":
+    st.markdown("# 🚫 Trade Rejection Analytics")
+    st.markdown("Understand why the system rejected or skipped signals.")
+    
+    events_file = os.path.join(os.path.abspath("data"), "learning", "system_events.jsonl")
+    
+    if not os.path.exists(events_file):
+        st.info("No system events found yet. The live bot needs to run and scan markets.")
+    else:
+        events = []
+        try:
+            with open(events_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            events.append(json.loads(line))
+                        except Exception:
+                            pass
+        except Exception as e:
+            st.error(f"Failed to read events: {e}")
+            
+        if events:
+            df_events = pd.DataFrame(events)
+            df_events['ts'] = parse_datetime_series(df_events['ts'])
+            
+            # Today's Summary
+            today = datetime.utcnow().date()
+            df_today = df_events[df_events['ts'].dt.date == today]
+            
+            st.markdown("### 📅 Today's Summary")
+            
+            # Counts (Using unique decision_id to prevent double counting)
+            total_evaluated = df_today[df_today['event_type'] == 'SIGNAL_EVALUATED']['decision_id'].nunique() if 'decision_id' in df_today.columns else 0
+            total_rejected = df_today[df_today['event_type'] == 'SIGNAL_REJECTED']['decision_id'].nunique() if 'decision_id' in df_today.columns else 0
+            total_skipped = df_today[df_today['event_type'] == 'SIGNAL_SKIPPED']['decision_id'].nunique() if 'decision_id' in df_today.columns else 0
+            total_approved = df_today[df_today['event_type'] == 'SIGNAL_APPROVED']['decision_id'].nunique() if 'decision_id' in df_today.columns else 0
+            
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Signals Evaluated", total_evaluated)
+            col2.metric("Approved", total_approved)
+            col3.metric("Skipped (State/Risk)", total_skipped)
+            col4.metric("Rejected (Edge)", total_rejected)
+            
+            st.markdown("---")
+            
+            # Reasons Bar Chart
+            st.markdown("### 📊 Rejection & Skipping Reasons")
+            reasons = df_today[df_today['event_type'].isin(['SIGNAL_REJECTED', 'SIGNAL_SKIPPED'])]
+            if not reasons.empty:
+                # Clean up reason strings
+                reasons['reason_clean'] = reasons['reason'].apply(lambda x: x.split('(')[0].strip() if isinstance(x, str) else x)
+                reason_counts = reasons.groupby(['reason_clean', 'event_type']).size().reset_index(name='count')
+                
+                fig = px.bar(
+                    reason_counts, 
+                    x='count', 
+                    y='reason_clean', 
+                    color='event_type',
+                    orientation='h',
+                    color_discrete_map={'SIGNAL_REJECTED': '#f87171', 'SIGNAL_SKIPPED': '#facc15'},
+                    title="Reasons for Non-Execution"
+                )
+                fig.update_layout(template="plotly_dark", yaxis={'categoryorder':'total ascending'})
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No rejections or skips today.")
+                
+            st.markdown("---")
+            
+            col_a, col_b = st.columns(2)
+            
+            with col_a:
+                # Top Reject Symbol & Reject Rate
+                st.markdown("### 🚫 Reject Rate by Symbol")
+                evals = df_today[df_today['event_type'] == 'SIGNAL_EVALUATED'].groupby('symbol')['decision_id'].nunique().reset_index(name='Evaluated')
+                rejects = df_today[df_today['event_type'] == 'SIGNAL_REJECTED'].groupby('symbol')['decision_id'].nunique().reset_index(name='Rejected')
+                
+                if not evals.empty:
+                    df_rate = pd.merge(evals, rejects, on='symbol', how='left').fillna(0)
+                    df_rate['Reject Rate'] = (df_rate['Rejected'] / df_rate['Evaluated']) * 100
+                    df_rate['Reject Rate'] = df_rate['Reject Rate'].clip(upper=100)
+                    df_rate = df_rate.sort_values('Rejected', ascending=False)
+                    
+                    df_rate['Reject Rate'] = df_rate['Reject Rate'].apply(lambda x: f"{x:.1f}%")
+                    st.dataframe(df_rate, use_container_width=True, hide_index=True)
+                else:
+                    st.info("No evaluated signals yet.")
+                    
+            with col_b:
+                # Near Miss Analytics
+                st.markdown("### 🎯 Profit Factor 'Near Miss' Analytics")
+                rejects_pf = df_today[(df_today['event_type'] == 'SIGNAL_REJECTED') & (df_today['reason'].str.contains("Profit Factor Low", na=False))]
+                
+                if not rejects_pf.empty:
+                    def classify_miss(pf):
+                        if pf >= 1.05: return "Near Miss (1.05-1.09)"
+                        if pf >= 1.00: return "Miss (1.00-1.04)"
+                        return "Critical Miss (<1.00)"
+                    
+                    miss_data = []
+                    for _, row in rejects_pf.iterrows():
+                        # Due to payload flattening in structured_logger, profit_factor might be a direct column
+                        pf = None
+                        if 'profit_factor' in row and pd.notna(row['profit_factor']):
+                            pf = row['profit_factor']
+                        else:
+                            md = row.get('metadata', {})
+                            if isinstance(md, dict) and 'profit_factor' in md:
+                                pf = md['profit_factor']
+                                
+                        if pf is not None:
+                            miss_data.append(classify_miss(pf))
+                            
+                    if miss_data:
+                        df_miss = pd.DataFrame(miss_data, columns=['Category']).value_counts().reset_index(name='Count')
+                        # Ensure specific order
+                        order = ["Near Miss (1.05-1.09)", "Miss (1.00-1.04)", "Critical Miss (<1.00)"]
+                        df_miss['Category'] = pd.Categorical(df_miss['Category'], categories=order, ordered=True)
+                        df_miss = df_miss.sort_values('Category')
+                        
+                        fig_miss = px.bar(
+                            df_miss,
+                            x='Category',
+                            y='Count',
+                            color='Category',
+                            color_discrete_map={
+                                "Near Miss (1.05-1.09)": "#facc15",  # Yellow
+                                "Miss (1.00-1.04)": "#fb923c",       # Orange
+                                "Critical Miss (<1.00)": "#ef4444"   # Red
+                            },
+                            title="Profit Factor Rejections Distribution"
+                        )
+                        fig_miss.update_layout(template="plotly_dark", showlegend=False)
+                        st.plotly_chart(fig_miss, use_container_width=True)
+                    else:
+                        st.info("No Profit Factor data found in metadata.")
+                else:
+                    st.info("No Profit Factor rejections today.")
+                    
+            st.markdown("---")
+            
+            # 🌪️ Pipeline Funnel
+            st.markdown("### 🌪️ Evaluation Pipeline Funnel")
+            
+            funnel_scanned = total_evaluated
+            
+            # Count rejections by category
+            fail_sim = df_today[(df_today['event_type'] == 'SIGNAL_REJECTED') & (df_today['reason'].str.contains("Similarity", na=False))].shape[0]
+            fail_n = df_today[(df_today['event_type'] == 'SIGNAL_REJECTED') & (df_today['reason'].str.contains("Sample Size", na=False))].shape[0]
+            fail_pf = df_today[(df_today['event_type'] == 'SIGNAL_REJECTED') & (df_today['reason'].str.contains("Profit Factor", na=False))].shape[0]
+            fail_expr = df_today[(df_today['event_type'] == 'SIGNAL_REJECTED') & (df_today['reason'].str.contains("Expectancy R", na=False))].shape[0]
+            fail_promo = df_today[(df_today['event_type'] == 'SIGNAL_REJECTED') & (df_today['reason'].str.contains("Promotion", na=False))].shape[0]
+            
+            pass_sim = funnel_scanned - fail_sim
+            pass_n = pass_sim - fail_n
+            pass_pf = pass_n - fail_pf
+            pass_expr = pass_pf - fail_expr
+            pass_promo = pass_expr - fail_promo
+            pass_risk = pass_promo - total_skipped
+            
+            funnel_data = dict(
+                number=[funnel_scanned, pass_sim, pass_n, pass_pf, pass_expr, pass_promo, total_approved],
+                stage=["1. Scanned", "2. Similarity Pass", "3. Sample Size Pass", "4. Profit Factor Pass", "5. ExpR Pass", "6. Promotion Pass", "7. Executed (Approved)"]
+            )
+            
+            # Handle edge cases where previous counts are somehow negative due to missing EVALUATED logs from old data
+            funnel_data['number'] = [max(0, n) for n in funnel_data['number']]
+            
+            fig_funnel = px.funnel(funnel_data, x='number', y='stage')
+            fig_funnel.update_layout(template="plotly_dark")
+            st.plotly_chart(fig_funnel, use_container_width=True)
+            
+            st.markdown("---")
+            
+            # Detailed Decision Tree Table
+            st.markdown("### 🌳 Recent Decisions")
+            recent = df_events[df_events['event_type'].isin(['SIGNAL_REJECTED', 'SIGNAL_SKIPPED', 'SIGNAL_APPROVED'])].tail(100).sort_values('ts', ascending=False)
+            
+            if not recent.empty:
+                display_data = []
+                for _, row in recent.iterrows():
+                    sym = row.get('symbol', 'N/A')
+                    side = row.get('side', 'N/A')
+                    status = row.get('status', 'N/A')
+                    reason = row.get('reason', 'N/A')
+                    
+                    dt = row.get('decision_tree', [])
+                    if not dt and 'metadata' in row and isinstance(row['metadata'], dict):
+                        dt = row['metadata'].get('decision_tree', [])
+                        
+                    dt_str = " → ".join(dt) if isinstance(dt, list) else str(dt)
+                    
+                    display_data.append({
+                        "Time": row['ts'].strftime("%H:%M:%S"),
+                        "Symbol": sym,
+                        "Side": side,
+                        "Status": "❌ REJECT" if status == "REJECTED" else ("⚠️ SKIP" if status == "SKIPPED" else "✅ PASS"),
+                        "Reason": reason,
+                        "Decision Tree": dt_str
+                    })
+                    
+                df_disp = pd.DataFrame(display_data)
+                
+                def color_status(val):
+                    color = '#4ade80' if 'PASS' in val else ('#f87171' if 'REJECT' in val else '#facc15')
+                    return f'color: {color}'
+                    
+                st.dataframe(
+                    df_disp.style.map(color_status, subset=['Status']), 
+                    use_container_width=True, 
+                    hide_index=True
+                )
+            else:
+                st.info("No decisions to display.")
+
 # ══════════════════════════════════════════════════════════════
 # PAGE 2 — PATTERN KNOWLEDGE BASE
 # ══════════════════════════════════════════════════════════════
@@ -529,13 +1098,17 @@ elif page == "📈 Live Outcomes":
     avg_r  = df_out["actual_r"].dropna().mean() if "actual_r" in df_out else 0
     best   = df_out["realized_pnl"].max() if "realized_pnl" in df_out else 0
     worst  = df_out["realized_pnl"].min() if "realized_pnl" in df_out else 0
+    tagged = df_out["pattern_id"].fillna("").astype(str).str.len().gt(0).sum() if "pattern_id" in df_out else 0
+    quality = tagged / total * 100 if total else 0
+    probes = df_out["entry_mode"].fillna("NORMAL").ne("NORMAL").sum() if "entry_mode" in df_out else 0
  
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
     with c1: st.metric("Total Trades", total)
     with c2: st.metric("Win Rate", f"{wr:.1f}%")
     with c3: st.metric("Total PnL", f"${total_pnl:+.2f}")
     with c4: st.metric("Best Trade", f"${best:+.2f}")
     with c5: st.metric("Worst Trade", f"${worst:+.2f}")
+    with c6: st.metric("Learning Quality", f"{quality:.0f}%", delta=f"{tagged}/{total} tagged | {probes} probe")
  
     st.markdown("---")
     col_l, col_r = st.columns(2)
@@ -640,7 +1213,7 @@ elif page == "📈 Live Outcomes":
     st.markdown("### Recent Trades")
     show_cols = [c for c in ["close_time", "symbol", "direction", "outcome",
                               "realized_pnl", "actual_r", "pattern_id",
-                              "pattern_pf", "session"]
+                              "pattern_pf", "session", "entry_mode", "probe_reason"]
                  if c in df_out.columns]
     df_recent = df_out.sort_values("close_time", ascending=False).head(20)[show_cols]
  
@@ -663,6 +1236,348 @@ elif page == "📈 Live Outcomes":
         styled = styled.format({"realized_pnl": "${:+.2f}", "actual_r": "{:.2f}R"})
  
     st.dataframe(styled, use_container_width=True, hide_index=True)
+ 
+# ══════════════════════════════════════════════════════════════
+# PAGE 4 — EDGE HEALTH
+# ══════════════════════════════════════════════════════════════
+elif page == "❤️ Edge Health":
+    st.markdown("# ❤️ System Edge Health")
+    from gqos.learning.edge_metrics import grouped_edge, rolling_edge
+
+    st.markdown("### Rolling Edge Monitor")
+    if df_out.empty:
+        st.info("No clean live outcomes yet.")
+    else:
+        roll = rolling_edge(df_out, windows=(20, 50, 100))
+        if not roll.empty:
+            st.dataframe(
+                roll.style.format({
+                    "win_rate": "{:.1f}%",
+                    "profit_factor": "{:.2f}",
+                    "expectancy": "${:+.2f}",
+                    "avg_r": "{:+.2f}R",
+                    "total_pnl": "${:+.2f}",
+                }),
+                use_container_width=True,
+                hide_index=True,
+            )
+
+        g1, g2 = st.columns(2)
+        for col, group_col, title in [
+            (g1, "symbol", "By Symbol"),
+            (g2, "session", "By Session"),
+        ]:
+            with col:
+                st.markdown(f"#### {title}")
+                grouped = grouped_edge(df_out, group_col=group_col, window=50, min_trades=2)
+                if grouped.empty:
+                    st.caption("Waiting for more closed trades.")
+                else:
+                    st.dataframe(
+                        grouped.head(10).style.format({
+                            "win_rate": "{:.1f}%",
+                            "profit_factor": "{:.2f}",
+                            "expectancy": "${:+.2f}",
+                            "avg_r": "{:+.2f}R",
+                            "total_pnl": "${:+.2f}",
+                        }),
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+
+        g3, g4 = st.columns(2)
+        for col, group_col, title in [
+            (g3, "direction", "By Side"),
+            (g4, "pattern_id", "By Pattern"),
+        ]:
+            with col:
+                st.markdown(f"#### {title}")
+                grouped = grouped_edge(df_out, group_col=group_col, window=50, min_trades=2)
+                if grouped.empty:
+                    st.caption("Waiting for more closed trades.")
+                else:
+                    st.dataframe(
+                        grouped.head(10).style.format({
+                            "win_rate": "{:.1f}%",
+                            "profit_factor": "{:.2f}",
+                            "expectancy": "${:+.2f}",
+                            "avg_r": "{:+.2f}R",
+                            "total_pnl": "${:+.2f}",
+                        }),
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+
+    st.markdown("---")
+    
+    import importlib
+    import sys
+    
+    # Force reload the module to bypass Streamlit cache during development
+    if "gqos.dashboard.edge_health" in sys.modules:
+        importlib.reload(sys.modules["gqos.dashboard.edge_health"])
+        
+    from gqos.dashboard.edge_health import (
+        calc_alpha_health, calc_execution_health, calc_risk_health,
+        calc_learning_health, calc_overall_edge_health
+    )
+    
+    df_slip = load_slippage()
+    acc, pos = load_mt5_positions()
+    
+    # Calculate historical datasets (excluding last 24h) for trend calculation
+    cutoff_time = datetime.now() - timedelta(days=1)
+    
+    if not df_out.empty and "close_time" in df_out.columns:
+        df_out_hist = df_out[df_out["close_time"] < cutoff_time]
+    else:
+        df_out_hist = pd.DataFrame()
+        
+    if not df_slip.empty and "timestamp" in df_slip.columns:
+        # Assuming slippage has a timestamp column, if not just don't calculate trend
+        try:
+            df_slip["timestamp"] = parse_datetime_series(df_slip["timestamp"])
+            df_slip_hist = df_slip[df_slip["timestamp"] < cutoff_time]
+        except Exception:
+            df_slip_hist = pd.DataFrame()
+    else:
+        df_slip_hist = pd.DataFrame()
+    
+    # Current health
+    alpha_h = calc_alpha_health(df_out)
+    exec_h = calc_execution_health(df_slip)
+    risk_h = calc_risk_health(acc, pos)
+    learn_h = calc_learning_health(df_pat, df_out)
+    
+    # Historical health
+    alpha_h_old = calc_alpha_health(df_out_hist)
+    exec_h_old = calc_execution_health(df_slip_hist)
+    # Risk and learning historical mocks (since we don't have historical state for MT5 or Pattern DB easily)
+    
+    # Set trends
+    if alpha_h["score"] is not None and alpha_h_old["score"] is not None:
+        alpha_h["trend"] = alpha_h["score"] - alpha_h_old["score"]
+    if exec_h["score"] is not None and exec_h_old["score"] is not None:
+        exec_h["trend"] = exec_h["score"] - exec_h_old["score"]
+        
+    overall_h = calc_overall_edge_health(alpha_h, exec_h, risk_h, learn_h)
+    
+    def status_color(status):
+        if status == "HEALTHY": return "#4ade80"
+        if status == "WATCH": return "#facc15"
+        if status == "DEGRADED": return "#f97316"
+        if status == "CRITICAL": return "#f87171"
+        return "#94a3b8" # WARMING_UP
+        
+    # --- System Status Banner ---
+    st.markdown("---")
+    banner_color = status_color(overall_h["status"])
+    banner_icon = "🟢" if overall_h["status"] == "HEALTHY" else ("🟡" if overall_h["status"] == "WATCH" else "🔴")
+    if overall_h["status"] == "WARMING_UP": banner_icon = "⚪"
+    
+    # Find the worst dimension for the banner reason
+    dim_statuses = [
+        ("Alpha", alpha_h["status"]), 
+        ("Execution", exec_h["status"]), 
+        ("Risk", risk_h["status"]), 
+        ("Learning", learn_h["status"])
+    ]
+    
+    criticals = [d for d in dim_statuses if d[1] == "CRITICAL"]
+    degradeds = [d for d in dim_statuses if d[1] == "DEGRADED"]
+    watches = [d for d in dim_statuses if d[1] == "WATCH"]
+    
+    banner_msg = "System operating normally"
+    if criticals:
+        banner_msg = f"{criticals[0][0]} Critical. Trading Halt Recommended."
+    elif degradeds:
+        banner_msg = f"{degradeds[0][0]} Degraded. Review immediately."
+    elif watches:
+        banner_msg = f"{watches[0][0]} Watch. Monitoring required."
+        
+    if overall_h["status"] == "WARMING_UP":
+        banner_msg = "System warming up. Gathering data."
+        
+    st.markdown(
+        f"<div style='border: 1px solid {banner_color}; border-left: 6px solid {banner_color}; border-radius: 4px; padding: 15px; background: #0f1629; margin-bottom: 20px;'>"
+        f"<h3 style='margin: 0; color: {banner_color}; font-family: \"IBM Plex Mono\", monospace;'>{banner_icon} SYSTEM STATUS: {overall_h['status']}</h3>"
+        f"<p style='margin: 5px 0 0 0; color: #e2e8f0;'>{banner_msg}</p>"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+        
+    # --- Save Snapshot & Render History ---
+    try:
+        from gqos.dashboard.health_history import save_snapshot, get_history
+        metrics_dict = {
+            'overall_edge': overall_h.get('score'),
+            'alpha_health': alpha_h.get('score'),
+            'execution_health': exec_h.get('score'),
+            'risk_health': risk_h.get('score'),
+            'learning_health': learn_h.get('score'),
+            'overall_status': overall_h.get('status'),
+            'alpha_status': alpha_h.get('status'),
+            'execution_status': exec_h.get('status'),
+            'risk_status': risk_h.get('status'),
+            'learning_status': learn_h.get('status'),
+            'confidence': f"Alpha:{alpha_h.get('confidence')} Exec:{exec_h.get('confidence')} Risk:{risk_h.get('confidence')} Learn:{learn_h.get('confidence')}",
+            'reason_summary': banner_msg
+        }
+        save_snapshot(metrics_dict)
+        
+        df_hist = get_history(hours=24)
+        if not df_hist.empty:
+            st.markdown("### 📈 Health History (24h)")
+            fig = go.Figure()
+            
+            fig.add_trace(go.Scatter(x=df_hist['timestamp'], y=df_hist['overall_edge'], mode='lines', name='Overall Edge', line=dict(color='#38bdf8', width=3)))
+            fig.add_trace(go.Scatter(x=df_hist['timestamp'], y=df_hist['alpha_health'], mode='lines', name='Alpha', line=dict(color='#4ade80', width=1, dash='dot')))
+            fig.add_trace(go.Scatter(x=df_hist['timestamp'], y=df_hist['execution_health'], mode='lines', name='Execution', line=dict(color='#facc15', width=1, dash='dot')))
+            fig.add_trace(go.Scatter(x=df_hist['timestamp'], y=df_hist['risk_health'], mode='lines', name='Risk', line=dict(color='#f87171', width=1, dash='dot')))
+            fig.add_trace(go.Scatter(x=df_hist['timestamp'], y=df_hist['learning_health'], mode='lines', name='Learning', line=dict(color='#a78bfa', width=1, dash='dot')))
+            
+            fig.update_layout(
+                template='plotly_dark',
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                yaxis=dict(range=[0, 105], title="Score"),
+                margin=dict(l=0, r=0, t=30, b=0),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown("---")
+            
+    except Exception as e:
+        st.warning(f"Could not load Health History: {e}")
+        
+    def render_health_card(title, health_dict):
+        score = health_dict.get("score")
+        status = health_dict.get("status", "WARMING_UP")
+        trend = health_dict.get("trend")
+        conf = health_dict.get("confidence", "LOW")
+        color = status_color(status)
+        
+        score_str = f"{score:.0f}" if score is not None else "-"
+        
+        trend_html = ""
+        if trend is not None and score is not None:
+            t_color = "#4ade80" if trend >= 0 else "#f87171"
+            t_arrow = "↑" if trend >= 0 else "↓"
+            trend_html = f"<span style='color: {t_color}; font-size: 0.9rem; margin-left: 5px;'>{t_arrow} {abs(trend):.1f}</span>"
+            
+        conf_html = f"<div style='font-size: 0.7rem; color: #475569; margin-top: 8px;'>CONFIDENCE: {conf}</div>"
+        
+        st.markdown(
+            f"<div style='border: 1px solid #1e2d4a; border-radius: 8px; padding: 15px; background: #0f1629; text-align: center;'>"
+            f"<div style='font-size: 0.9rem; color: #94a3b8; font-family: \"IBM Plex Sans\", sans-serif; margin-bottom: 5px;'>{title}</div>"
+            f"<div style='font-size: 2rem; color: {color}; font-family: \"IBM Plex Mono\", monospace; font-weight: bold;'>{score_str}{trend_html}</div>"
+            f"<div style='font-size: 0.8rem; color: {color}; font-family: \"IBM Plex Mono\", monospace; margin-top: 5px;'>{status}</div>"
+            f"{conf_html}"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
+    # Top level metrics
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1: render_health_card("Overall Edge", overall_h)
+    with c2: render_health_card("Alpha Health", alpha_h)
+    with c3: render_health_card("Execution", exec_h)
+    with c4: render_health_card("Risk Health", risk_h)
+    with c5: render_health_card("Learning", learn_h)
+    
+    st.markdown("---")
+    
+    col_radar, col_table = st.columns([1, 2])
+    
+    with col_radar:
+        st.markdown("### Health Dimensions")
+        categories = ['Alpha', 'Execution', 'Risk', 'Learning']
+        
+        scores = [
+            alpha_h["score"] or 0, 
+            exec_h["score"] or 0, 
+            risk_h["score"] or 0, 
+            learn_h["score"] or 0
+        ]
+        
+        marker_colors = [
+            status_color(alpha_h["status"]),
+            status_color(exec_h["status"]),
+            status_color(risk_h["status"]),
+            status_color(learn_h["status"])
+        ]
+        
+        fig = go.Figure()
+        fig.add_trace(go.Scatterpolar(
+            r=scores,
+            theta=categories,
+            fill='toself',
+            fillcolor='rgba(56,189,248,0.1)',
+            line=dict(color='#475569', width=1),
+            marker=dict(size=12, color=marker_colors),
+            mode='lines+markers',
+            text=[f"{s:.0f}" if s else "WARMING_UP" for s in scores],
+            hoverinfo="text"
+        ))
+        
+        fig.update_layout(
+            polar=dict(
+                radialaxis=dict(visible=True, range=[0, 100], color="#475569", gridcolor="#1e2d4a"),
+                angularaxis=dict(color="#e2e8f0", gridcolor="#1e2d4a")
+            ),
+            paper_bgcolor="#0a0e1a", plot_bgcolor="#0a0e1a",
+            margin=dict(l=40, r=40, t=20, b=20),
+            showlegend=False
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        
+    with col_table:
+        st.markdown("### Dimension Breakdown")
+        
+        rows = []
+        for dim_name, h_dict in [
+            ("Alpha Health", alpha_h),
+            ("Execution Health", exec_h),
+            ("Risk Health", risk_h),
+            ("Learning Health", learn_h)
+        ]:
+            if h_dict.get("metrics"):
+                metrics_str = " | ".join(f"{k}: {v}" for k, v in h_dict["metrics"].items())
+            else:
+                metrics_str = "-"
+                
+            score_val = f"{h_dict['score']:.0f}" if h_dict.get("score") is not None else "-"
+            conf = h_dict.get("confidence", "-")
+            
+            rows.append({
+                "Dimension": dim_name,
+                "Score": score_val,
+                "Status": h_dict["status"],
+                "Confidence": conf,
+                "Key Metrics": metrics_str,
+                "Reason/Note": h_dict.get("reason", "")
+            })
+            
+        df_breakdown = pd.DataFrame(rows)
+        
+        def highlight_status(s):
+            if s == "HEALTHY": return "color: #4ade80; font-weight: bold"
+            if s == "WATCH": return "color: #facc15; font-weight: bold"
+            if s == "DEGRADED": return "color: #f97316; font-weight: bold"
+            if s == "CRITICAL": return "color: #f87171; font-weight: bold"
+            return "color: #94a3b8"
+            
+        def highlight_conf(c):
+            if "HIGH" in str(c): return "color: #4ade80"
+            if "LOW" in str(c): return "color: #f87171"
+            return "color: #facc15"
+            
+        st.dataframe(
+            df_breakdown.style.map(highlight_status, subset=["Status"])
+                              .map(highlight_conf, subset=["Confidence"]),
+            use_container_width=True, hide_index=True
+        )
  
 # ── Footer ─────────────────────────────────────────────────────
 st.markdown("---")

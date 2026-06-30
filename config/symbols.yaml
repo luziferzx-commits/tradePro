@@ -31,6 +31,7 @@ symbols:
     max_lot: 200.0
     max_spread_points: 500
     min_lot: 0.01
+    min_profit_factor: 1.1
     pip_size: 0.0001
     quote_currency: CAD
     session: 24/5
@@ -50,6 +51,7 @@ symbols:
     max_lot: 200.0
     max_spread_points: 500
     min_lot: 0.01
+    min_profit_factor: 1.05
     pip_size: 0.0001
     quote_currency: USD
     session: 24/5
@@ -69,6 +71,7 @@ symbols:
     max_lot: 50.0
     max_spread_points: 5000
     min_lot: 0.01
+    min_profit_factor: 1.1
     pip_size: 1.0
     quote_currency: USD
     session: 24/7
@@ -88,6 +91,7 @@ symbols:
     max_lot: 100.0
     max_spread_points: 800
     min_lot: 0.01
+    min_profit_factor: 1.1
     pip_size: 0.1
     quote_currency: USD
     session: 24/7
@@ -107,6 +111,7 @@ symbols:
     max_lot: 200.0
     max_spread_points: 500
     min_lot: 0.01
+    min_profit_factor: 1.1
     pip_size: 0.0001
     quote_currency: GBP
     session: 24/5
@@ -126,6 +131,7 @@ symbols:
     max_lot: 500.0
     max_spread_points: 15
     min_lot: 0.01
+    min_profit_factor: 1.05
     pip_size: 0.0001
     quote_currency: USD
     session: 24/5
@@ -145,6 +151,7 @@ symbols:
     max_lot: 500.0
     max_spread_points: 20
     min_lot: 0.01
+    min_profit_factor: 1.05
     pip_size: 0.0001
     quote_currency: USD
     session: 24/5
@@ -164,6 +171,7 @@ symbols:
     max_lot: 500.0
     max_spread_points: 20
     min_lot: 0.1
+    min_profit_factor: 1.0
     pip_size: 0.1
     quote_currency: EUR
     session: EU
@@ -183,6 +191,7 @@ symbols:
     max_lot: 500.0
     max_spread_points: 500
     min_lot: 0.1
+    min_profit_factor: 1.0
     pip_size: 0.1
     quote_currency: USD
     session: US
@@ -202,6 +211,7 @@ symbols:
     max_lot: 200.0
     max_spread_points: 500
     min_lot: 0.01
+    min_profit_factor: 1.05
     pip_size: 0.0001
     quote_currency: USD
     session: 24/5
@@ -221,6 +231,7 @@ symbols:
     max_lot: 20.0
     max_spread_points: 500
     min_lot: 0.01
+    min_profit_factor: 1.1
     pip_size: 0.0001
     quote_currency: USD
     session: 24/7
@@ -240,6 +251,7 @@ symbols:
     max_lot: 500.0
     max_spread_points: 500
     min_lot: 0.01
+    min_profit_factor: 1.0
     pip_size: 0.1
     quote_currency: USD
     session: US
@@ -259,6 +271,7 @@ symbols:
     max_lot: 500.0
     max_spread_points: 150
     min_lot: 0.1
+    min_profit_factor: 1.0
     pip_size: 0.1
     quote_currency: USD
     session: US
@@ -278,6 +291,7 @@ symbols:
     max_lot: 200.0
     max_spread_points: 500
     min_lot: 0.01
+    min_profit_factor: 1.1
     pip_size: 0.0001
     quote_currency: CAD
     session: 24/5
@@ -297,6 +311,7 @@ symbols:
     max_lot: 500.0
     max_spread_points: 20
     min_lot: 0.01
+    min_profit_factor: 1.1
     pip_size: 0.01
     quote_currency: JPY
     session: 24/5
@@ -316,6 +331,7 @@ symbols:
     max_lot: 50.0
     max_spread_points: 500
     min_lot: 0.01
+    min_profit_factor: 1.03
     pip_size: 0.01
     quote_currency: USD
     session: 24/5
@@ -335,11 +351,12 @@ symbols:
     max_lot: 50.0
     max_spread_points: 50
     min_lot: 0.01
-    pip_size: 0.001
+    min_profit_factor: 1.03
+    pip_size: 1.0
     quote_currency: USD
     session: 24/5
     tick_size: 0.001
-    tick_value: 1.0
+    tick_value: 5.0
     timezone: UTC
     typical_spread_points: 25
     volatility_multiplier: 1.8
@@ -357,12 +374,13 @@ symbols:
     max_lot: 100.0
     max_spread_points: 500
     min_lot: 0.01
-    pip_size: 0.01
+    min_profit_factor: 1.1
+    pip_size: 1.0
     primary_timeframe: M15
     quote_currency: USD
     session: 24/5
-    tick_size: 0.01
-    tick_value: 1.0
+    tick_size: 0.001
+    tick_value: 0.1
     timezone: UTC
     typical_spread_points: 15
     volatility_multiplier: 1.5
@@ -377,6 +395,7 @@ symbols:
     max_lot: 200000.0
     max_spread_points: 500
     min_lot: 20.0
+    min_profit_factor: 1.1
     pip_size: 0.0001
     quote_currency: USD
     session: 24/7

@@ -6,6 +6,7 @@ from gqos.messaging.contracts import MessageEnvelope
 from gqos.live.events import ReconciliationFillEvent
 from gqos.common.enums import TradeDirection
 from gqos.risk.events import ExecuteTradeCommand
+from gqos.accounting.models import Position
 
 class LiveTradingEngine:
     def __init__(
@@ -40,10 +41,17 @@ class LiveTradingEngine:
         
         # 2. Broker Truth Reconciliation
         self._reconcile_broker_truth()
+        if hasattr(self._portfolio, "rebuild_cash_reservations_from_positions"):
+            self._portfolio.rebuild_cash_reservations_from_positions(self._accounting.state.positions.values())
+            print("Rebuilt portfolio cash-reservation ledger from reconciled accounting positions.")
         
     def _reconcile_broker_truth(self):
         try:
-            actual_positions = self._adapter.get_actual_positions()
+            actual_position_details = self._get_actual_position_details()
+            actual_positions = {
+                symbol: details["quantity"]
+                for symbol, details in actual_position_details.items()
+            }
         except Exception as e:
             print(f"Failed to fetch broker positions: {e}. HALTING.")
             self._safety.trigger("Failed to query broker on startup")
@@ -57,7 +65,10 @@ class LiveTradingEngine:
 
         mismatch = False
 
-        for sym, actual_qty in actual_positions.items():
+        all_symbols = set(actual_positions) | set(local_positions)
+
+        for sym in all_symbols:
+            actual_qty = actual_positions.get(sym, Decimal('0'))
             local_qty = local_positions.get(sym, Decimal('0'))
 
             if actual_qty != local_qty:
@@ -78,6 +89,11 @@ class LiveTradingEngine:
                 # Inject into accounting
                 env = MessageEnvelope.create(payload=evt, version=1)
                 self._event_bus.publish(env)
+                self._set_reconciled_position(
+                    sym,
+                    actual_qty,
+                    actual_position_details.get(sym, {}).get("average_price", Decimal('0')),
+                )
 
         if mismatch:
             print("Reconciliation complete. Positions synced from broker. Resuming.")
@@ -85,6 +101,58 @@ class LiveTradingEngine:
         else:
             print("Reconciliation Passed. System is fully synced.")
             self.is_reconciled = True
+
+    def _get_actual_position_details(self):
+        if hasattr(self._adapter, "get_actual_position_details"):
+            return self._adapter.get_actual_position_details()
+        return {
+            symbol: {"quantity": quantity, "average_price": Decimal('0')}
+            for symbol, quantity in self._adapter.get_actual_positions().items()
+        }
+
+    def _set_reconciled_position(
+        self,
+        symbol: str,
+        actual_qty: Decimal,
+        broker_average_price: Decimal = Decimal('0'),
+    ) -> None:
+        existing_items = [
+            (key, pos)
+            for key, pos in self._accounting.state.positions.items()
+            if pos.symbol == symbol
+        ]
+        existing_pos = existing_items[0][1] if existing_items else None
+        strategy_id = (
+            existing_pos.strategy_id
+            if existing_pos is not None
+            else self._infer_reconciliation_strategy_id()
+        )
+
+        for key, _ in existing_items:
+            self._accounting.state.positions.pop(key, None)
+
+        if actual_qty == Decimal('0'):
+            return
+
+        direction = TradeDirection.BUY if actual_qty > 0 else TradeDirection.SELL
+        quantity = abs(actual_qty)
+        average_price = Decimal(str(broker_average_price))
+        if existing_pos is not None and existing_pos.direction == direction:
+            average_price = Decimal(str(broker_average_price)) or existing_pos.average_price
+
+        self._accounting.state.positions[f"{strategy_id}_{symbol}"] = Position(
+            strategy_id=strategy_id,
+            symbol=symbol,
+            direction=direction,
+            quantity=quantity,
+            average_price=average_price,
+        )
+
+    def _infer_reconciliation_strategy_id(self) -> str:
+        allocations = getattr(getattr(self._portfolio, "state", None), "allocations", {})
+        if len(allocations) == 1:
+            return next(iter(allocations))
+        return getattr(self._accounting.state, "strategy_id", "global")
             
     def _handle_execute_command(self, envelope: MessageEnvelope[ExecuteTradeCommand]):
         cmd = envelope.payload
@@ -97,14 +165,21 @@ class LiveTradingEngine:
             print("Trading Blocked: Kill Switch Triggered.")
             return
             
-        order_id = self._oms.create_order(cmd.symbol, cmd.direction, cmd.quantity, cmd.strategy_id)
+        order_id = self._oms.create_order(
+            cmd.symbol,
+            cmd.direction,
+            cmd.quantity,
+            cmd.strategy_id,
+            risk_allocation_id=getattr(cmd, "risk_allocation_id", ""),
+            portfolio_allocation_id=getattr(cmd, "portfolio_allocation_id", ""),
+        )
         
         # Submit to broker
         price = cmd.estimated_value / cmd.quantity if cmd.quantity > 0 else Decimal('0')
         
         # Check if the adapter supports sl/tp by inspecting its signature, or just pass as kwargs if supported
         try:
-            self._adapter.submit_order(order_id, cmd.symbol, cmd.direction, cmd.quantity, price, stop_loss=cmd.stop_loss, take_profit=cmd.take_profit)
+            self._adapter.submit_order(order_id, cmd.symbol, cmd.direction, cmd.quantity, price, stop_loss=cmd.stop_loss, take_profit=cmd.take_profit, decision_id=getattr(cmd, 'decision_id', ''))
         except TypeError:
             # Fallback for adapters that don't support SL/TP yet
             self._adapter.submit_order(order_id, cmd.symbol, cmd.direction, cmd.quantity, price)

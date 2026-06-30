@@ -8,6 +8,8 @@ import json
 from datetime import datetime
 import os
 
+from config.settings import settings
+from execution.mt5_direction import closing_deal_position_direction
 from notifications.telegram_notifier import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, send_telegram
 
 logger = logging.getLogger("GoldBot.TelegramListener")
@@ -20,8 +22,14 @@ class TelegramCommandListener:
         self.last_update_id = 0
         self.base_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
         self.known_tickets = set()
+        self.poll_closed_positions = os.getenv("TELEGRAM_POLL_CLOSED_POSITIONS", "False").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
 
     def start(self):
+        self._refresh_known_tickets()
         self.running = True
         threading.Thread(target=self._poll_updates, daemon=True).start()
         logger.info("TelegramCommandListener started.")
@@ -52,13 +60,30 @@ class TelegramCommandListener:
                 # Suppress timeout errors
                 pass
             
-            self._check_closed_positions()
+            if self.poll_closed_positions:
+                self._check_closed_positions()
             time.sleep(1)
+
+    def _refresh_known_tickets(self):
+        try:
+            pos = mt5.positions_get() or []
+            self.known_tickets = {
+                p.ticket
+                for p in pos
+                if getattr(p, "magic", settings.MAGIC_NUMBER) == settings.MAGIC_NUMBER
+            }
+        except Exception as e:
+            logger.warning(f"Could not initialize known MT5 tickets for Telegram listener: {e}")
+            self.known_tickets = set()
 
     def _check_closed_positions(self):
         try:
-            pos = mt5.positions_get()
-            current_tickets = set(p.ticket for p in pos) if pos else set()
+            pos = mt5.positions_get() or []
+            current_tickets = {
+                p.ticket
+                for p in pos
+                if getattr(p, "magic", settings.MAGIC_NUMBER) == settings.MAGIC_NUMBER
+            }
             
             # Check for missing tickets (Closed)
             closed_tickets = self.known_tickets - current_tickets
@@ -68,11 +93,13 @@ class TelegramCommandListener:
                     deals = mt5.history_deals_get(position=t)
                     if deals:
                         close_deal = deals[-1]
-                        if close_deal.entry == mt5.DEAL_ENTRY_OUT:
+                        if (
+                            close_deal.entry == mt5.DEAL_ENTRY_OUT
+                            and getattr(close_deal, "magic", settings.MAGIC_NUMBER) == settings.MAGIC_NUMBER
+                        ):
                             profit = close_deal.profit
                             symbol = close_deal.symbol
-                            # If it was a SELL deal to close, original was BUY
-                            direction = "BUY" if close_deal.type == mt5.DEAL_TYPE_SELL else "SELL"
+                            direction = closing_deal_position_direction(close_deal.type)
                             notify_trade_closed(t, symbol, direction, profit, 0.0)
             
             self.known_tickets = current_tickets
@@ -98,8 +125,23 @@ class TelegramCommandListener:
             self._cmd_risk()
         elif cmd_text == "/top":
             self._cmd_top()
+        elif cmd_text == "/health":
+            self._cmd_health()
+        elif cmd_text == "/scoreboard":
+            self._cmd_scoreboard()
+        elif cmd_text == "/learning":
+            self._cmd_learning()
+        elif cmd_text == "/missed":
+            self._cmd_missed()
+        elif cmd_text == "/sim":
+            self._cmd_sim()
+        elif cmd_text == "/monitor":
+            self._cmd_monitor()
+        elif cmd_text.startswith("/promote "):
+            pattern_id = cmd_text.split(" ", 1)[1].strip()
+            self._cmd_promote(pattern_id)
         else:
-            send_telegram("❌ Unknown command.\nAvailable: /status, /positions, /pause, /resume, /stop, /stats, /report, /risk, /top")
+            send_telegram("❌ Unknown command.\nAvailable: /status, /positions, /pause, /resume, /stop, /stats, /report, /risk, /top, /health, /scoreboard, /learning, /missed, /sim, /monitor")
 
     def _cmd_status(self):
         acc = mt5.account_info()
@@ -133,6 +175,30 @@ class TelegramCommandListener:
         send_telegram("⏸️ <b>Bot PAUSED</b>\nNo new trades will be opened. Existing trades are still managed.")
 
     def _cmd_resume(self):
+        try:
+            from gqos.ops.live_guard import get_entry_block_reason
+            acc = mt5.account_info()
+            balance = float(getattr(acc, "balance", 0.0)) if acc else 0.0
+            block_reason = get_entry_block_reason(balance)
+            if block_reason:
+                if settings.LIVE_GUARD_ENTRY_ACTION == "PROBE":
+                    self.alpha_worker.is_paused = False
+                    self.alpha_worker.guard_probe_reason = block_reason
+                    send_telegram(
+                        "🧪 <b>Guarded probe mode enabled</b>\n"
+                        f"{block_reason}\n"
+                        f"New entries are limited to {settings.LIVE_GUARD_PROBE_MULTIPLIER:.2f}x size."
+                    )
+                    return
+                self.alpha_worker.is_paused = True
+                send_telegram(
+                    "⛔ <b>Resume blocked by Live Guard</b>\n"
+                    f"{block_reason}\n"
+                    "Existing positions are still being managed."
+                )
+                return
+        except Exception as e:
+            logger.warning(f"Resume guard check failed: {e}")
         self.alpha_worker.is_paused = False
         send_telegram("▶️ <b>Bot RESUMED</b>\nScanning for new trades...")
 
@@ -256,3 +322,98 @@ class TelegramCommandListener:
             send_telegram(msg)
         except Exception as e:
             send_telegram(f"❌ Error reading DB: {e}")
+
+    def _cmd_health(self):
+        try:
+            import html
+            from gqos.ops.live_guard import build_health_report, summarize_rejection_reasons
+            ok, report = build_health_report()
+            prefix = "PASS" if ok else "CHECK"
+            send_telegram(f"<b>GQOS Health</b> [{prefix}]\n<pre>{html.escape(report)}</pre>")
+            send_telegram(f"<pre>{html.escape(summarize_rejection_reasons())}</pre>")
+        except Exception as e:
+            send_telegram(f"❌ Health check failed: {e}")
+
+    def _cmd_scoreboard(self):
+        try:
+            from gqos.ops.live_guard import build_symbol_scoreboard
+            send_telegram(build_symbol_scoreboard(max_rows=25))
+        except Exception as e:
+            send_telegram(f"❌ Scoreboard failed: {e}")
+
+    def _cmd_learning(self):
+        try:
+            from gqos.ops.learning_health import build_learning_health
+            ok, report = build_learning_health()
+            prefix = "PASS" if ok else "CHECK"
+            send_telegram(f"<b>Learning Health</b> [{prefix}]\n<pre>{html.escape(report)}</pre>")
+        except Exception as e:
+            send_telegram(f"❌ Learning health failed: {e}")
+
+    def _cmd_missed(self):
+        try:
+            from gqos.learning.missed_opportunity_tracker import missed_opportunity_tracker
+            from gqos.ops.missed_opportunity_report import build_missed_opportunity_report
+            missed_opportunity_tracker.process_pending(limit=None)
+            send_telegram(f"<b>Missed Opportunity</b>\n<pre>{html.escape(build_missed_opportunity_report())}</pre>")
+        except Exception as e:
+            send_telegram(f"❌ Missed opportunity report failed: {e}")
+
+    def _cmd_sim(self):
+        try:
+            from gqos.learning.continuous_market_simulator import continuous_market_simulator
+            from gqos.learning.simulation_analyzer import build_simulation_recommendations
+            from gqos.ops.continuous_market_sim_report import build_continuous_market_sim_report
+            continuous_market_simulator.scan_once()
+            recs = build_simulation_recommendations().get("recommendations", {})
+            rec_lines = ["", "Recommendations:"]
+            for key, rec in list(recs.items())[:8]:
+                rec_lines.append(
+                    f"- {key}: {rec.get('action')} AvgR={float(rec.get('avg_r', 0.0)):+.2f} "
+                    f"PFadj={float(rec.get('pf_threshold_adjust', 0.0)):+.3f}"
+                )
+            report = build_continuous_market_sim_report()
+            if recs:
+                report += "\n" + "\n".join(rec_lines)
+            send_telegram(f"<b>Continuous Market Simulation</b>\n<pre>{html.escape(report)}</pre>")
+        except Exception as e:
+            send_telegram(f"❌ Continuous simulation report failed: {e}")
+
+    def _cmd_monitor(self):
+        try:
+            from gqos.ops.learning_health import build_learning_health
+            from gqos.ops.continuous_market_sim_report import build_continuous_market_sim_report
+            from gqos.ops.missed_opportunity_report import build_missed_opportunity_report
+            ok, learning = build_learning_health()
+            report = (
+                f"Learning: {'PASS' if ok else 'CHECK'}\n"
+                f"{learning}\n\n"
+                f"{build_continuous_market_sim_report()}\n\n"
+                f"{build_missed_opportunity_report()}"
+            )
+            send_telegram(f"<b>GQOS Monitor</b>\n<pre>{html.escape(report[:3500])}</pre>")
+        except Exception as e:
+            send_telegram(f"❌ Monitor failed: {e}")
+
+    def _cmd_promote(self, pattern_id):
+        db_path = "data/pattern_store/pattern_database.parquet"
+        if not os.path.exists(db_path):
+            send_telegram("❌ Pattern DB not found.")
+            return
+            
+        try:
+            df = pd.read_parquet(db_path)
+            mask = df['pattern_id'] == pattern_id
+            if not mask.any():
+                send_telegram(f"❌ Pattern `{pattern_id}` not found.")
+                return
+                
+            old_status = df.loc[mask, 'promotion_status'].iloc[0]
+            df.loc[mask, 'promotion_status'] = "LIVE_APPROVED"
+            df.to_parquet(db_path)
+            
+            send_telegram(f"✅ Pattern `{pattern_id}` manually approved.\nStatus: {old_status} ➡️ LIVE_APPROVED")
+            logger.info(f"[TelegramListener] Manual promotion: {pattern_id} from {old_status} to LIVE_APPROVED")
+        except Exception as e:
+            send_telegram(f"❌ Error promoting: {e}")
+            logger.error(f"[TelegramListener] Error promoting {pattern_id}: {e}")

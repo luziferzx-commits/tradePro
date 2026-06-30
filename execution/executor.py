@@ -8,7 +8,16 @@ logger = logging.getLogger(__name__)
 
 class Executor:
     @staticmethod
-    def execute_trade(signal_id: int, symbol: str, direction: str, volume: float, sl_points: float = 500, probability: float = 0.0, evaluation: dict = None) -> bool:
+    def execute_trade(
+        signal_id: int,
+        symbol: str,
+        direction: str,
+        volume: float,
+        sl_points: float = 500,
+        tp_points: float | None = None,
+        probability: float = 0.0,
+        evaluation: dict = None,
+    ) -> bool:
         """
         Sends an order to MT5. sl_points is in point values (e.g., 500 = 50 pips).
         """
@@ -68,15 +77,17 @@ class Executor:
         point = mt5.symbol_info(resolved_symbol).point
         price = mt5.symbol_info_tick(resolved_symbol).ask if direction == "BUY" else mt5.symbol_info_tick(resolved_symbol).bid
         
+        tp_distance_points = tp_points if tp_points is not None else sl_points * 2
+
         # Calculate SL/TP
         if direction == "BUY":
             order_type = mt5.ORDER_TYPE_BUY
             sl = price - (sl_points * point)
-            tp = price + (sl_points * 2 * point) # 1:2 RR as default
+            tp = price + (tp_distance_points * point)
         else:
             order_type = mt5.ORDER_TYPE_SELL
             sl = price + (sl_points * point)
-            tp = price - (sl_points * 2 * point)
+            tp = price - (tp_distance_points * point)
 
         request = {
             "action": mt5.TRADE_ACTION_DEAL,

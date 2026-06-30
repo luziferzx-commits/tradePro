@@ -2,6 +2,7 @@ import MetaTrader5 as mt5
 import pandas as pd
 import json
 import os
+from execution.mt5_direction import closing_deal_position_direction
 
 def init_mt5():
     if not mt5.initialize():
@@ -81,7 +82,7 @@ def get_trade_history(days=1):
             history.append({
                 "ticket": d.ticket,
                 "symbol": d.symbol,
-                "direction": "SELL" if d.type == mt5.DEAL_TYPE_SELL else "BUY",
+                "direction": closing_deal_position_direction(d.type),
                 "volume": d.volume,
                 "price": d.price,
                 "profit": d.profit,

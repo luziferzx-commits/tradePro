@@ -76,6 +76,19 @@ class AutoRetrainTrigger:
             if current >= self.retrain_threshold and not self._is_retraining:
                 self._maybe_trigger_retrain()
 
+    def trigger_if_due(self):
+        with self._lock:
+            current = self._state["trades_since_retrain"]
+            if current >= self.retrain_threshold and not self._is_retraining:
+                logger.info(
+                    "[RetrainTrigger] Startup threshold already reached: %s/%s",
+                    current,
+                    self.retrain_threshold,
+                )
+                self._maybe_trigger_retrain()
+                return True
+        return False
+
     def _maybe_trigger_retrain(self):
         """ตัดสินใจว่าจะ retrain หรือไม่"""
         trades = self._state["trades_since_retrain"]
@@ -117,6 +130,23 @@ class AutoRetrainTrigger:
             if not outcomes_df.empty:
                 result = pattern_updater.update(outcomes_df)
                 logger.info(f"[RetrainTrigger] Pattern update: {result}")
+                
+                pending = result.get("pending_promotions", [])
+                if pending:
+                    try:
+                        from notifications.telegram_notifier import send_telegram
+                        for promo in pending:
+                            msg = (
+                                f"🚨 *Promotion Approval Required* 🚨\n"
+                                f"Pattern: `{promo['pattern_id']}`\n"
+                                f"Old PF: {promo['old_pf']:.2f} ➡️ New PF: {promo['new_pf']:.2f}\n"
+                                f"Win Rate: {promo['win_rate']:.1%}\n"
+                                f"Sample Size: {promo['n']}\n\n"
+                                f"To approve, reply with: `/promote {promo['pattern_id']}`"
+                            )
+                            send_telegram(msg)
+                    except Exception as e:
+                        logger.error(f"[RetrainTrigger] Failed to send Telegram promo alert: {e}")
 
             # 2. Retrain ML models
             from data.mt5_client import mt5_client
@@ -177,19 +207,23 @@ class AutoRetrainTrigger:
         }
 
     def _load_state(self) -> dict:
-        if os.path.exists(RETRAIN_STATE_PATH):
-            try:
-                with open(RETRAIN_STATE_PATH, "r") as f:
-                    return json.load(f)
-            except Exception:
-                pass
-        return {
+        defaults = {
             "trades_since_retrain": 0,
             "wins_since_retrain": 0,
             "pnl_since_retrain": 0.0,
             "total_live_trades": 0,
             "last_retrain": None,
         }
+        if os.path.exists(RETRAIN_STATE_PATH):
+            try:
+                with open(RETRAIN_STATE_PATH, "r") as f:
+                    state = json.load(f)
+                    merged = {**defaults, **state}
+                    merged.pop("is_retraining", None)
+                    return merged
+            except Exception:
+                pass
+        return defaults
 
     def _save_state(self):
         os.makedirs("data/learning", exist_ok=True)
@@ -198,4 +232,6 @@ class AutoRetrainTrigger:
 
 
 # Singleton
-retrain_trigger = AutoRetrainTrigger(retrain_threshold=50)
+retrain_trigger = AutoRetrainTrigger(
+    retrain_threshold=int(os.getenv("GQOS_RETRAIN_THRESHOLD", "50"))
+)

@@ -15,6 +15,19 @@ class MLPredictor:
         """Initialize Multi-Symbol Predictor"""
         self.fallback_model_path = fallback_model_path
         self._models = {} # dict of symbol -> {"model": model, "metadata": dict, "threshold": float, "version": str, "features": list}
+
+    @property
+    def threshold(self) -> float:
+        if "FALLBACK" in self._models:
+            return float(self._models["FALLBACK"].get("threshold", 0.5))
+        return 0.5
+
+    def reload(self):
+        """Clear cached models so the next prediction loads the latest registry artifacts."""
+        count = len(self._models)
+        self._models.clear()
+        logger.info("MLPredictor cache cleared; %s cached model(s) will be reloaded on demand.", count)
+        return True
         
     def _load_model_for_symbol(self, symbol: str):
         """Loads the production model for a symbol from registry."""

@@ -66,7 +66,8 @@ class AccountingEngine:
                 symbol=trade.symbol,
                 direction=trade.direction,
                 quantity=trade.quantity,
-                average_price=trade.execution_price
+                average_price=trade.execution_price,
+                ticket=trade.ticket
             ))
             return events
             
@@ -97,14 +98,17 @@ class AccountingEngine:
                 symbol=trade.symbol,
                 direction=pos.direction,
                 quantity_closed=trade.quantity,
-                exit_price=trade.execution_price
+                exit_price=trade.execution_price,
+                ticket=trade.ticket
             ))
             
             if realized_pnl != Decimal('0'):
                 events.append(RealizedPnLEmittedEvent(
                     strategy_id=trade.strategy_id,
                     symbol=trade.symbol,
-                    realized_pnl=realized_pnl
+                    realized_pnl=realized_pnl,
+                    ticket=trade.ticket,
+                    exit_price=trade.execution_price
                 ))
                 
             if trade.quantity < pos.quantity:
@@ -130,14 +134,17 @@ class AccountingEngine:
             symbol=trade.symbol,
             direction=pos.direction,
             quantity_closed=closed_qty,
-            exit_price=trade.execution_price
+            exit_price=trade.execution_price,
+            ticket=trade.ticket
         ))
         
         if realized_pnl != Decimal('0'):
             events.append(RealizedPnLEmittedEvent(
                 strategy_id=trade.strategy_id,
                 symbol=trade.symbol,
-                realized_pnl=realized_pnl
+                realized_pnl=realized_pnl,
+                ticket=trade.ticket,
+                exit_price=trade.execution_price
             ))
             
         opened_qty = trade.quantity - closed_qty
@@ -146,7 +153,8 @@ class AccountingEngine:
             symbol=trade.symbol,
             direction=trade.direction,
             quantity=opened_qty,
-            average_price=trade.execution_price
+            average_price=trade.execution_price,
+            ticket=trade.ticket
         ))
         
         return events

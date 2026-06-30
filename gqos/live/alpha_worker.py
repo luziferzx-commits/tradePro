@@ -18,6 +18,7 @@ from data.mt5_client import MT5Client
 from strategy.strategies.registry import StrategyRegistry
 from strategy.strategies.ensemble_router import EnsembleRouter
 from strategy.evidence_router import EvidenceRouter
+from config.settings import settings
 
 # ─── Learning Loop ─────────────────────────────────────────────────
 from gqos.learning.outcome_logger import outcome_logger
@@ -35,6 +36,7 @@ class AlphaWorker:
         self._running = False
         self._thread = None
         self.is_paused = False
+        self.guard_probe_reason = ""
         
         self.registry = SymbolRegistry("config/symbols.yaml")
         self.metadata = MarketMetadata(self.registry)
@@ -42,7 +44,10 @@ class AlphaWorker:
         self.predictor = MLPredictor()
         
         import os
+        from datetime import datetime
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        self.run_id = os.getenv("GQOS_RUN_ID") or f"live-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}"
+        self.learning_source = settings.LEARNING_SOURCE
         self.evidence_router = EvidenceRouter(base_dir=base_dir, mode="LIVE")
         
         self.abc_router = EnsembleRouter(trading_cost_r=0.1, min_ev_threshold=0.0)
@@ -64,7 +69,8 @@ class AlphaWorker:
     def _run_loop(self):
         while self._running:
             try:
-                if self.is_paused:
+                paused_scan_only = self.is_paused and settings.ENABLE_PAUSED_SIGNAL_LOGGING
+                if self.is_paused and not paused_scan_only:
                     time.sleep(1)
                     continue
                     
@@ -73,6 +79,8 @@ class AlphaWorker:
                     continue
 
                 logger.info("AlphaWorker: New closed candle detected. Scanning markets...")
+                if paused_scan_only:
+                    logger.info("AlphaWorker: Entry paused; scanning for signal logging only.")
                 
                 # 1. Run Legacy MultiAssetScanner
                 approved, rejected = self.scanner.scan_all()
@@ -81,13 +89,17 @@ class AlphaWorker:
                 evidence_signals = []
                 try:
                     from strategy.indicators import IndicatorCalculator
+                    import uuid
+                    from datetime import datetime
                     symbols_to_scan = [m["symbol"] for m in self.registry.get_enabled_symbols()]
                     for symbol in symbols_to_scan:
+                        now_str = datetime.utcnow().strftime("%Y%m%d")
+                        decision_id = f"GQOS-{now_str}-{str(uuid.uuid4().hex[:8].upper())}"
                         df = self.mt5_client.get_historical_data(symbol, "M15", 250)
                         if df is None or df.empty: continue
                         df = IndicatorCalculator.add_indicators(df)
                         
-                        sig = self.evidence_router.evaluate(df, symbol)
+                        sig = self.evidence_router.evaluate(df, symbol, decision_id)
                         if sig:
                             evidence_signals.append({
                                 'symbol':            symbol,
@@ -97,11 +109,12 @@ class AlphaWorker:
                                 'source':            'EVIDENCE_ROUTER',
                                 # ─── ส่ง metadata ไปด้วย เพื่อ Learning Loop ───
                                 'metadata':          sig.get('metadata', {}),
+                                'decision_id':       decision_id,
                                 # ─────────────────────────────────────────────────
                             })
                             logger.info(
                                 f"💡 EvidenceRouter Signal: {symbol} {sig['direction']} "
-                                f"(Sim: {sig['metadata']['similarity_score']:.2f})"
+                                f"(Sim: {sig.get('metadata', {}).get('similarity', 0):.2f})"
                             )
                 except Exception as e:
                     logger.error(f"AlphaWorker EvidenceRouter scan failed: {e}", exc_info=True)
@@ -144,8 +157,9 @@ class AlphaWorker:
                         fng = CryptoSentiment.get_fear_greed_index()
                         fng_val = fng['value']
                         
-                        # Contrarian Force Approve: Extreme Fear (< 20) -> Force BUY
-                        if fng_val < 20:
+                        # Optional contrarian rescue. Keep disabled by default in live mode
+                        # because it can reintroduce crypto signals rejected by other filters.
+                        if settings.ENABLE_CRYPTO_FORCE_APPROVE and fng_val < 20:
                             for sig in rejected:
                                 if sig['symbol'] in crypto_symbols and sig['side'] in ["BUY", "LONG"]:
                                     sig['model_probability'] = 0.85
@@ -178,15 +192,39 @@ class AlphaWorker:
                     f"({len(evidence_signals)} from Evidence). Processing signals..."
                 )
 
+                guard_probe_active = bool(getattr(self, "guard_probe_reason", ""))
                 for sig in approved:
+                    if paused_scan_only:
+                        logger.info(
+                            "AlphaWorker: Entry paused; signal logged but no live order will be sent "
+                            f"for {sig.get('symbol')} {sig.get('side')}."
+                        )
+                        continue
+
                     symbol = sig['symbol']
                     side   = sig['side']
                     direction = TradeDirection.BUY if side in ["BUY", "LONG"] else TradeDirection.SELL
+                    decision_id = sig.get('decision_id')
+                    if not decision_id:
+                        import uuid
+                        import datetime
+                        date_str = datetime.datetime.utcnow().strftime("%Y%m%d")
+                        decision_id = f"GQOS-{date_str}-{str(uuid.uuid4().hex[:8].upper())}"
+                        sig['decision_id'] = decision_id
                     
                     resolved_symbol = self.mt5_client.resolve_symbol(symbol)
                     sym_info = mt5.symbol_info(resolved_symbol)
                     if not sym_info:
                         logger.error(f"Could not get symbol info for {resolved_symbol}")
+                        continue
+
+                    symbol_config = self.registry.get_symbol(symbol) or {}
+                    max_spread = symbol_config.get("max_spread_points")
+                    if max_spread is not None and sym_info.spread > float(max_spread):
+                        logger.warning(
+                            f"AlphaWorker: Skipping {resolved_symbol}; "
+                            f"spread too high ({sym_info.spread} > {max_spread})."
+                        )
                         continue
                         
                     positions = mt5.positions_get(symbol=resolved_symbol)
@@ -200,30 +238,59 @@ class AlphaWorker:
                     point = Decimal(str(sym_info.point))
                     atr   = Decimal(str(sig.get('atr', 0.0)))
                     
-                    symbol_config  = self.registry.get_symbol(symbol) or {}
                     atr_multiplier = Decimal(str(symbol_config.get("atr_sl_multiplier", 15.0)))
                     
-                    sl_buffer = atr * atr_multiplier if atr > 0 else Decimal('500') * point
+                    base_sl_buffer = atr * atr_multiplier if atr > 0 else Decimal('500') * point
+                    
+                    # Apply Dynamic Target ML with Clamping
+                    try:
+                        from ml.dynamic_targets import dynamic_targets
+                        pattern_sim = float(sig.get('metadata', {}).get('similarity', sig.get('metadata', {}).get('similarity_score', 0.5)))
+                        pred_sl, pred_tp = dynamic_targets.predict(pattern_sim, float(base_sl_buffer))
+                        
+                        # Clamp to safety bounds (0.5x to 2.0x of static ATR buffer)
+                        min_sl = float(base_sl_buffer) * 0.5
+                        max_sl = float(base_sl_buffer) * 2.0
+                        
+                        clamped_sl = max(min_sl, min(max_sl, pred_sl))
+                        clamped_tp = max(min_sl * 2.0, min(max_sl * 2.0, pred_tp))
+                        
+                        sl_buffer = Decimal(str(clamped_sl))
+                        tp_buffer = Decimal(str(clamped_tp))
+                    except Exception as e:
+                        logger.error(f"Dynamic targets failed: {e}")
+                        sl_buffer = base_sl_buffer
+                        tp_buffer = sl_buffer * Decimal('2.0')
+                        
                     sl_price  = (entry_price - sl_buffer) if direction == TradeDirection.BUY \
                                 else (entry_price + sl_buffer)
-                    tp_buffer = sl_buffer * Decimal('2.0')
                     tp_price  = (entry_price + tp_buffer) if direction == TradeDirection.BUY \
                                 else (entry_price - tp_buffer)
 
                     # ─── Learning Loop: บันทึกก่อนส่ง command ───────────────
                     meta = sig.get('metadata') or {}
+                    account = mt5.account_info()
+                    account_id = str(getattr(account, "login", "") or "")
+                    entry_mode = "GUARDED_PROBE" if guard_probe_active else "NORMAL"
+                    probe_reason = self.guard_probe_reason if guard_probe_active else ""
                     try:
-                        outcome_logger.on_trade_opened(
+                        outcome_logger.register_intent(
+                            decision_id=decision_id,
                             symbol=resolved_symbol,
                             direction=direction.name,
                             entry_price=float(entry_price),
                             sl_price=float(sl_price),
                             tp_price=float(tp_price),
                             pattern_id=meta.get('pattern_id'),
-                            pattern_pf=float(meta.get('historical_pf', 0.0)),
-                            pattern_sim=float(meta.get('similarity_score', 0.0)),
+                            pattern_pf=float(meta.get('profit_factor', meta.get('historical_pf', 0.0))),
+                            pattern_sim=float(meta.get('similarity', meta.get('similarity_score', 0.0))),
                             session=meta.get('session_label', 'Unknown'),
                             strategy_id="gqos_alpha_v1",
+                            source=self.learning_source,
+                            run_id=self.run_id,
+                            account_id=account_id,
+                            entry_mode=entry_mode,
+                            probe_reason=probe_reason,
                         )
                     except Exception as e:
                         logger.warning(f"[Learning] on_trade_opened failed: {e}")
@@ -231,15 +298,63 @@ class AlphaWorker:
 
                     if hasattr(self, 'position_monitor'):
                         try:
-                            self.position_monitor.register_open(
+                            self.position_monitor.register_intent(
+                                decision_id=decision_id,
                                 symbol=resolved_symbol,
                                 edge_score=float(conviction)
                             )
                         except Exception as e:
                             logger.warning(f"[PositionMonitor] register_open failed: {e}")
 
+                    if settings.ENABLE_PAUSED_SYMBOL_RECOVERY_PROBE:
+                        try:
+                            from gqos.risk.portfolio_budget import portfolio_budget
+                            from strategy.cooldown_manager import cooldown_manager
+
+                            budget_multiplier = portfolio_budget.get_multiplier(resolved_symbol)
+                            historical_pf = float(meta.get('profit_factor', meta.get('historical_pf', 0.0)))
+                            expectancy_r = float(meta.get('expectancy_r', 0.0))
+                            similarity = float(meta.get('similarity', meta.get('similarity_score', 0.0)))
+                            if (
+                                budget_multiplier <= 0.0
+                                and historical_pf >= settings.RECOVERY_PROBE_MIN_PF
+                                and expectancy_r >= settings.RECOVERY_PROBE_MIN_EXPECTANCY_R
+                                and similarity >= settings.RECOVERY_PROBE_MIN_SIMILARITY
+                            ):
+                                cooldown_manager.set_probe(decision_id, True)
+                                outcome_logger.update_intent(
+                                    decision_id,
+                                    entry_mode="RECOVERY_PROBE",
+                                    probe_reason="symbol budget paused; strong recovery signal",
+                                )
+                                logger.warning(
+                                    f"[RecoveryProbe] {resolved_symbol} budget paused but signal is strong; "
+                                    f"allowing {settings.LIVE_GUARD_PROBE_MULTIPLIER:.2f}x probe "
+                                    f"(PF={historical_pf:.2f}, ExpR={expectancy_r:.2f}, Sim={similarity:.2f})"
+                                )
+                        except Exception as e:
+                            logger.warning(f"[RecoveryProbe] Could not evaluate probe override for {resolved_symbol}: {e}")
+
+                    if guard_probe_active:
+                        try:
+                            from strategy.cooldown_manager import cooldown_manager
+                            cooldown_manager.set_probe(decision_id, True)
+                            outcome_logger.update_intent(
+                                decision_id,
+                                entry_mode="GUARDED_PROBE",
+                                probe_reason=self.guard_probe_reason,
+                            )
+                            logger.warning(
+                                f"[GuardedProbe] {resolved_symbol} {direction.name} allowed at "
+                                f"{settings.LIVE_GUARD_PROBE_MULTIPLIER:.2f}x because "
+                                f"{self.guard_probe_reason}"
+                            )
+                        except Exception as e:
+                            logger.warning(f"[GuardedProbe] Could not mark {resolved_symbol} as probe: {e}")
+
                     cmd = SizePositionCommand(
                         strategy_id="gqos_alpha_v1",
+                        decision_id=decision_id,
                         symbol=resolved_symbol,
                         direction=direction,
                         entry_price=entry_price,
@@ -254,7 +369,7 @@ class AlphaWorker:
                         f"AlphaWorker: Emitting SizePositionCommand for {resolved_symbol} "
                         f"{direction.name} SL={sl_price:.5f}"
                     )
-                    self._cmd_bus.dispatch(MessageEnvelope.create(payload=cmd, version=1))
+                    self._cmd_bus.dispatch(MessageEnvelope.create(payload=cmd, version=1, run_id=self.run_id))
                 
                 logger.info("AlphaWorker: Sleeping 60s...")
                 for _ in range(60):

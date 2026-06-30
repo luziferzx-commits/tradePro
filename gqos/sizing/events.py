@@ -21,6 +21,7 @@ class SizePositionCommand(Command):
     conviction: Optional[Decimal] = None
     metrics: Optional[StrategyMetrics] = None
     volatility: Optional[VolatilityMetrics] = None
+    decision_id: str = ""
 
 @dataclass(frozen=True)
 class PositionSizedEvent(Event):

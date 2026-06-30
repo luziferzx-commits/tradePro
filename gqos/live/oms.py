@@ -20,6 +20,8 @@ class LiveOrder:
     status: OrderStatus = OrderStatus.NEW
     average_fill_price: Decimal = Decimal('0')
     strategy_id: str = "global"
+    risk_allocation_id: str = ""
+    portfolio_allocation_id: str = ""
     
     def __post_init__(self):
         self.remaining_quantity = self.total_quantity
@@ -29,14 +31,24 @@ class OrderManagementSystem:
         self._event_bus = event_bus
         self.orders: Dict[str, LiveOrder] = {}
         
-    def create_order(self, symbol: str, direction: TradeDirection, quantity: Decimal, strategy_id: str = "global") -> str:
+    def create_order(
+        self,
+        symbol: str,
+        direction: TradeDirection,
+        quantity: Decimal,
+        strategy_id: str = "global",
+        risk_allocation_id: str = "",
+        portfolio_allocation_id: str = "",
+    ) -> str:
         order_id = str(uuid.uuid4())
         order = LiveOrder(
             order_id=order_id,
             symbol=symbol,
             direction=direction,
             total_quantity=quantity,
-            strategy_id=strategy_id
+            strategy_id=strategy_id,
+            risk_allocation_id=risk_allocation_id,
+            portfolio_allocation_id=portfolio_allocation_id,
         )
         self.orders[order_id] = order
         self._emit_update(order)
@@ -84,7 +96,8 @@ class OrderManagementSystem:
             quantity=fill_qty,
             execution_price=fill_price,
             intended_price=fill_price, # We ignore slippage here, it's baked into fill_price
-            slippage_amount=Decimal('0')
+            slippage_amount=Decimal('0'),
+            ticket=order.order_id
         )
         self._event_bus.publish(MessageEnvelope.create(payload=trade_evt, version=1))
         
@@ -96,6 +109,8 @@ class OrderManagementSystem:
             filled_quantity=order.filled_quantity,
             remaining_quantity=order.remaining_quantity,
             average_fill_price=order.average_fill_price,
-            message=message
+            message=message,
+            risk_allocation_id=order.risk_allocation_id,
+            portfolio_allocation_id=order.portfolio_allocation_id,
         )
         self._event_bus.publish(MessageEnvelope.create(payload=evt, version=1))

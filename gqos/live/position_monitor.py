@@ -12,6 +12,8 @@ Rules:
   FLIP        → ทิศกลับ → รอ 1 candle confirm แล้วค่อย flip
 """
 import logging
+import json
+import os
 import threading
 import time
 from decimal import Decimal
@@ -53,6 +55,12 @@ class PositionMonitor:
         
         # track if a position has already been reduced due to news
         self._news_reduced: dict = {}   # symbol → bool
+        
+        self._emitted_store_path = os.getenv(
+            "GQOS_EMITTED_CLOSE_DEALS_PATH",
+            os.path.join("data", "learning", "emitted_close_deals.json"),
+        )
+        self._emitted_tickets: set = self._load_emitted_close_keys()
 
         logger.info("PositionMonitor initialized.")
 
@@ -60,13 +68,13 @@ class PositionMonitor:
     # Public API
     # ─────────────────────────────────────────────────────────────────
 
-    def register_open(self, symbol: str, edge_score: float):
-        """เรียกเมื่อเปิด position ใหม่ — บันทึก edge ตอนเปิด"""
+    def register_intent(self, decision_id: str, symbol: str, edge_score: float):
         self._opening_edge[symbol] = edge_score
         self._pending_flip.pop(symbol, None)
         logger.info(f"[PositionMonitor] Registered {symbol} opening edge={edge_score:.3f}")
 
     def start(self):
+        self._seed_recent_closed_deals()
         self._re_evaluate_existing_positions()
         self._running = True
         self._thread  = threading.Thread(target=self._run_loop, daemon=True)
@@ -96,7 +104,7 @@ class PositionMonitor:
             except Exception:
                 pass
                 
-            sig = self._evidence_router.evaluate(df, base_sym)
+            sig = self._evidence_router.evaluate(df, base_sym, log_events=False)
             if sig:
                 confidence = float(sig.get("confidence", 0.5))
                 self._opening_edge[symbol] = confidence
@@ -108,6 +116,73 @@ class PositionMonitor:
             self._thread.join()
         logger.info("PositionMonitor stopped.")
 
+    def _load_emitted_close_keys(self) -> set:
+        try:
+            with open(self._emitted_store_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                return {str(item) for item in data}
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            logger.warning(f"[PositionMonitor] Could not load emitted close deal store: {e}")
+        return set()
+
+    def _save_emitted_close_keys(self):
+        try:
+            directory = os.path.dirname(self._emitted_store_path)
+            if directory:
+                os.makedirs(directory, exist_ok=True)
+            keys = sorted(self._emitted_tickets)[-5000:]
+            with open(self._emitted_store_path, "w", encoding="utf-8") as f:
+                json.dump(keys, f)
+        except Exception as e:
+            logger.warning(f"[PositionMonitor] Could not save emitted close deal store: {e}")
+
+    def _remember_emitted_close(self, close_key):
+        if close_key is None:
+            return
+        self._emitted_tickets.add(str(close_key))
+        self._save_emitted_close_keys()
+
+    def _remember_close_deal(self, deal):
+        self._emitted_tickets.add(self._close_deal_key(deal))
+        position_id = getattr(deal, "position_id", None)
+        if position_id:
+            self._emitted_tickets.add(str(position_id))
+        self._save_emitted_close_keys()
+
+    def _close_deal_key(self, deal):
+        ticket = getattr(deal, "ticket", None)
+        if ticket:
+            return str(ticket)
+        return str(getattr(deal, "position_id", ""))
+
+    def _seed_recent_closed_deals(self):
+        try:
+            import datetime
+            start = datetime.datetime.now() - datetime.timedelta(days=1)
+            end = datetime.datetime.now() + datetime.timedelta(hours=1)
+            deals = mt5.history_deals_get(start, end) or []
+            seeded = 0
+            for deal in deals:
+                if (
+                    getattr(deal, "magic", None) == self._magic
+                    and getattr(deal, "entry", None) == mt5.DEAL_ENTRY_OUT
+                ):
+                    key = self._close_deal_key(deal)
+                    if key and key not in self._emitted_tickets:
+                        self._emitted_tickets.add(key)
+                        position_id = getattr(deal, "position_id", None)
+                        if position_id:
+                            self._emitted_tickets.add(str(position_id))
+                        seeded += 1
+            if seeded:
+                self._save_emitted_close_keys()
+                logger.info(f"[PositionMonitor] Seeded {seeded} recent close deals to prevent restart duplicates.")
+        except Exception as e:
+            logger.warning(f"[PositionMonitor] Could not seed recent close deals: {e}")
+
     # ─────────────────────────────────────────────────────────────────
     # Main loop — รันทุก M5 candle
     # ─────────────────────────────────────────────────────────────────
@@ -117,7 +192,12 @@ class PositionMonitor:
         while self._running:
             try:
                 # ตรวจว่ามี M5 candle ใหม่ไหม
-                tick = mt5.symbol_info_tick("XAUUSDm") or mt5.symbol_info_tick("EURUSDm")
+                positions = mt5.positions_get()
+                if not positions:
+                    time.sleep(5)
+                    continue
+                
+                tick = mt5.symbol_info_tick(positions[0].symbol)
                 if tick is None:
                     time.sleep(5)
                     continue
@@ -127,12 +207,56 @@ class PositionMonitor:
                     time.sleep(1)
                     continue
 
+                if last_candle_time is not None:
+                    self._check_new_deals(last_candle_time, tick.time)
+
                 last_candle_time = current_minute
                 self._evaluate_all_positions()
 
             except Exception as e:
                 logger.error(f"[PositionMonitor] Error: {e}", exc_info=True)
                 time.sleep(5)
+
+    def _check_new_deals(self, from_time, to_time):
+        if not hasattr(self, '_evt_bus') or not self._evt_bus:
+            return
+            
+        import datetime
+        # Use a wide 24-hour window based on local time to avoid MT5 timezone mismatch bugs
+        # The _emitted_tickets set ensures we don't process duplicates
+        start = datetime.datetime.now() - datetime.timedelta(days=1)
+        end = datetime.datetime.now() + datetime.timedelta(hours=1)
+        
+        deals = mt5.history_deals_get(start, end)
+        if not deals:
+            return
+            
+        for d in deals:
+            if d.magic == self._magic and d.entry == 1:
+                deal_key = self._close_deal_key(d)
+                position_key = str(getattr(d, "position_id", ""))
+                if deal_key in self._emitted_tickets or position_key in self._emitted_tickets:
+                    continue
+                
+                self._remember_close_deal(d)
+                
+                from gqos.accounting.events import RealizedPnLEmittedEvent
+                from gqos.messaging.contracts import MessageEnvelope
+                from decimal import Decimal
+                
+                logger.info(f"[PositionMonitor] 🚨 Detected MT5 Deal Close (SL/TP/Manual): {d.symbol} ticket={d.position_id} pnl={d.profit}")
+                
+                event = RealizedPnLEmittedEvent(
+                    strategy_id="gqos_alpha_v1",
+                    symbol=d.symbol,
+                    realized_pnl=Decimal(str(d.profit)),
+                    ticket=d.position_id,
+                    exit_price=Decimal(str(d.price))
+                )
+                self._evt_bus.publish(MessageEnvelope.create(payload=event, version=1))
+                
+                self._opening_edge.pop(d.symbol, None)
+                self._news_reduced.pop(d.symbol, None)
 
     # ─────────────────────────────────────────────────────────────────
     # Evaluate all open positions
@@ -142,6 +266,22 @@ class PositionMonitor:
         positions = mt5.positions_get() or []
         if not positions:
             return
+
+        # ─── Weekend Liquidation (Friday >= 22:45 UTC) ───
+        from datetime import datetime, timezone
+        now_utc = datetime.now(timezone.utc)
+        if now_utc.weekday() == 4 and now_utc.hour >= 22 and now_utc.minute >= 45:
+            logger.warning("[PositionMonitor] 🚨 Friday 22:45 UTC reached! Liquidating all for weekend.")
+            try:
+                from notifications.telegram_notifier import send_telegram
+                send_telegram("🚨 <b>Weekend Liquidation</b>\nFriday 22:45 UTC reached! Closing all active positions for the weekend.")
+            except:
+                pass
+            for pos in positions:
+                if pos.magic == self._magic:
+                    self._close_position(pos, reason="Weekend Close")
+            return
+        # ────────────────────────────────────────────────
 
         for pos in positions:
             if pos.magic != self._magic:
@@ -168,25 +308,39 @@ class PositionMonitor:
             pass
 
         # ประเมิน edge ใหม่
-        sig_now = self._evidence_router.evaluate(df, base_sym)
+        sig_now = self._evidence_router.evaluate(df, base_sym, log_events=False)
 
         opening_edge = self._opening_edge.get(symbol, 0.0)
 
         # ──── ตัดสินใจ ────────────────────────────────────────────────
 
+        # Case: Capital Preservation (2R Breakeven)
+        self._protect_profits(pos)
+
         # Case 0: High-Impact News coming?
         if self._news_filter and not self._news_reduced.get(symbol, False):
             if self._news_filter.is_high_impact_news_coming(symbol, within_minutes=30):
                 logger.warning(
-                    f"[PositionMonitor] {symbol}: High-Impact News approaching! REDUCING position 50% for safety."
+                    f"[PositionMonitor] {symbol}: High-Impact News approaching! CLOSING 100% position for safety (News Blackout)."
                 )
-                self._reduce_position(pos, ratio=0.5)
+                try:
+                    from notifications.telegram_notifier import send_telegram
+                    send_telegram(f"🚨 <b>News Blackout</b>\nHigh-impact news in < 30 mins. Force closing {symbol}.")
+                except:
+                    pass
+                self._close_position(pos, reason="News Blackout")
                 self._news_reduced[symbol] = True
                 return
 
         if opening_edge == 0:
-            logger.debug(f"[PositionMonitor] {symbol}: Unknown opening edge → HOLD")
-            return
+            if sig_now is not None:
+                opening_edge = float(sig_now.get("confidence", 0.5))
+                self._opening_edge[symbol] = opening_edge
+                logger.info(f"[PositionMonitor] {symbol}: Recovered opening edge as {opening_edge:.3f} on reboot")
+            else:
+                logger.info(f"[PositionMonitor] {symbol}: No edge (Recovery) → CLOSE")
+                self._close_position(pos, reason="No edge (Reboot)")
+                return
 
         # Case 1: หมด edge
         if sig_now is None:
@@ -256,6 +410,12 @@ class PositionMonitor:
     # MT5 Actions
     # ─────────────────────────────────────────────────────────────────
 
+    def _learning_comment(self, pos, fallback: str) -> str:
+        existing = str(getattr(pos, "comment", "") or "")
+        if existing.upper().startswith("GQOS-"):
+            return existing[:31]
+        return fallback[:31]
+
     def _close_position(self, pos, reason: str = ""):
         """ปิด position ทั้งหมด"""
         close_type = mt5.ORDER_TYPE_SELL if pos.type == mt5.POSITION_TYPE_BUY \
@@ -275,7 +435,7 @@ class PositionMonitor:
             "price":    price,
             "deviation": 20,
             "magic":    self._magic,
-            "comment":  f"PM:{reason[:8]}",
+            "comment":  self._learning_comment(pos, f"PM:{reason[:8]}"),
             "type_time":    mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC,
         }
@@ -285,6 +445,42 @@ class PositionMonitor:
             logger.info(f"[PositionMonitor] ✅ Closed {pos.symbol} | {reason}")
             self._opening_edge.pop(pos.symbol, None)
             self._news_reduced.pop(pos.symbol, None)
+            if hasattr(self, '_initial_risk'):
+                self._initial_risk.pop(pos.symbol, None)
+            
+            if hasattr(self, '_evt_bus') and self._evt_bus:
+                try:
+                    from gqos.accounting.events import RealizedPnLEmittedEvent
+                    from gqos.messaging.contracts import MessageEnvelope
+                    from decimal import Decimal
+                    import time
+                    
+                    time.sleep(0.5)
+                    deals = mt5.history_deals_get(position=pos.ticket)
+                    realized_pnl = float(pos.profit)
+                    exit_price = price
+                    out_deal = None
+                    
+                    if deals:
+                        out_deal = next((d for d in deals if d.entry == 1), None)
+                        if out_deal:
+                            realized_pnl = float(out_deal.profit)
+                            exit_price = out_deal.price
+                            
+                    if out_deal:
+                        self._remember_close_deal(out_deal)
+                    else:
+                        self._remember_emitted_close(pos.ticket)
+                    event = RealizedPnLEmittedEvent(
+                        strategy_id="gqos_alpha_v1",
+                        symbol=pos.symbol,
+                        realized_pnl=Decimal(str(realized_pnl)),
+                        ticket=pos.ticket,
+                        exit_price=Decimal(str(exit_price))
+                    )
+                    self._evt_bus.publish(MessageEnvelope.create(payload=event, version=1))
+                except Exception as e:
+                    logger.error(f"[PositionMonitor] Failed to emit RealizedPnLEmittedEvent: {e}")
         else:
             err = getattr(result, 'comment', 'Unknown') if result else 'None'
             logger.error(f"[PositionMonitor] ❌ Close failed {pos.symbol}: {err}")
@@ -316,7 +512,7 @@ class PositionMonitor:
             "price":    price,
             "deviation": 20,
             "magic":    self._magic,
-            "comment":  "PM:Reduce50",
+            "comment":  self._learning_comment(pos, "PM:Reduce50"),
             "type_time":    mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC,
         }
@@ -379,3 +575,88 @@ class PositionMonitor:
     def set_cmd_bus(self, cmd_bus):
         """inject cmd_bus สำหรับส่ง flip command"""
         self._cmd_bus = cmd_bus
+
+    def set_event_bus(self, evt_bus):
+        """inject evt_bus สำหรับส่ง RealizedPnLEmittedEvent"""
+        self._evt_bus = evt_bus
+
+    def _protect_profits(self, pos):
+        """ถ้ากำไรถึง 2R ให้เลื่อน SL มาที่ Breakeven + 10 points และถ้าเกิน 3R ให้ Trailing 1.5R"""
+        if pos.sl == 0.0:
+            return
+
+        if not hasattr(self, '_initial_risk'):
+            self._initial_risk = {}
+
+        if pos.symbol not in self._initial_risk:
+            if pos.type == mt5.POSITION_TYPE_BUY:
+                self._initial_risk[pos.symbol] = pos.price_open - pos.sl
+            else:
+                self._initial_risk[pos.symbol] = pos.sl - pos.price_open
+
+        risk = self._initial_risk.get(pos.symbol, 0)
+        if risk <= 0:
+            return
+
+        sym_info = mt5.symbol_info(pos.symbol)
+        if not sym_info:
+            return
+
+        tick = mt5.symbol_info_tick(pos.symbol)
+        if not tick:
+            return
+
+        entry = pos.price_open
+        current = tick.bid if pos.type == mt5.POSITION_TYPE_BUY else tick.ask
+
+        if pos.type == mt5.POSITION_TYPE_BUY:
+            profit = current - entry
+            
+            # Trailing Stop Check (>= 3R)
+            if profit >= risk * 3.0:
+                new_sl = current - (risk * 1.5)  # Trail by 1.5R distance
+                if pos.sl < new_sl:
+                    self._modify_sl(pos, new_sl, "Trailing Stop")
+            # 2R Breakeven Check
+            elif profit >= risk * 2.0:
+                new_sl = entry + (sym_info.point * 10)
+                if pos.sl < new_sl:
+                    self._modify_sl(pos, new_sl, "Breakeven")
+        else:
+            profit = entry - current
+            
+            # Trailing Stop Check (>= 3R)
+            if profit >= risk * 3.0:
+                new_sl = current + (risk * 1.5)  # Trail by 1.5R distance
+                if pos.sl == 0.0 or pos.sl > new_sl:
+                    self._modify_sl(pos, new_sl, "Trailing Stop")
+            # 2R Breakeven Check
+            elif profit >= risk * 2.0:
+                new_sl = entry - (sym_info.point * 10)
+                if pos.sl == 0.0 or pos.sl > new_sl:
+                    self._modify_sl(pos, new_sl, "Breakeven")
+
+    def _modify_sl(self, pos, new_sl: float, reason: str):
+        sym_info = mt5.symbol_info(pos.symbol)
+        if not sym_info:
+            return
+            
+        new_sl = round(new_sl, sym_info.digits)
+        request = {
+            "action": mt5.TRADE_ACTION_SLTP,
+            "position": pos.ticket,
+            "symbol": pos.symbol,
+            "sl": float(new_sl),
+            "tp": float(pos.tp),
+        }
+        result = mt5.order_send(request)
+        if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+            logger.info(f"[PositionMonitor] ✅ SL Moved to {new_sl} for {pos.symbol} | {reason}")
+            try:
+                from notifications.telegram_notifier import send_telegram
+                send_telegram(f"🛡 <b>{reason}</b>\nSL moved to <code>{new_sl}</code> for {pos.symbol}")
+            except:
+                pass
+        else:
+            err = getattr(result, 'comment', 'Unknown') if result else 'None'
+            logger.warning(f"[PositionMonitor] ❌ Move SL failed {pos.symbol}: {err}")

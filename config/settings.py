@@ -24,10 +24,29 @@ class Settings:
     MAX_DAILY_LOSS_PCT = float(os.getenv("MAX_DAILY_LOSS_PCT", 0.03))  # 3% max daily loss
     MAX_DAILY_LOSS_WARNING_PCT = float(os.getenv("MAX_DAILY_LOSS_WARNING_PCT", 0.02)) # 2% warning
     MAX_DRAWDOWN_PCT = float(os.getenv("MAX_DRAWDOWN_PCT", 0.15))      # 15% max drawdown
+    MAX_REAL_RISK_PER_TRADE_PCT = float(os.getenv("MAX_REAL_RISK_PER_TRADE_PCT", 0.02))
+    MIN_EVIDENCE_EXPECTANCY_R = float(os.getenv("MIN_EVIDENCE_EXPECTANCY_R", 0.05))
+    ENABLE_PAUSED_SYMBOL_RECOVERY_PROBE = os.getenv("ENABLE_PAUSED_SYMBOL_RECOVERY_PROBE", "False").lower() == "true"
+    RECOVERY_PROBE_MIN_PF = float(os.getenv("RECOVERY_PROBE_MIN_PF", 1.50))
+    RECOVERY_PROBE_MIN_EXPECTANCY_R = float(os.getenv("RECOVERY_PROBE_MIN_EXPECTANCY_R", 0.20))
+    RECOVERY_PROBE_MIN_SIMILARITY = float(os.getenv("RECOVERY_PROBE_MIN_SIMILARITY", 0.70))
     MAX_CONSECUTIVE_LOSSES = int(os.getenv("MAX_CONSECUTIVE_LOSSES", 5))
     MAX_SPREAD_POINTS = int(os.getenv("MAX_SPREAD_POINTS", 50))        # e.g., 5.0 pips for Gold
     MAX_SLIPPAGE_POINTS = int(os.getenv("MAX_SLIPPAGE_POINTS", 20))    # Pre-trade signal price drift
     MAX_TRADES_PER_DAY = int(os.getenv("MAX_TRADES_PER_DAY", 5))
+    TRADE_THROTTLE_MAX_GLOBAL_PER_HOUR = int(os.getenv("TRADE_THROTTLE_MAX_GLOBAL_PER_HOUR", 5))
+    TRADE_THROTTLE_MAX_SYMBOL_PER_HOUR = int(os.getenv("TRADE_THROTTLE_MAX_SYMBOL_PER_HOUR", 2))
+    MAX_CORRELATED_POSITIONS_PER_GROUP = int(os.getenv("MAX_CORRELATED_POSITIONS_PER_GROUP", 3))
+    ENABLE_AUTO_PAUSE_BAD_START = os.getenv("ENABLE_AUTO_PAUSE_BAD_START", "True").lower() == "true"
+    AUTO_PAUSE_BAD_START_TRADES = int(os.getenv("AUTO_PAUSE_BAD_START_TRADES", 3))
+    AUTO_PAUSE_BAD_START_LOSSES = int(os.getenv("AUTO_PAUSE_BAD_START_LOSSES", 3))
+    AUTO_PAUSE_FLOATING_DD_PCT = float(os.getenv("AUTO_PAUSE_FLOATING_DD_PCT", 0.015))
+    ENABLE_DAILY_PROFIT_LOCK = os.getenv("ENABLE_DAILY_PROFIT_LOCK", "True").lower() == "true"
+    DAILY_PROFIT_LOCK_PCT = float(os.getenv("DAILY_PROFIT_LOCK_PCT", 0.015))
+    DAILY_GUARD_TIMEZONE = os.getenv("DAILY_GUARD_TIMEZONE", "Asia/Bangkok")
+    ENABLE_PAUSED_SIGNAL_LOGGING = os.getenv("ENABLE_PAUSED_SIGNAL_LOGGING", "True").lower() == "true"
+    LIVE_GUARD_ENTRY_ACTION = os.getenv("LIVE_GUARD_ENTRY_ACTION", "PROBE").upper()
+    LIVE_GUARD_PROBE_MULTIPLIER = float(os.getenv("LIVE_GUARD_PROBE_MULTIPLIER", 0.10))
 
     
     # Multi-Market Configuration
@@ -53,7 +72,7 @@ class Settings:
     
     # Safety & Execution
     DRY_RUN = os.getenv("DRY_RUN", "True").lower() == "true"
-    LIVE_MICRO_MODE = os.getenv("LIVE_MICRO_MODE", "False").lower() == "true"
+    LIVE_MICRO_MODE = os.getenv("LIVE_MICRO_MODE", "True").lower() == "true"
     ALLOW_LIVE_TRADING = os.getenv("ALLOW_LIVE_TRADING", "False").lower() == "true"
     IS_DEMO_ACCOUNT = os.getenv("IS_DEMO_ACCOUNT", "True").lower() == "true"
     MAGIC_NUMBER = 234000
@@ -62,6 +81,17 @@ class Settings:
     MIN_EQUITY = float(os.getenv("MIN_EQUITY", "100.0"))
     REQUIRE_STOP_LOSS = os.getenv("REQUIRE_STOP_LOSS", "True").lower() == "true"
     REQUIRE_TAKE_PROFIT = os.getenv("REQUIRE_TAKE_PROFIT", "True").lower() == "true"
+    
+    # Smart Execution
+    USE_SMART_EXECUTION = os.getenv("USE_SMART_EXECUTION", "True").lower() == "true"
+    LIMIT_ORDER_EXPIRY_MINUTES = int(os.getenv("LIMIT_ORDER_EXPIRY_MINUTES", 5))
+    LIVE_ENGINE_LOCK_PORT = int(os.getenv("LIVE_ENGINE_LOCK_PORT", 49321))
+    LEARNING_SOURCE = os.getenv("LEARNING_SOURCE", "LIVE")
+    LEARNING_ALLOWED_SOURCES = os.getenv("LEARNING_ALLOWED_SOURCES", "LIVE,SHADOW_VALIDATED")
+    DYNAMIC_TARGET_MIN_SAMPLES = int(os.getenv("DYNAMIC_TARGET_MIN_SAMPLES", 100))
+    AUTO_DEMOTE_LIVE_PF_THRESHOLD = float(os.getenv("AUTO_DEMOTE_LIVE_PF_THRESHOLD", 1.0))
+    AUTO_DEMOTE_MIN_LIVE_TRADES = int(os.getenv("AUTO_DEMOTE_MIN_LIVE_TRADES", 5))
+    ENABLE_CRYPTO_FORCE_APPROVE = os.getenv("ENABLE_CRYPTO_FORCE_APPROVE", "False").lower() == "true"
     
     # AI Settings
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")

@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import time
 from datetime import datetime
 from pathlib import Path
@@ -10,7 +11,12 @@ logger = logging.getLogger(__name__)
 
 class SlippageTracker:
     def __init__(self, log_dir="data/learning"):
-        self.log_file = Path(log_dir) / "slippage_log.jsonl"
+        configured_file = os.getenv("GQOS_SLIPPAGE_LOG_FILE")
+        configured_dir = os.getenv("GQOS_SLIPPAGE_LOG_DIR")
+        if configured_file:
+            self.log_file = Path(configured_file)
+        else:
+            self.log_file = Path(configured_dir or log_dir) / "slippage_log.jsonl"
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
         self.registry = SymbolRegistry("config/symbols.yaml")
 

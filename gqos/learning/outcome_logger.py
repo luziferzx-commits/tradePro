@@ -19,9 +19,9 @@ import pandas as pd
 
 logger = logging.getLogger("GQOS.OutcomeLogger")
 
-OUTCOMES_PATH = "data/learning/live_outcomes.jsonl"
+OUTCOMES_PATH = os.getenv("GQOS_OUTCOMES_PATH", "data/learning/live_outcomes.jsonl")
 PATTERN_DB_PATH = "data/pattern_store/pattern_database.parquet"
-PENDING_PATH = "data/learning/pending_trades.json"
+PENDING_PATH = os.getenv("GQOS_PENDING_TRADES_PATH", "data/learning/pending_trades.json")
 
 
 class TradeOutcomeLogger:
@@ -30,17 +30,20 @@ class TradeOutcomeLogger:
     ทำให้ EvidenceRouter เรียนรู้จาก live trading จริงๆ
     """
 
-    def __init__(self):
+    def __init__(self, emit_structured_logs: bool = True):
         os.makedirs("data/learning", exist_ok=True)
+        self._emit_structured_logs = emit_structured_logs
         self._pending: dict = self._load_pending()
         self._lock = threading.Lock()
+        self._discard_stale_unlinked_intents()
         logger.info(f"OutcomeLogger initialized. Pending trades: {len(self._pending)}")
 
     # ──────────────────────────────────────────────
     # 1. บันทึกตอนเปิด position
     # ──────────────────────────────────────────────
-    def on_trade_opened(
+    def register_intent(
         self,
+        decision_id: str,
         symbol: str,
         direction: str,
         entry_price: float,
@@ -51,6 +54,11 @@ class TradeOutcomeLogger:
         pattern_sim: float,
         session: str,
         strategy_id: str,
+        source: Optional[str] = None,
+        run_id: Optional[str] = None,
+        account_id: Optional[str] = None,
+        entry_mode: str = "NORMAL",
+        probe_reason: Optional[str] = None,
     ):
         """เรียกเมื่อ order ถูก fill — บันทึก metadata ไว้รอ outcome"""
         
@@ -65,7 +73,7 @@ class TradeOutcomeLogger:
             else: session = "Dead_Lunch"
             
         with self._lock:
-            self._pending[symbol] = {
+            self._pending[decision_id] = {
                 "symbol": symbol,
                 "direction": direction,
                 "entry_price": entry_price,
@@ -76,32 +84,103 @@ class TradeOutcomeLogger:
                 "pattern_similarity": pattern_sim,
                 "session": session,
                 "strategy_id": strategy_id,
+                "decision_id": decision_id,
+                "source": source or os.getenv("LEARNING_SOURCE", "LIVE"),
+                "run_id": run_id or os.getenv("GQOS_RUN_ID", ""),
+                "account_id": account_id or os.getenv("GQOS_ACCOUNT_ID", ""),
+                "entry_mode": entry_mode,
+                "probe_reason": probe_reason or "",
                 "open_time": datetime.utcnow().isoformat(),
             }
             self._save_pending()
+            
+            prefix = f"[{decision_id}] " if decision_id else ""
             logger.info(
-                f"[OutcomeLogger] Trade opened: {symbol} {direction} "
+                f"{prefix}OutcomeLogger -> Trade opened: {symbol} {direction} "
                 f"pattern={pattern_id}"
             )
 
     # ──────────────────────────────────────────────
     # 2. บันทึกตอนปิด position
     # ──────────────────────────────────────────────
+    def on_trade_opened(self, ticket: int, decision_id: str):
+        with self._lock:
+            meta = self._pending.pop(decision_id, None)
+            if meta:
+                meta['ticket'] = ticket
+                self._pending[str(ticket)] = meta
+                self._save_pending()
+                logger.info(f"[{decision_id}] Linked ticket {ticket} to pending trade.")
+                try:
+                    from strategy.cooldown_manager import cooldown_manager
+                    cooldown_manager.record_approval(meta.get("pattern_id"))
+                except Exception as exc:
+                    logger.warning(f"[{decision_id}] Failed to record pattern cooldown: {exc}")
+                return meta
+            else:
+                logger.warning(f"[{decision_id}] No pending intent found to link ticket {ticket}.")
+                return None
+
+    def _discard_stale_unlinked_intents(self, max_age_minutes: int = 30):
+        now = datetime.utcnow()
+        removed = 0
+        for key, meta in list(self._pending.items()):
+            if not isinstance(meta, dict) or meta.get("ticket"):
+                continue
+            try:
+                opened = datetime.fromisoformat(str(meta.get("open_time", "")))
+            except ValueError:
+                opened = now
+            age_minutes = (now - opened).total_seconds() / 60.0
+            if age_minutes > max_age_minutes:
+                self._pending.pop(key, None)
+                removed += 1
+        if removed:
+            self._save_pending()
+            logger.info(f"[OutcomeLogger] Discarded {removed} stale unfilled intents.")
+
+    def discard_intent_by_symbol(self, symbol: str):
+        """เรียกเมื่อ signal ถูก reject จาก risk/exposure/broker เพื่อลบขยะทิ้ง"""
+        with self._lock:
+            keys_to_remove = []
+            for key, meta in self._pending.items():
+                if meta.get("symbol") == symbol and "ticket" not in meta:
+                    keys_to_remove.append(key)
+            
+            if keys_to_remove:
+                for key in keys_to_remove:
+                    self._pending.pop(key, None)
+                self._save_pending()
+                logger.info(f"[OutcomeLogger] Discarded {len(keys_to_remove)} pending intents for {symbol} due to rejection.")
+
+    def update_intent(self, decision_id: str, **fields):
+        with self._lock:
+            meta = self._pending.get(decision_id)
+            if not meta:
+                return False
+            for key, value in fields.items():
+                if value is not None:
+                    meta[key] = value
+            self._save_pending()
+            return True
+
     def on_trade_closed(
         self,
-        symbol: str,
+        ticket: int,
         exit_price: float,
         realized_pnl: float,
         close_time: Optional[datetime] = None,
     ):
         """เรียกเมื่อ position ปิด — คำนวณ outcome แล้วบันทึก"""
         with self._lock:
-            meta = self._pending.pop(symbol, None)
+            meta = self._pending.pop(str(ticket), None)
             if meta is None:
                 logger.warning(
-                    f"[OutcomeLogger] No pending trade for symbol={symbol}"
+                    f"[OutcomeLogger] No pending trade for ticket={ticket}"
                 )
-                return
+                return None
+
+            return self._record_closed_locked(meta, exit_price, realized_pnl, close_time)
 
             # คำนวณ actual R:R
             entry = meta["entry_price"]
@@ -129,15 +208,116 @@ class TradeOutcomeLogger:
 
             self._save_pending()
 
+            decision_id = meta.get("decision_id", "")
+            prefix = f"[{decision_id}] " if decision_id else ""
             logger.info(
-                f"[OutcomeLogger] Trade closed: {meta['symbol']} {outcome} "
+                f"{prefix}OutcomeLogger -> Trade closed: {meta['symbol']} {outcome} "
                 f"PnL={realized_pnl:.2f} R={actual_r} pattern={meta['pattern_id']}"
             )
+            
+            try:
+                from gqos.common.structured_logger import log_structured_event
+                if self._emit_structured_logs:
+                    log_structured_event(
+                        event_type="TRADE_CLOSED",
+                        decision_id=decision_id,
+                        symbol=meta['symbol'],
+                        side=meta.get('direction', 'UNKNOWN'),
+                        status=outcome,
+                        reason=f"Position closed with PnL {realized_pnl:.2f}",
+                        metadata={"realized_pnl": realized_pnl, "actual_r": actual_r}
+                    )
+            except Exception as e:
+                logger.warning(f"[{decision_id}] Failed to emit structured log: {e}")
 
     # ──────────────────────────────────────────────
     # 3. Helper methods
     # ──────────────────────────────────────────────
-    def get_outcomes_df(self) -> pd.DataFrame:
+    def on_trade_closed_by_symbol(
+        self,
+        symbol: str,
+        exit_price: float,
+        realized_pnl: float,
+        close_time: Optional[datetime] = None,
+    ):
+        """Close the oldest ticket-linked pending trade for a symbol."""
+        with self._lock:
+            candidates = []
+            for key, meta in self._pending.items():
+                if meta.get("symbol") == symbol and "ticket" in meta:
+                    candidates.append((key, meta))
+
+            if not candidates:
+                logger.warning(f"[OutcomeLogger] No ticket-linked pending trade for symbol={symbol}")
+                return None
+
+            candidates.sort(key=lambda item: item[1].get("open_time", ""))
+            key, meta = candidates[0]
+            self._pending.pop(key, None)
+            return self._record_closed_locked(meta, exit_price, realized_pnl, close_time)
+
+    def _record_closed_locked(
+        self,
+        meta: dict,
+        exit_price: float,
+        realized_pnl: float,
+        close_time: Optional[datetime] = None,
+    ):
+        entry = meta["entry_price"]
+        sl = meta["sl_price"]
+        sl_dist = abs(entry - sl) if sl and sl != 0 else None
+
+        actual_r = None
+        if sl_dist and sl_dist > 0:
+            actual_r = round(realized_pnl / (sl_dist * 100), 3)
+
+        outcome = "WIN" if realized_pnl > 0 else "LOSS"
+
+        record = {
+            **meta,
+            "close_price": exit_price,
+            "realized_pnl": realized_pnl,
+            "actual_r": actual_r,
+            "outcome": outcome,
+            "close_time": (close_time or datetime.utcnow()).isoformat(),
+        }
+
+        with open(OUTCOMES_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record) + "\n")
+
+        self._save_pending()
+
+        decision_id = meta.get("decision_id", "")
+        prefix = f"[{decision_id}] " if decision_id else ""
+        logger.info(
+            f"{prefix}OutcomeLogger -> Trade closed: {meta['symbol']} {outcome} "
+            f"PnL={realized_pnl:.2f} R={actual_r} pattern={meta['pattern_id']}"
+        )
+
+        try:
+            from gqos.common.structured_logger import log_structured_event
+            if self._emit_structured_logs:
+                log_structured_event(
+                    event_type="TRADE_CLOSED",
+                    decision_id=decision_id,
+                    symbol=meta['symbol'],
+                    side=meta.get('direction', 'UNKNOWN'),
+                    status=outcome,
+                    reason=f"Position closed with PnL {realized_pnl:.2f}",
+                    metadata={
+                        "realized_pnl": realized_pnl,
+                        "actual_r": actual_r,
+                        "source": meta.get("source", "LIVE"),
+                        "run_id": meta.get("run_id", ""),
+                        "account_id": meta.get("account_id", ""),
+                    }
+                )
+        except Exception as e:
+            logger.warning(f"[{decision_id}] Failed to emit structured log: {e}")
+
+        return record
+
+    def get_outcomes_df(self, allowed_sources: Optional[set[str] | list[str] | tuple[str, ...]] = None) -> pd.DataFrame:
         """โหลด live outcomes ทั้งหมด"""
         if not os.path.exists(OUTCOMES_PATH):
             return pd.DataFrame()
@@ -147,7 +327,18 @@ class TradeOutcomeLogger:
                 line = line.strip()
                 if line:
                     records.append(json.loads(line))
-        return pd.DataFrame(records)
+        df = pd.DataFrame(records)
+        if df.empty:
+            return df
+
+        if "source" not in df.columns:
+            df["source"] = "LIVE"
+
+        if allowed_sources:
+            allowed = {str(s).strip().upper() for s in allowed_sources}
+            df = df[df["source"].fillna("LIVE").astype(str).str.upper().isin(allowed)]
+
+        return df
 
     def get_stats(self) -> dict:
         """สรุปสถิติ live trading"""
@@ -164,6 +355,12 @@ class TradeOutcomeLogger:
             "total_pnl": round(df["realized_pnl"].sum(), 2),
             "avg_r": round(df["actual_r"].dropna().mean(), 3),
         }
+
+    def reload_pending(self) -> int:
+        """Reload pending metadata after an external MT5 sync restores tickets."""
+        with self._lock:
+            self._pending = self._load_pending()
+            return len(self._pending)
 
     def _load_pending(self) -> dict:
         if os.path.exists(PENDING_PATH):

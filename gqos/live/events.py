@@ -27,6 +27,8 @@ class OrderUpdateEvent(Event):
     remaining_quantity: Decimal
     average_fill_price: Decimal
     message: str = ""
+    risk_allocation_id: str = ""
+    portfolio_allocation_id: str = ""
 
 @dataclass(frozen=True)
 class ReconciliationFillEvent(Event):
