@@ -349,7 +349,7 @@ class DynamicScalingPolicy(ISizingPolicy):
                 with open(self.state_file, "r") as f:
                     data = json.load(f)
                     self.max_equity = Decimal(str(data.get("max_equity", 0)))
-            except:
+            except (OSError, ValueError, json.JSONDecodeError, ArithmeticError):
                 self.max_equity = Decimal('0')
         else:
             self.max_equity = Decimal('0')

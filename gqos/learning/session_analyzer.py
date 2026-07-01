@@ -24,12 +24,20 @@ class SessionAnalyzer:
         are archived there. For now, we will compute session from time.
         """
         try:
+            import os
             import MetaTrader5 as mt5
-            from datetime import datetime
+            from datetime import datetime, timedelta
             if not mt5.initialize():
                 return
 
-            deals = mt5.history_deals_get(datetime(2026, 6, 26), datetime.now()) or []
+            # Rolling history window instead of a hard-coded start date that has
+            # to be bumped by hand. Override with GQOS_SESSION_LOOKBACK_DAYS.
+            try:
+                lookback_days = int(os.getenv("GQOS_SESSION_LOOKBACK_DAYS", "30"))
+            except (TypeError, ValueError):
+                lookback_days = 30
+            start = datetime.now() - timedelta(days=max(1, lookback_days))
+            deals = mt5.history_deals_get(start, datetime.now()) or []
             closed = [d for d in deals if d.entry == 1 and d.profit != 0]
 
             for d in closed:
