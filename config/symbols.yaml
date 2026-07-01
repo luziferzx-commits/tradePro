@@ -7,6 +7,9 @@ symbol_aliases:
   EURUSD: EURUSDm
   GBPUSD: GBPUSDm
   GER40: DE30m
+  # Base symbol stripped from the broker name "DE30m" also resolves back to it
+  # (position handling derives "DE30" from "DE30m", which isn't the GER40 key).
+  DE30: DE30m
   NAS100: USTECm
   NZDUSD: NZDUSDm
   SOLUSD: SOLUSDm
