@@ -167,6 +167,7 @@ cython_debug/
 # Plain-text scratch/report dumps at repo root (keep a few known-good ones)
 *.txt
 !requirements.txt
+!requirements-dev.txt
 !baseline_hash.txt
 
 # Notebooks / ML artifacts
