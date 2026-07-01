@@ -309,14 +309,14 @@ class TelegramCommandListener:
                 data = json.load(f)
                 realized = data.get("realized_pnl", 0.0)
                 total_pnl = realized
-        except:
+        except Exception:
             pass
 
         pending_count = 0
         try:
             with open("data/learning/pending_trades.json", "r") as f:
                 pending_count = len(json.load(f))
-        except:
+        except Exception:
             pass
 
         msg = f"📈 <b>STATISTICS</b>\n"

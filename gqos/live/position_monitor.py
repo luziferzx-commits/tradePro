@@ -275,7 +275,7 @@ class PositionMonitor:
             try:
                 from notifications.telegram_notifier import send_telegram
                 send_telegram("🚨 <b>Weekend Liquidation</b>\nFriday 22:45 UTC reached! Closing all active positions for the weekend.")
-            except:
+            except Exception:
                 pass
             for pos in positions:
                 if pos.magic == self._magic:
@@ -326,7 +326,7 @@ class PositionMonitor:
                 try:
                     from notifications.telegram_notifier import send_telegram
                     send_telegram(f"🚨 <b>News Blackout</b>\nHigh-impact news in < 30 mins. Force closing {symbol}.")
-                except:
+                except Exception:
                     pass
                 self._close_position(pos, reason="News Blackout")
                 self._news_reduced[symbol] = True
@@ -654,7 +654,7 @@ class PositionMonitor:
             try:
                 from notifications.telegram_notifier import send_telegram
                 send_telegram(f"🛡 <b>{reason}</b>\nSL moved to <code>{new_sl}</code> for {pos.symbol}")
-            except:
+            except Exception:
                 pass
         else:
             err = getattr(result, 'comment', 'Unknown') if result else 'None'
