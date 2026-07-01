@@ -287,6 +287,8 @@ def main():
     
     alpha_worker = AlphaWorker(cmd_bus)
     session_guard = LiveSessionGuard(alpha_worker=alpha_worker, circuit_breaker=cb_engine)
+    # Let the AlphaWorker loop auto-clear daily guard pauses at day rollover.
+    alpha_worker._guard_reevaluate = session_guard.reevaluate
     startup_guard_reason = session_guard.enforce_startup_limits(float(initial_capital))
 
     # ─── Dynamic Position Management ──────────────────────────────

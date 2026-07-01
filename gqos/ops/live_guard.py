@@ -431,6 +431,44 @@ class LiveSessionGuard:
         except Exception as exc:
             logger.warning("Could not trip circuit breaker %s: %s", breaker_id, exc)
 
+    def _reset(self, breaker_id: str) -> None:
+        try:
+            self.circuit_breaker.reset(breaker_id)
+        except Exception as exc:
+            logger.warning("Could not reset circuit breaker %s: %s", breaker_id, exc)
+
+    def reevaluate(self) -> str | None:
+        """Auto-clear daily pauses once the block reason no longer applies.
+
+        Called periodically (from the AlphaWorker loop) so that when the daily
+        P&L window rolls over at the start of a new day, the daily-loss /
+        bad-start / profit-lock pause lifts on its own — no manual restart.
+        """
+        was_guarded = (
+            getattr(self.alpha_worker, "is_paused", False)
+            or self.bad_start_paused
+            or self.profit_locked
+        )
+        if not was_guarded:
+            return None
+        try:
+            acc = mt5.account_info()
+            balance = float(acc.balance) if acc else 0.0
+        except Exception:
+            return None
+        if balance <= 0:
+            return None
+        if get_entry_block_reason(balance) is not None:
+            return None  # still within a block window
+
+        self.alpha_worker.is_paused = False
+        self.alpha_worker.guard_probe_reason = ""
+        self.bad_start_paused = False
+        self.profit_locked = False
+        self._reset("DAILY_LOSS_LIMIT")
+        self._reset("BAD_START_GUARD")
+        return "Live guard cleared: daily limits reset — resuming new entries."
+
 
 def summarize_rejection_reasons(limit: int = 500) -> str:
     events = read_recent_signal_events(limit=limit)

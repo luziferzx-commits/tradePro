@@ -37,6 +37,9 @@ class AlphaWorker:
         self._thread = None
         self.is_paused = False
         self.guard_probe_reason = ""
+        # Optional callback (set by the live runner) to auto-clear daily guard
+        # pauses when the block window rolls over; returns a message or None.
+        self._guard_reevaluate = None
         
         self.registry = SymbolRegistry("config/symbols.yaml")
         self.metadata = MarketMetadata(self.registry)
@@ -69,6 +72,16 @@ class AlphaWorker:
     def _run_loop(self):
         while self._running:
             try:
+                # Auto-clear daily guard pauses (e.g. at day rollover) so the
+                # bot resumes trading without a manual restart.
+                if self._guard_reevaluate is not None:
+                    try:
+                        _msg = self._guard_reevaluate()
+                        if _msg:
+                            logger.warning("[LiveGuard] %s", _msg)
+                    except Exception as _e:
+                        logger.debug(f"guard reevaluate failed: {_e}")
+
                 paused_scan_only = self.is_paused and settings.ENABLE_PAUSED_SIGNAL_LOGGING
                 if self.is_paused and not paused_scan_only:
                     time.sleep(1)
