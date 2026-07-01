@@ -1,8 +1,21 @@
 """tests/conftest.py — Global test configuration and mocks."""
+import os
 import sys
+import tempfile
 from unittest.mock import MagicMock
 
 import pytest
+
+# Redirect all learning-data paths to a session-scoped temp dir BEFORE any gqos
+# module is imported. Several modules (outcome_logger, mt5_outcome_sync,
+# learning_health, demo_exploration, …) capture these paths as module globals
+# via os.getenv(...) at import time, so setting the env here is the only way to
+# guarantee no test ever appends to the real data/learning/* repo files.
+_TEST_LEARNING_DIR = tempfile.mkdtemp(prefix="gqos_test_learning_")
+os.environ.setdefault("GQOS_OUTCOMES_PATH", os.path.join(_TEST_LEARNING_DIR, "live_outcomes.jsonl"))
+os.environ.setdefault("GQOS_PENDING_TRADES_PATH", os.path.join(_TEST_LEARNING_DIR, "pending_trades.json"))
+os.environ.setdefault("GQOS_SYSTEM_EVENTS_FILE", os.path.join(_TEST_LEARNING_DIR, "system_events.jsonl"))
+os.environ.setdefault("GQOS_SLIPPAGE_LOG_FILE", os.path.join(_TEST_LEARNING_DIR, "slippage_log.jsonl"))
 
 # Mock MetaTrader5 before any tests or imports run to prevent OS-level crashes
 if "MetaTrader5" not in sys.modules:
