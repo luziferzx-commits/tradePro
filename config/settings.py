@@ -65,6 +65,9 @@ class Settings:
     #   >= HALT   -> hard stop (catastrophic circuit breaker)
     DYNAMIC_DD_DERISK_PCT = float(os.getenv("DYNAMIC_DD_DERISK_PCT", 0.05))
     DYNAMIC_DD_HALT_PCT = float(os.getenv("DYNAMIC_DD_HALT_PCT", 0.20))
+    # Reject patterns whose backtest PF is at/above this ceiling (overfit guard).
+    # 0 = disabled. Live analysis: research PF >= ~1.5 failed, 1.1-1.3 worked.
+    PATTERN_PF_CEILING = float(os.getenv("PATTERN_PF_CEILING", 0))
     ENABLE_DEMO_EXPLORATION = os.getenv("ENABLE_DEMO_EXPLORATION", "False").lower() == "true"
     DEMO_EXPLORATION_DAILY_CAP = int(os.getenv("DEMO_EXPLORATION_DAILY_CAP", 20))
     DEMO_EXPLORATION_MAX_PER_SCAN = int(os.getenv("DEMO_EXPLORATION_MAX_PER_SCAN", 2))

@@ -55,12 +55,15 @@ def setup_fake_mt5(monkeypatch, sent_requests, multiplier=1.0, is_probe=False):
 
     monkeypatch.setattr(mt5_adapter.mt5, "order_send", fake_order_send)
 
-    sys.modules["strategy.cooldown_manager"] = SimpleNamespace(
+    # Use monkeypatch.setitem so these module stubs are restored after the test
+    # (a raw sys.modules assignment leaks and breaks later tests that need the
+    # real strategy.cooldown_manager / gqos.risk.portfolio_budget).
+    monkeypatch.setitem(sys.modules, "strategy.cooldown_manager", SimpleNamespace(
         cooldown_manager=SimpleNamespace(is_probe=lambda decision_id: is_probe)
-    )
-    sys.modules["gqos.risk.portfolio_budget"] = SimpleNamespace(
+    ))
+    monkeypatch.setitem(sys.modules, "gqos.risk.portfolio_budget", SimpleNamespace(
         portfolio_budget=SimpleNamespace(get_multiplier=lambda symbol: multiplier)
-    )
+    ))
 
 
 def test_mt5_adapter_never_increases_pipeline_sized_quantity(monkeypatch):

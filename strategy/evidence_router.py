@@ -345,7 +345,17 @@ class EvidenceRouter:
         # ----------------------------------
             
         pf = best_match['aggregate_pf']
-        
+
+        # Overfit guard: patterns whose backtest PF is very high tend to be
+        # curve-fit and fail live (analysis of live trades: research PF >= ~1.5
+        # went 0% win rate, while the 1.1-1.3 band was profitable). Reject them
+        # when a ceiling is configured (PATTERN_PF_CEILING, 0 = disabled).
+        pf_ceiling = float(getattr(settings, "PATTERN_PF_CEILING", 0) or 0)
+        if pf_ceiling > 0 and pf >= pf_ceiling:
+            return reject_signal(
+                f"Profit Factor overfit ({pf:.2f} >= ceiling {pf_ceiling:.2f})", decision_tree
+            )
+
         # PROBE Tier Logic
         is_probe = False
         clean_symbol = symbol.replace("m", "") # Remove 'm' suffix if any
