@@ -29,9 +29,10 @@ def test_kelly_policy_half():
     req = SizingRequest("s1", "AAPL", TradeDirection.BUY, Decimal('100.0'), metrics=metrics)
     res = engine.size_trade(req, policy, portfolio)
     
-    # Half Kelly = 0.325 / 2 = 0.1625 -> 16.25k -> Qty 162.5 -> rounded down = 162
-    assert res.quantity == Decimal('162')
-    assert res.estimated_value == Decimal('16200.0')
+    # Half Kelly = 0.325 / 2 = 0.1625 -> 16.25k -> Qty 162.5
+    # (0.01 lot granularity, so 162.50 rather than whole-share 162)
+    assert res.quantity == Decimal('162.50')
+    assert res.estimated_value == Decimal('16250.00')
 
 def test_kelly_policy_max_fraction():
     # Set max kelly to 0.2

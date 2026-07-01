@@ -56,7 +56,7 @@ class TestExecutionEngine(unittest.TestCase):
         self.registry.store(pred)
         self.registry.store(decision)
         
-        cmd = ExecuteTradeCommand(decision.symbol, TradeDirection.BUY, decision.quantity, decision.estimated_value, decision.strategy_id)
+        cmd = ExecuteTradeCommand(decision=decision)
         env = MessageEnvelope.create(cmd, version=1, correlation_id="c1")
         
         # Dispatch command

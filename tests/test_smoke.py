@@ -50,9 +50,18 @@ def test_sltp_calculator_basic_run():
 # ── 4. FEATURE VALIDATOR BASIC RUN ───────────────────────────────────────────
 
 def test_feature_validator_basic_run():
-    from ml.feature_validator import FeatureValidator, REQUIRED_FEATURE_KEYS
-    
-    clean_feats = {k: 50.0 for k in REQUIRED_FEATURE_KEYS}
+    from ml.feature_validator import FeatureValidator, REQUIRED_FEATURE_KEYS, _CLAMP_RULES
+
+    # Build values that sit inside each feature's clamp range so a genuinely
+    # clean input produces no warnings (50.0 is out of range for bounded keys
+    # like hour_utc/is_buy/distances).
+    clean_feats = {}
+    for k in REQUIRED_FEATURE_KEYS:
+        if k in _CLAMP_RULES:
+            lo, hi = _CLAMP_RULES[k]
+            clean_feats[k] = (lo + hi) / 2
+        else:
+            clean_feats[k] = 50.0
     sanitized, warnings = FeatureValidator.validate_and_sanitize(clean_feats)
     
     assert isinstance(sanitized, dict)

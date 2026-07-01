@@ -33,11 +33,14 @@ correlations:
 def test_correlation_penalty(correlation_engine):
     open_positions = [{"symbol": "US500", "side": "BUY"}]
     
-    mult = correlation_engine.calculate_correlation_penalty("NAS100", "BUY", open_positions)
+    # calculate_correlation_penalty returns (multiplier, reasons)
+    mult, reasons = correlation_engine.calculate_correlation_penalty("NAS100", "BUY", open_positions)
     assert mult == pytest.approx(0.05, abs=0.01)
-    
-    mult2 = correlation_engine.calculate_correlation_penalty("NAS100", "SELL", open_positions)
+    assert reasons  # correlated with US500
+
+    mult2, reasons2 = correlation_engine.calculate_correlation_penalty("NAS100", "SELL", open_positions)
     assert mult2 == 1.0
+    assert reasons2 == []
 
 def test_exposure_limits(mock_metadata):
     exposure = ExposureManager(mock_metadata, max_total_risk_pct=0.03, max_asset_class_risk_pct=0.02)
@@ -73,7 +76,11 @@ def test_capital_allocator(mock_metadata, correlation_engine):
     assert executions[0]["risk_amount_pct"] == 0.01
     
     assert executions[1]["symbol"] == "NAS100"
-    assert executions[1]["risk_amount_pct"] == pytest.approx(0.0005, abs=0.0001)
+    # Correlation penalty would size NAS100 at 0.01 * 0.05 = 0.0005, but the
+    # minimum tradable lot on the default 500 account bumps actual risk up to
+    # 0.002 (min-lot feasibility). The correlation_multiplier is still recorded.
+    assert executions[1]["risk_amount_pct"] == pytest.approx(0.002, abs=0.0001)
+    assert executions[1]["correlation_multiplier"] == pytest.approx(0.05, abs=0.01)
     
     assert executions[2]["symbol"] == "EURUSD"
     assert executions[2]["risk_amount_pct"] == 0.01
@@ -85,5 +92,7 @@ def test_portfolio_var():
         {"symbol": "B", "side": "BUY", "risk_amount": 100.0}
     ]
     
-    var = PortfolioVaR.calculate_var(open_pos, corr, confidence_level=0.95)
-    assert var == pytest.approx(284.9, rel=0.01)
+    # calculate_var returns a dict with var/cvar/method/warnings
+    result = PortfolioVaR.calculate_var(open_pos, corr, confidence_level=0.95)
+    assert result["var"] == pytest.approx(284.9, rel=0.01)
+    assert result["cvar"] >= result["var"]

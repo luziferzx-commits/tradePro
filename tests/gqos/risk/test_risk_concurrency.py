@@ -16,7 +16,7 @@ def test_concurrent_allocations_atomic():
             strategy_id="strat_concurrent",
             requested_amount=Decimal('1.0')
         )
-        res, _ = store.allocate(req)
+        res, _budget, _thresholds = store.allocate(req)
         return res.success
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:

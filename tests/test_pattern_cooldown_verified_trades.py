@@ -1,6 +1,11 @@
 import json
 from datetime import datetime
 
+# Import before the test chdir's into tmp_path so module resolution always
+# happens against the real project root (avoids a cwd-dependent ImportError
+# when the suite runs in a different order).
+from strategy.cooldown_manager import PatternCooldownManager
+
 
 def test_cooldown_self_heal_ignores_unfilled_signal_approvals(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
@@ -39,8 +44,6 @@ def test_cooldown_self_heal_ignores_unfilled_signal_approvals(monkeypatch, tmp_p
         ),
         encoding="utf-8",
     )
-
-    from strategy.cooldown_manager import PatternCooldownManager
 
     manager = PatternCooldownManager(cooldown_hours=6.0, state_file=str(state_file))
 

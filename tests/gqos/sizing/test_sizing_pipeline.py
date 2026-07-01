@@ -7,6 +7,7 @@ from gqos.sizing.pipeline import PositionSizingPipeline
 from gqos.sizing.engine import PositionSizingEngine
 from gqos.sizing.policies import FixedFractionalPolicy
 from gqos.sizing.models import RoundingPolicy
+from gqos.sizing.portfolio import PortfolioSnapshot
 from gqos.risk.events import ExecuteTradeCommand
 
 class MockCommandBus(ICommandBus):
@@ -33,9 +34,9 @@ def test_sizing_pipeline():
     event_bus = MockEventBus()
     engine = PositionSizingEngine()
     policy = FixedFractionalPolicy(fraction=Decimal('0.05')) # 5%
-    capital = Decimal('100000.0')
-    
-    pipeline = PositionSizingPipeline(inner_bus, event_bus, engine, policy, capital)
+    portfolio = PortfolioSnapshot.create_mock(Decimal('100000.0'))
+
+    pipeline = PositionSizingPipeline(inner_bus, event_bus, engine, policy, portfolio)
     
     # Send a SizePositionCommand (Price = 100) -> Target Qty = 50
     cmd = SizePositionCommand("strat_1", "AAPL", TradeDirection.BUY, Decimal('100.0'))

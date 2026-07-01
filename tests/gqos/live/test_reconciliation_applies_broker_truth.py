@@ -84,27 +84,29 @@ class MockFxConverter:
         return amount
 
 
-def make_engine(adapter_positions):
+def make_engine(adapter_positions, halt_on_reconcile_mismatch=False):
     bus = MockEventBus()
     cmd_bus = MockCommandBus()
     accounting = AccountingEngine(bus, MockFeeModel(), MockFxConverter())
     portfolio = PortfolioManager("LivePort", Decimal("100000.0"))
     portfolio.allocate_capital("gqos_alpha_v1", Decimal("100000.0"))
+    safety = MockSafety()
     engine = LiveTradingEngine(
         bus,
         cmd_bus,
         oms=None,
         adapter=MockAdapter(adapter_positions),
-        safety=MockSafety(),
+        safety=safety,
         persistence=MockPersistence(),
         accounting=accounting,
         portfolio=portfolio,
+        halt_on_reconcile_mismatch=halt_on_reconcile_mismatch,
     )
-    return engine, accounting, portfolio
+    return engine, accounting, portfolio, safety
 
 
 def test_reconciliation_creates_missing_broker_position_in_accounting():
-    engine, accounting, portfolio = make_engine({
+    engine, accounting, portfolio, _safety = make_engine({
         "XAUUSDm": {"quantity": Decimal("0.03"), "average_price": Decimal("3300.0")}
     })
 
@@ -120,7 +122,7 @@ def test_reconciliation_creates_missing_broker_position_in_accounting():
 
 
 def test_reconciliation_removes_stale_local_position_absent_from_broker():
-    engine, accounting, portfolio = make_engine({})
+    engine, accounting, portfolio, _safety = make_engine({})
     accounting.state.positions["gqos_alpha_v1_XAUUSDm"] = Position(
         strategy_id="gqos_alpha_v1",
         symbol="XAUUSDm",
@@ -133,3 +135,20 @@ def test_reconciliation_removes_stale_local_position_absent_from_broker():
 
     assert accounting.state.positions == {}
     assert engine.is_reconciled is True
+
+
+def test_reconciliation_halts_when_flag_enabled():
+    # Opt-in safety: with halt enabled, a mismatch still syncs broker truth into
+    # the ledger but blocks trading (is_reconciled=False) and trips the kill
+    # switch for manual review.
+    engine, accounting, portfolio, safety = make_engine(
+        {"XAUUSDm": {"quantity": Decimal("0.03"), "average_price": Decimal("3300.0")}},
+        halt_on_reconcile_mismatch=True,
+    )
+
+    engine.start()
+
+    pos = accounting.state.positions["gqos_alpha_v1_XAUUSDm"]
+    assert pos.quantity == Decimal("0.03")  # broker truth still applied
+    assert engine.is_reconciled is False
+    assert safety.triggered is True

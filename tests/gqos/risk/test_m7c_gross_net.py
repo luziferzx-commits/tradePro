@@ -31,8 +31,8 @@ def test_gross_net_exposure_limits():
     from gqos.risk.events import TradeExecutedEvent
     engine.apply_trade(TradeExecutedEvent(strategy_id="strat_1", symbol="AAPL", direction=TradeDirection.BUY, quantity=Decimal('10'), execution_price=Decimal('40.0')))
     
-    assert engine._state.gross_exposure == Decimal('400.0')
-    assert engine._state.net_exposure == Decimal('400.0')
+    assert engine._snapshot.gross_exposure == Decimal('400.0')
+    assert engine._snapshot.net_exposure == Decimal('400.0')
     
     # 2. Net Exceeded
     cmd2 = ExecuteTradeCommand("TSLA", TradeDirection.BUY, Decimal('10'), Decimal('200.0'), "strat_1") # +200 gross, +200 net => Gross=600, Net=600 (LIMIT 500)
@@ -46,8 +46,8 @@ def test_gross_net_exposure_limits():
     assert success
     
     engine.apply_trade(TradeExecutedEvent(strategy_id="strat_1", symbol="TSLA", direction=TradeDirection.SELL, quantity=Decimal('10'), execution_price=Decimal('20.0')))
-    assert engine._state.gross_exposure == Decimal('600.0')
-    assert engine._state.net_exposure == Decimal('200.0')
+    assert engine._snapshot.gross_exposure == Decimal('600.0')
+    assert engine._snapshot.net_exposure == Decimal('200.0')
     
     # 4. Gross Exceeded
     cmd4 = ExecuteTradeCommand("TSLA", TradeDirection.SELL, Decimal('30'), Decimal('600.0'), "strat_1") # Gross=1200, Limit 1000
