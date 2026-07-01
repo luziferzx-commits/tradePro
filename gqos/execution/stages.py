@@ -505,8 +505,8 @@ class ExposureStage(IPipelineStage):
                         status="BLOCKED",
                         reason=f"Max {self._max_positions} positions reached"
                     )
-                except Exception:
-                    pass
+                except Exception as _log_err:
+                    logger.debug("structured log emit failed: %s", _log_err)
                 return StageResult.halt("Max positions reached", events=[reject_event])
 
             # Rule 2: Total Portfolio Risk Cap
@@ -594,8 +594,8 @@ class ExposureStage(IPipelineStage):
                         status="BLOCKED",
                         reason=f"Risk Cap Exceeded ({budget_pct:.0f}%)"
                     )
-                except Exception:
-                    pass
+                except Exception as _log_err:
+                    logger.debug("structured log emit failed: %s", _log_err)
                 return StageResult.halt("Portfolio risk cap exceeded", events=[reject_event])
 
             # Rule 3: Correlation Group Cap
@@ -632,8 +632,8 @@ class ExposureStage(IPipelineStage):
                             status="BLOCKED",
                             reason=reason,
                         )
-                    except Exception:
-                        pass
+                    except Exception as _log_err:
+                        logger.debug("structured log emit failed: %s", _log_err)
                     return StageResult.halt("Correlation group limit", events=[reject_event])
 
         # Per-trade exposure check (existing engine)
@@ -658,8 +658,8 @@ class ExposureStage(IPipelineStage):
                     status="BLOCKED",
                     reason=f"{code}: {reason}"
                 )
-            except Exception:
-                pass
+            except Exception as _log_err:
+                logger.debug("structured log emit failed: %s", _log_err)
                 
             return StageResult.halt("Exposure Limit Exceeded", events=[reject_event])
 
@@ -673,8 +673,8 @@ class ExposureStage(IPipelineStage):
                 status="PASSED",
                 reason="All exposure limits passed"
             )
-        except Exception:
-            pass
+        except Exception as _log_err:
+            logger.debug("structured log emit failed: %s", _log_err)
 
         return StageResult.continue_with(envelope)
 

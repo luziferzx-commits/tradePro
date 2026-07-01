@@ -345,8 +345,8 @@ class MT5BrokerAdapter(IBrokerAdapter):
                     status="FAILED",
                     reason=err_comment
                 )
-            except Exception:
-                pass
+            except Exception as _log_err:
+                logger.debug("structured log emit failed: %s", _log_err)
             self._oms_callback(order_id, OrderStatus.REJECTED.value, Decimal('0'), Decimal('0'), err_comment)
             return
 
@@ -505,8 +505,8 @@ class MT5BrokerAdapter(IBrokerAdapter):
                                             reason="Limit Order Filled",
                                             metadata={"ticket": ticket}
                                         )
-                                    except Exception:
-                                        pass
+                                    except Exception as _log_err:
+                                        logger.debug("structured log emit failed: %s", _log_err)
                                     self._oms_callback(data["order_id"], "FILL", filled_qty, fill_price, f"MT5 Limit Filled: {ticket}")
                                 del self._pending_orders[ticket]
                             elif h_ord.state in (mt5.ORDER_STATE_EXPIRED, mt5.ORDER_STATE_CANCELED, mt5.ORDER_STATE_REJECTED):
