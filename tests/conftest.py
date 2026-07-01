@@ -26,9 +26,21 @@ if "MetaTrader5" not in sys.modules:
 def isolate_learning_logs(tmp_path, monkeypatch):
     """Keep tests from appending synthetic events to production learning files."""
     log_dir = tmp_path / "learning"
+    log_dir.mkdir(parents=True, exist_ok=True)
     monkeypatch.setenv("GQOS_SYSTEM_EVENTS_FILE", str(log_dir / "system_events.jsonl"))
     monkeypatch.setenv("GQOS_SLIPPAGE_LOG_FILE", str(log_dir / "slippage_log.jsonl"))
+    monkeypatch.setenv("GQOS_OUTCOMES_PATH", str(log_dir / "live_outcomes.jsonl"))
+    monkeypatch.setenv("GQOS_PENDING_TRADES_PATH", str(log_dir / "pending_trades.json"))
 
     slippage_module = sys.modules.get("gqos.execution.slippage_tracker")
     if slippage_module is not None:
         slippage_module.slippage_tracker.log_file = log_dir / "slippage_log.jsonl"
+
+    # outcome_logger captures its paths as module globals at import time, so the
+    # env vars above only help a fresh import. Patch the already-imported module
+    # attributes directly so the singleton logger never touches the real repo
+    # learning files, regardless of test order.
+    outcome_module = sys.modules.get("gqos.learning.outcome_logger")
+    if outcome_module is not None:
+        monkeypatch.setattr(outcome_module, "OUTCOMES_PATH", str(log_dir / "live_outcomes.jsonl"), raising=False)
+        monkeypatch.setattr(outcome_module, "PENDING_PATH", str(log_dir / "pending_trades.json"), raising=False)
