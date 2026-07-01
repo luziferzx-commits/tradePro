@@ -384,13 +384,8 @@ class MT5BrokerAdapter(IBrokerAdapter):
                 )
             except Exception as e:
                 logger.warning(f"Failed to link ticket for outcome_logger: {e}")
-            try:
-                # Update position monitor via a global reference if available, 
-                # but MT5 adapter does not have direct access to the position_monitor instance.
-                # We rely on position_monitor polling the ticket.
-                pass
-            except Exception:
-                pass
+            # Position monitor picks up the new ticket by polling; the adapter
+            # has no direct reference to it, so there is nothing to notify here.
         try:
             from gqos.common.structured_logger import log_structured_event
             log_structured_event(
