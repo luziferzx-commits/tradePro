@@ -40,6 +40,7 @@ class Settings:
     ENABLE_AUTO_PAUSE_BAD_START = os.getenv("ENABLE_AUTO_PAUSE_BAD_START", "True").lower() == "true"
     AUTO_PAUSE_BAD_START_TRADES = int(os.getenv("AUTO_PAUSE_BAD_START_TRADES", 3))
     AUTO_PAUSE_BAD_START_LOSSES = int(os.getenv("AUTO_PAUSE_BAD_START_LOSSES", 3))
+    BAD_START_HARD_PAUSE_REQUIRES_NEGATIVE_PNL = os.getenv("BAD_START_HARD_PAUSE_REQUIRES_NEGATIVE_PNL", "True").lower() == "true"
     AUTO_PAUSE_FLOATING_DD_PCT = float(os.getenv("AUTO_PAUSE_FLOATING_DD_PCT", 0.015))
     ENABLE_DAILY_PROFIT_LOCK = os.getenv("ENABLE_DAILY_PROFIT_LOCK", "True").lower() == "true"
     DAILY_PROFIT_LOCK_PCT = float(os.getenv("DAILY_PROFIT_LOCK_PCT", 0.015))
@@ -47,6 +48,44 @@ class Settings:
     ENABLE_PAUSED_SIGNAL_LOGGING = os.getenv("ENABLE_PAUSED_SIGNAL_LOGGING", "True").lower() == "true"
     LIVE_GUARD_ENTRY_ACTION = os.getenv("LIVE_GUARD_ENTRY_ACTION", "PROBE").upper()
     LIVE_GUARD_PROBE_MULTIPLIER = float(os.getenv("LIVE_GUARD_PROBE_MULTIPLIER", 0.10))
+    # Startup safety (opt-in): when True, a mismatch between the local ledger and
+    # broker positions at start halts trading and trips the kill switch for
+    # manual review. Default False preserves the auto-sync-and-resume design
+    # (broker truth is applied to the ledger and trading continues).
+    HALT_ON_RECONCILE_MISMATCH = os.getenv("HALT_ON_RECONCILE_MISMATCH", "False").lower() == "true"
+    ENABLE_DEMO_EXPLORATION = os.getenv("ENABLE_DEMO_EXPLORATION", "False").lower() == "true"
+    DEMO_EXPLORATION_DAILY_CAP = int(os.getenv("DEMO_EXPLORATION_DAILY_CAP", 20))
+    DEMO_EXPLORATION_MAX_PER_SCAN = int(os.getenv("DEMO_EXPLORATION_MAX_PER_SCAN", 2))
+    DEMO_EXPLORATION_TARGET_SIGNALS_PER_SCAN = int(os.getenv("DEMO_EXPLORATION_TARGET_SIGNALS_PER_SCAN", 2))
+    DEMO_EXPLORATION_MIN_CONFIDENCE = float(os.getenv("DEMO_EXPLORATION_MIN_CONFIDENCE", 0.55))
+    DEMO_EXPLORATION_MIN_AVG_R = float(os.getenv("DEMO_EXPLORATION_MIN_AVG_R", 0.05))
+    DEMO_EXPLORATION_MIN_WIN_RATE = float(os.getenv("DEMO_EXPLORATION_MIN_WIN_RATE", 0.48))
+    DEMO_EXPLORATION_ALLOW_NEUTRAL = os.getenv("DEMO_EXPLORATION_ALLOW_NEUTRAL", "True").lower() == "true"
+    ENABLE_ADVANCED_PRICE_ACTION_FILTERS = os.getenv("ENABLE_ADVANCED_PRICE_ACTION_FILTERS", "True").lower() == "true"
+    PA_H4_TREND_CONFLICT_ACTION = os.getenv("PA_H4_TREND_CONFLICT_ACTION", "PENALTY").upper()
+    PA_H4_SR_ACTION = os.getenv("PA_H4_SR_ACTION", "PENALTY").upper()
+    PA_H4_SR_ATR_MULT = float(os.getenv("PA_H4_SR_ATR_MULT", 0.35))
+    PA_H1_SR_ATR_MULT = float(os.getenv("PA_H1_SR_ATR_MULT", 0.25))
+    PA_TREND_CONFLICT_PENALTY = float(os.getenv("PA_TREND_CONFLICT_PENALTY", 0.85))
+    PA_H4_SR_PENALTY = float(os.getenv("PA_H4_SR_PENALTY", 0.90))
+    PA_H1_SR_PENALTY = float(os.getenv("PA_H1_SR_PENALTY", 0.92))
+    PA_FVG_BOOST = float(os.getenv("PA_FVG_BOOST", 1.08))
+    PA_LIQUIDITY_SWEEP_ACTION = os.getenv("PA_LIQUIDITY_SWEEP_ACTION", "REJECT").upper()
+    PA_DIVERGENCE_ACTION = os.getenv("PA_DIVERGENCE_ACTION", "REJECT").upper()
+    PA_CHOP_THRESHOLD = float(os.getenv("PA_CHOP_THRESHOLD", 61.8))
+    PA_CHOP_TREND_PENALTY = float(os.getenv("PA_CHOP_TREND_PENALTY", 0.85))
+    PA_VOLUME_DRY_BREAKOUT_PENALTY = float(os.getenv("PA_VOLUME_DRY_BREAKOUT_PENALTY", 0.90))
+    PA_USD_CONFLICT_PENALTY = float(os.getenv("PA_USD_CONFLICT_PENALTY", 0.90))
+    PA_KILLZONE_OFFHOURS_PENALTY = float(os.getenv("PA_KILLZONE_OFFHOURS_PENALTY", 0.92))
+    ENABLE_PA_FILTER_AUTOCALIBRATION = os.getenv("ENABLE_PA_FILTER_AUTOCALIBRATION", "True").lower() == "true"
+    PA_CALIBRATION_MIN_SAMPLES = int(os.getenv("PA_CALIBRATION_MIN_SAMPLES", 40))
+    PA_CALIBRATION_MIN_CONFIDENCE = float(os.getenv("PA_CALIBRATION_MIN_CONFIDENCE", 0.25))
+    PA_CALIBRATION_STRICT_AVG_R = float(os.getenv("PA_CALIBRATION_STRICT_AVG_R", -0.10))
+    PA_CALIBRATION_RELAX_AVG_R = float(os.getenv("PA_CALIBRATION_RELAX_AVG_R", 0.20))
+    PA_CALIBRATION_IGNORE_AVG_R = float(os.getenv("PA_CALIBRATION_IGNORE_AVG_R", 0.45))
+    PA_CALIBRATION_STRICT_WIN_RATE = float(os.getenv("PA_CALIBRATION_STRICT_WIN_RATE", 0.45))
+    PA_CALIBRATION_RELAX_WIN_RATE = float(os.getenv("PA_CALIBRATION_RELAX_WIN_RATE", 0.56))
+    PA_CALIBRATION_REFRESH_SECONDS = int(os.getenv("PA_CALIBRATION_REFRESH_SECONDS", 300))
 
     
     # Multi-Market Configuration

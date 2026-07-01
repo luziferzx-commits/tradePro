@@ -35,12 +35,24 @@ class PortfolioBudgetManager:
         """Load history from MT5 to compute win rate per symbol."""
         try:
             import MetaTrader5 as mt5
-            from datetime import datetime
+            from datetime import datetime, timedelta
             if not mt5.initialize():
                 logger.warning("MT5 initialize failed for PortfolioBudgetManager")
                 return
 
-            deals = mt5.history_deals_get(datetime(2026, 6, 26), datetime.now()) or []
+            # Rolling intraday window: stats reset at the start of the current
+            # day rather than being anchored to a hard-coded date that has to be
+            # bumped by hand. Override with GQOS_BUDGET_LOOKBACK_DAYS if a longer
+            # window is desired.
+            try:
+                lookback_days = int(os.getenv("GQOS_BUDGET_LOOKBACK_DAYS", "0"))
+            except (TypeError, ValueError):
+                lookback_days = 0
+            if lookback_days > 0:
+                start = datetime.now() - timedelta(days=lookback_days)
+            else:
+                start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            deals = mt5.history_deals_get(start, datetime.now()) or []
             closed = sorted(
                 [d for d in deals if d.entry == 1 and d.profit != 0],
                 key=lambda d: getattr(d, "time", 0),

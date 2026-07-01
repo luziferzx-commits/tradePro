@@ -143,6 +143,7 @@ class TradeThrottleStage(IPipelineStage):
     A throttle slot is reserved before execution and must be released again
     when the broker/portfolio rejects the order without any fill. Filled orders
     keep their slot until the rolling window expires.
+    State is persisted to disk so it survives bot restarts.
     """
 
     def __init__(
@@ -151,14 +152,63 @@ class TradeThrottleStage(IPipelineStage):
         max_symbol_per_hour: int = 2,
         clock=time.time,
         emit_structured_logs: bool = True,
+        state_file: str | None = None,
     ):
         self._max_global = int(max_global_per_hour)
         self._max_symbol = int(max_symbol_per_hour)
         self._clock = clock
         self._emit_structured_logs = emit_structured_logs
+        # Persistence is opt-in: only production passes a state_file so it
+        # survives restarts. Tests default to None to stay fully isolated and
+        # never read/write the shared live state file.
+        self._state_file = state_file
         self._global_times = deque()
         self._symbol_times = defaultdict(deque)
         self._window_seconds = 3600
+
+        self._load_state()
+
+    def _load_state(self):
+        import os, json
+        if not self._state_file or not os.path.exists(self._state_file):
+            return
+        try:
+            with open(self._state_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            now = float(self._clock())
+            cutoff = now - self._window_seconds
+            
+            # Load and prune global times
+            loaded_global = data.get("global_times", [])
+            valid_global = [t for t in loaded_global if t >= cutoff]
+            self._global_times = deque(sorted(valid_global))
+            
+            # Load and prune symbol times
+            loaded_symbols = data.get("symbol_times", {})
+            self._symbol_times = defaultdict(deque)
+            for sym, times in loaded_symbols.items():
+                valid_times = [t for t in times if t >= cutoff]
+                if valid_times:
+                    self._symbol_times[sym] = deque(sorted(valid_times))
+        except Exception as e:
+            logger.warning(f"[TradeThrottle] Failed to load state: {e}")
+
+    def _save_state(self):
+        import os, json, tempfile, shutil
+        if not self._state_file:
+            return
+        os.makedirs(os.path.dirname(self._state_file), exist_ok=True)
+        try:
+            data = {
+                "global_times": list(self._global_times),
+                "symbol_times": {sym: list(times) for sym, times in self._symbol_times.items() if times}
+            }
+            fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(self._state_file))
+            with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                json.dump(data, f)
+            shutil.move(tmp_path, self._state_file)
+        except Exception as e:
+            logger.warning(f"[TradeThrottle] Failed to save state: {e}")
 
     def process(self, envelope: MessageEnvelope, context: PipelineContext) -> StageResult:
         if not isinstance(envelope.payload, (SizePositionCommand, ExecuteTradeCommand)):
@@ -184,6 +234,7 @@ class TradeThrottleStage(IPipelineStage):
 
         self._global_times.append(now)
         self._symbol_times[cmd.symbol].append(now)
+        self._save_state()
         return StageResult.continue_with(envelope)
 
     def release_for_symbol(self, symbol: str, reason: str = "") -> bool:
@@ -200,6 +251,7 @@ class TradeThrottleStage(IPipelineStage):
 
         suffix = f": {reason}" if reason else ""
         logger.info("[TradeThrottle] Released no-fill slot for %s%s", symbol, suffix)
+        self._save_state()
         return True
 
     def _prune(self, timestamps: deque, now: float) -> None:

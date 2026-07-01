@@ -16,9 +16,10 @@ class LiveTradingEngine:
         oms: Any, 
         adapter: Any, 
         safety: Any, 
-        persistence: Any, 
-        accounting: Any, 
-        portfolio: Any
+        persistence: Any,
+        accounting: Any,
+        portfolio: Any,
+        halt_on_reconcile_mismatch: bool = None,
     ):
         self._event_bus = event_bus
         self._cmd_bus = cmd_bus
@@ -28,7 +29,19 @@ class LiveTradingEngine:
         self._persistence = persistence
         self._accounting = accounting
         self._portfolio = portfolio
-        
+
+        # Opt-in safety: when True, a startup position mismatch against broker
+        # truth halts trading and trips the kill switch for manual review.
+        # Default (False) keeps the auto-sync-and-resume design: broker truth is
+        # applied to the ledger and trading continues.
+        if halt_on_reconcile_mismatch is None:
+            try:
+                from config.settings import settings
+                halt_on_reconcile_mismatch = bool(getattr(settings, "HALT_ON_RECONCILE_MISMATCH", False))
+            except Exception:
+                halt_on_reconcile_mismatch = False
+        self._halt_on_reconcile_mismatch = halt_on_reconcile_mismatch
+
         self.is_reconciled = False
         
         self._cmd_bus.register_handler(ExecuteTradeCommand, self._handle_execute_command)
@@ -96,8 +109,14 @@ class LiveTradingEngine:
                 )
 
         if mismatch:
-            print("Reconciliation complete. Positions synced from broker. Resuming.")
-            self.is_reconciled = True
+            if self._halt_on_reconcile_mismatch:
+                print("Reconciliation MISMATCH detected. Positions synced from broker, "
+                      "but HALTING for manual review (HALT_ON_RECONCILE_MISMATCH=True).")
+                self.is_reconciled = False
+                self._safety.trigger("Startup position mismatch vs broker truth")
+            else:
+                print("Reconciliation complete. Positions synced from broker. Resuming.")
+                self.is_reconciled = True
         else:
             print("Reconciliation Passed. System is fully synced.")
             self.is_reconciled = True
@@ -172,6 +191,8 @@ class LiveTradingEngine:
             cmd.strategy_id,
             risk_allocation_id=getattr(cmd, "risk_allocation_id", ""),
             portfolio_allocation_id=getattr(cmd, "portfolio_allocation_id", ""),
+            stop_loss=cmd.stop_loss or Decimal('0'),
+            take_profit=cmd.take_profit or Decimal('0'),
         )
         
         # Submit to broker

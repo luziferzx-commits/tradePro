@@ -7,6 +7,28 @@ from gqos.common.enums import TradeDirection
 from gqos.sizing.models import SizingRequest, SizingResult, RoundingPolicy, InvalidSizingRequestError
 from gqos.sizing.portfolio import PortfolioSnapshot
 
+def resolve_tick_specs(symbol: str):
+    """Best-effort (tick_size, tick_value) as Decimals, else (None, None).
+
+    Sizing policies are pure math and must not hard-fail (or silently misbehave)
+    when MetaTrader5 is unavailable, not initialized, or returns non-numeric
+    values (e.g. mocked in tests). Any such case degrades to (None, None) so the
+    caller falls back to loss-per-unit sizing.
+    """
+    try:
+        import MetaTrader5 as mt5
+        info = mt5.symbol_info(symbol)
+        if info is None:
+            return None, None
+        tick_size = Decimal(str(float(info.trade_tick_size)))
+        tick_value = Decimal(str(float(info.trade_tick_value)))
+        if tick_size > 0 and tick_value > 0:
+            return tick_size, tick_value
+    except (ImportError, TypeError, ValueError, ArithmeticError, AttributeError):
+        pass
+    return None, None
+
+
 def apply_rounding(quantity: Decimal, policy: RoundingPolicy, precision: Decimal = Decimal('0.01')) -> Decimal:
     if policy == RoundingPolicy.ROUND_DOWN:
         return quantity.quantize(precision, rounding=ROUND_DOWN)
@@ -105,18 +127,14 @@ class FixedRiskPolicy(ISizingPolicy):
             
         loss_per_share = abs(request.entry_price - request.stop_loss_price)
         risk_amount = portfolio.total_equity * self.risk_fraction
-        
-        import MetaTrader5 as mt5
-        info = mt5.symbol_info(request.symbol)
-        
-        if info and info.trade_tick_size > 0 and info.trade_tick_value > 0:
-            tick_size = Decimal(str(info.trade_tick_size))
-            tick_value = Decimal(str(info.trade_tick_value))
+
+        tick_size, tick_value = resolve_tick_specs(request.symbol)
+        if tick_size and tick_value:
             risk_per_lot = (loss_per_share / tick_size) * tick_value
             raw_quantity = risk_amount / risk_per_lot if risk_per_lot > 0 else risk_amount / loss_per_share
         else:
             raw_quantity = risk_amount / loss_per_share
-            
+
         quantity = apply_rounding(raw_quantity, self.rounding)
         
         if quantity <= Decimal('0'):
@@ -355,96 +373,6 @@ class DynamicScalingPolicy(ISizingPolicy):
         if request.stop_loss_price is None:
             raise InvalidSizingRequestError("DynamicScalingPolicy requires a stop_loss_price")
             
-        current_equity = portfolio.total_equity
-        if current_equity > self.max_equity:
-            self.max_equity = current_equity
-            self._save_state()
-            
-        # 1. Calculate Drawdown
-        drawdown = Decimal('0')
-        if self.max_equity > 0:
-            drawdown = (self.max_equity - current_equity) / self.max_equity
-            
-        # Circuit Breaker
-        if drawdown > Decimal('0.10'):
-            raise InvalidSizingRequestError(f"Circuit Breaker Triggered: Drawdown {drawdown*100:.2f}% > 10%")
-            
-        # 2. Calculate Win Streak
-        from gqos.learning.outcome_logger import outcome_logger
-        df = outcome_logger.get_outcomes_df()
-        win_streak = 0
-        if not df.empty:
-            recent_trades = df.sort_values("close_time", ascending=False)
-            for _, row in recent_trades.iterrows():
-                if row.get('pnl', 0) > 0:
-                    win_streak += 1
-                else:
-                    break
-                    
-        # 3. Determine dynamic risk
-        if win_streak >= 5:
-            dynamic_risk = Decimal('0.015')
-        elif drawdown > Decimal('0.05'):
-            dynamic_risk = Decimal('0.005')
-        else:
-            dynamic_risk = self.base_risk_fraction
-            
-        # 4. Standard FixedRisk Calculation using dynamic_risk
-        loss_per_share = abs(request.entry_price - request.stop_loss_price)
-        risk_amount = current_equity * dynamic_risk
-        
-        import MetaTrader5 as mt5
-        info = mt5.symbol_info(request.symbol)
-        
-        if info and info.trade_tick_size > 0 and info.trade_tick_value > 0:
-            tick_size = Decimal(str(info.trade_tick_size))
-            tick_value = Decimal(str(info.trade_tick_value))
-            risk_per_lot = (loss_per_share / tick_size) * tick_value
-            raw_quantity = risk_amount / risk_per_lot if risk_per_lot > 0 else risk_amount / loss_per_share
-
-
-import json
-import os
-
-class DynamicScalingPolicy(ISizingPolicy):
-    def __init__(self, base_risk_fraction: Decimal, rounding: RoundingPolicy = RoundingPolicy.ROUND_DOWN):
-        if not (Decimal('0') < base_risk_fraction <= Decimal('1')):
-            raise ValueError("Risk fraction must be between 0 and 1 exclusive")
-        self.base_risk_fraction = base_risk_fraction
-        self.rounding = rounding
-        self.state_file = "data/learning/dynamic_scaling_state.json"
-        self._load_state()
-        
-    def _load_state(self):
-        if os.path.exists(self.state_file):
-            try:
-                with open(self.state_file, "r") as f:
-                    data = json.load(f)
-                    self.max_equity = Decimal(str(data.get("max_equity", 0)))
-            except:
-                self.max_equity = Decimal('0')
-        else:
-            self.max_equity = Decimal('0')
-            
-    def _save_state(self):
-        os.makedirs(os.path.dirname(self.state_file), exist_ok=True)
-        with open(self.state_file, "w") as f:
-            json.dump({"max_equity": float(self.max_equity)}, f)
-            
-    @property
-    def policy_name(self) -> str: return "DynamicScaling"
-    
-    @property
-    def policy_version(self) -> str: return "1.0"
-    
-    @property
-    def policy_parameters_hash(self) -> str:
-        return hashlib.md5(f"{self.base_risk_fraction}_{self.rounding}".encode()).hexdigest()
-        
-    def calculate_size(self, request: SizingRequest, portfolio: PortfolioSnapshot) -> SizingResult:
-        if request.stop_loss_price is None:
-            raise InvalidSizingRequestError("DynamicScalingPolicy requires a stop_loss_price")
-            
         import MetaTrader5 as mt5
         acc = mt5.account_info()
         current_equity = Decimal(str(acc.equity)) if acc else portfolio.total_equity
@@ -484,18 +412,14 @@ class DynamicScalingPolicy(ISizingPolicy):
         # 4. Standard FixedRisk Calculation using dynamic_risk
         loss_per_share = abs(request.entry_price - request.stop_loss_price)
         risk_amount = current_equity * dynamic_risk
-        
-        import MetaTrader5 as mt5
-        info = mt5.symbol_info(request.symbol)
-        
-        if info and info.trade_tick_size > 0 and info.trade_tick_value > 0:
-            tick_size = Decimal(str(info.trade_tick_size))
-            tick_value = Decimal(str(info.trade_tick_value))
+
+        tick_size, tick_value = resolve_tick_specs(request.symbol)
+        if tick_size and tick_value:
             risk_per_lot = (loss_per_share / tick_size) * tick_value
             raw_quantity = risk_amount / risk_per_lot if risk_per_lot > 0 else risk_amount / loss_per_share
         else:
             raw_quantity = risk_amount / loss_per_share
-            
+
         # Hard cap volume to prevent explosive sizing
         raw_quantity = min(raw_quantity, Decimal('10.0'))
             

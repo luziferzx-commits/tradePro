@@ -3,6 +3,8 @@ import sys
 import logging
 import time
 import threading
+import json
+import html
 from decimal import Decimal
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -16,7 +18,7 @@ from gqos.messaging.contracts import MessageEnvelope
 
 from gqos.accounting.engine import AccountingEngine
 from gqos.portfolio.manager import PortfolioManager
-from gqos.risk.events import ExecuteTradeCommand, TradeExecutedEvent
+from gqos.risk.events import ExecuteTradeCommand
 from gqos.common.enums import TradeDirection
 
 from gqos.live.events import OrderStatus, OrderUpdateEvent, ReconciliationFillEvent, HeartbeatEvent
@@ -183,7 +185,7 @@ def main():
     
     def oms_callback(order_id, status, fill_qty, fill_price, msg):
         if status == "FILL":
-            oms.apply_fill(order_id, fill_qty, fill_price)
+            oms.apply_fill(order_id, fill_qty, fill_price, msg)
         else:
             oms.update_order_status(order_id, OrderStatus(status), msg)
             
@@ -220,13 +222,13 @@ def main():
         broker_symbol = _symbol_aliases.get(sym)
         if broker_symbol:
             asset_dir.register_asset(AssetMetadata(broker_symbol, "MIXED", "FX", sym))
-        
+            
     exposure = ExposureEngine(asset_dir, ExposureLimits(
-        max_gross_exposure=initial_capital * 2,
-        max_net_exposure=initial_capital * Decimal('1.5'),
-        max_symbol_exposure=initial_capital * Decimal('0.5'),
-        max_sector_exposure=initial_capital * 1,
-        max_correlation_group_exposure=initial_capital * 1
+        max_gross_exposure=initial_capital * Decimal('20.0'),
+        max_net_exposure=initial_capital * Decimal('10.0'),
+        max_symbol_exposure=initial_capital * Decimal('5.0'),
+        max_sector_exposure=initial_capital * Decimal('10.0'),
+        max_correlation_group_exposure=initial_capital * Decimal('10.0')
     ))
     
     store = RiskBudgetStore()
@@ -243,6 +245,7 @@ def main():
     trade_throttle_stage = TradeThrottleStage(
         max_global_per_hour=settings.TRADE_THROTTLE_MAX_GLOBAL_PER_HOUR,
         max_symbol_per_hour=settings.TRADE_THROTTLE_MAX_SYMBOL_PER_HOUR,
+        state_file="data/execution/trade_throttle.json",
     )
     account_loss_guard_stage = AccountLossGuardStage(
         reference_balance=risk_reference_balance,
@@ -285,7 +288,6 @@ def main():
     alpha_worker = AlphaWorker(cmd_bus)
     session_guard = LiveSessionGuard(alpha_worker=alpha_worker, circuit_breaker=cb_engine)
     startup_guard_reason = session_guard.enforce_startup_limits(float(initial_capital))
-    alpha_worker.start()
 
     # ─── Dynamic Position Management ──────────────────────────────
     from strategy.indicators import IndicatorCalculator
@@ -300,7 +302,6 @@ def main():
     )
     position_monitor.set_cmd_bus(cmd_bus)
     position_monitor.set_event_bus(evt_bus)
-    position_monitor.start()
     
     alpha_worker.position_monitor = position_monitor
     
@@ -335,22 +336,146 @@ def main():
     from database.logger import DatabaseLogger
     import uuid
     from datetime import datetime
+
+    telegram_alert_state_path = os.getenv(
+        "GQOS_TELEGRAM_ALERT_STATE_PATH",
+        os.path.join("data", "learning", "telegram_alert_state.json"),
+    )
+    telegram_alert_lock = threading.Lock()
+
+    def _load_telegram_alert_state():
+        state = {"opened": set(), "closed": set()}
+        try:
+            with open(telegram_alert_state_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                state["opened"].update(str(x) for x in data.get("opened", []))
+                state["closed"].update(str(x) for x in data.get("closed", []))
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            logger.warning(f"[Telegram] Could not load alert state: {e}")
+        try:
+            emitted_path = os.getenv(
+                "GQOS_EMITTED_CLOSE_STORE",
+                os.path.join("data", "learning", "emitted_close_deals.json"),
+            )
+            with open(emitted_path, "r", encoding="utf-8") as f:
+                emitted = json.load(f)
+            if isinstance(emitted, list):
+                state["closed"].update(str(x) for x in emitted)
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            logger.warning(f"[Telegram] Could not seed closed alert state: {e}")
+        return state
+
+    telegram_alert_state = _load_telegram_alert_state()
+
+    def _save_telegram_alert_state():
+        try:
+            directory = os.path.dirname(telegram_alert_state_path)
+            if directory:
+                os.makedirs(directory, exist_ok=True)
+            payload = {
+                "opened": sorted(telegram_alert_state["opened"])[-5000:],
+                "closed": sorted(telegram_alert_state["closed"])[-5000:],
+            }
+            with open(telegram_alert_state_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f)
+        except Exception as e:
+            logger.warning(f"[Telegram] Could not save alert state: {e}")
+
+    def _telegram_alert_seen(kind: str, key: str) -> bool:
+        if not key:
+            return False
+        with telegram_alert_lock:
+            return str(key) in telegram_alert_state[kind]
+
+    def _remember_telegram_alert(kind: str, key: str):
+        if not key:
+            return
+        with telegram_alert_lock:
+            telegram_alert_state[kind].add(str(key))
+            _save_telegram_alert_state()
+
+    def _position_side_text(pos) -> str:
+        pos_type = getattr(pos, "type", None)
+        if pos_type == mt5.POSITION_TYPE_BUY:
+            return "BUY"
+        if pos_type == mt5.POSITION_TYPE_SELL:
+            return "SELL"
+        return "UNKNOWN"
+
+    def notify_resumed_existing_positions() -> None:
+        try:
+            positions = list(mt5.positions_get() or [])
+        except Exception as e:
+            logger.warning(f"[Telegram] Could not load existing positions for resume alert: {e}")
+            return
+        if not positions:
+            return
+
+        lines = [
+            "<b>GQOS Existing Positions Resumed</b>",
+            "These positions were already open before this restart.",
+            "The bot will manage them; later close alerts are expected.",
+            "",
+        ]
+        for pos in positions[:12]:
+            ticket = str(getattr(pos, "ticket", "UNKNOWN"))
+            symbol = html.escape(str(getattr(pos, "symbol", "UNKNOWN")))
+            side = _position_side_text(pos)
+            volume = float(getattr(pos, "volume", 0.0) or 0.0)
+            price_open = float(getattr(pos, "price_open", 0.0) or 0.0)
+            profit = float(getattr(pos, "profit", 0.0) or 0.0)
+            lines.append(
+                f"{symbol} #{ticket} {side} lot={volume:.2f} "
+                f"entry={price_open:.5f} float={profit:+.2f}"
+            )
+        if len(positions) > 12:
+            lines.append(f"...and {len(positions) - 12} more")
+
+        if send_telegram("\n".join(lines)):
+            for pos in positions:
+                ticket = str(getattr(pos, "ticket", "") or "")
+                if ticket:
+                    _remember_telegram_alert("opened", ticket)
+            logger.info("[Telegram] Resumed existing positions alert sent: %s positions", len(positions))
+        else:
+            logger.warning("[Telegram] Resumed existing positions alert failed")
     
     def on_trade_executed(env: MessageEnvelope):
         cmd = env.payload
         ticket_val = getattr(cmd, 'ticket', None)
         ticket_str = str(ticket_val) if ticket_val else "GQOS"
-        
-        notify_trade_executed(
-            symbol=cmd.symbol,
-            direction=cmd.direction.name if hasattr(cmd.direction, 'name') else str(cmd.direction),
-            lot=float(cmd.quantity),
-            entry=float(cmd.execution_price),
-            sl=0.0,
-            tp=0.0,
-            ticket=ticket_str,
-            probability=0.0
+        open_key = ticket_str if ticket_str and ticket_str != "GQOS" else f"{cmd.symbol}:{cmd.direction}:{cmd.execution_price}:{cmd.quantity}"
+        logger.info(
+            "[Telegram] Trade open event received: symbol=%s direction=%s ticket=%s lot=%s price=%s",
+            cmd.symbol,
+            cmd.direction,
+            ticket_str,
+            cmd.quantity,
+            cmd.execution_price,
         )
+        if _telegram_alert_seen("opened", open_key):
+            logger.warning(f"[Telegram] Duplicate open alert skipped: {open_key}")
+        else:
+            sent = notify_trade_executed(
+                symbol=cmd.symbol,
+                direction=cmd.direction.name if hasattr(cmd.direction, 'name') else str(cmd.direction),
+                lot=float(cmd.quantity),
+                entry=float(cmd.execution_price),
+                sl=float(getattr(cmd, "stop_loss", None) or 0.0),
+                tp=float(getattr(cmd, "take_profit", None) or 0.0),
+                ticket=ticket_str,
+                probability=0.0
+            )
+            if sent:
+                _remember_telegram_alert("opened", open_key)
+                logger.info(f"[Telegram] Trade open alert sent: {cmd.symbol} ticket={ticket_str}")
+            else:
+                logger.warning(f"[Telegram] Trade open alert failed: {cmd.symbol} ticket={ticket_str}")
         # Log to Database
         try:
             db_ticket = str(ticket_val) if ticket_val else str(uuid.uuid4())
@@ -361,21 +486,164 @@ def main():
                 direction=cmd.direction.name if hasattr(cmd.direction, 'name') else str(cmd.direction),
                 volume=float(cmd.quantity),
                 open_price=float(cmd.execution_price),
-                sl=0.0,
-                tp=0.0,
+                sl=float(getattr(cmd, "stop_loss", None) or 0.0),
+                tp=float(getattr(cmd, "take_profit", None) or 0.0),
                 open_time=datetime.utcnow()
             )
         except Exception as e:
             logger.error(f"Failed to log trade execution to DB: {e}")
         
     last_closed_dir   = {}
-    processed_realized_close_keys = set()
+    processed_realized_close_keys = set(telegram_alert_state["closed"])
+
+    def _clean_trade_direction(direction):
+        text = getattr(direction, "name", direction)
+        text = str(text or "UNKNOWN").upper()
+        if "BUY" in text or "LONG" in text:
+            return "BUY"
+        if "SELL" in text or "SHORT" in text:
+            return "SELL"
+        return "UNKNOWN"
+
+    def _position_direction_from_mt5_close(ticket):
+        if not ticket:
+            return "UNKNOWN"
+        try:
+            from execution.mt5_direction import closing_deal_position_direction
+            deals = mt5.history_deals_get(position=int(ticket)) or []
+            close_deals = [
+                d for d in deals
+                if getattr(d, "entry", None) == mt5.DEAL_ENTRY_OUT
+            ]
+            if not close_deals:
+                return "UNKNOWN"
+            close_deal = close_deals[-1]
+            return closing_deal_position_direction(getattr(close_deal, "type", None))
+        except Exception as e:
+            logger.warning(f"[Telegram] Could not derive close direction for ticket={ticket}: {e}")
+            return "UNKNOWN"
+
+    def _actual_r_from_mt5_history(ticket, realized_pnl: float):
+        if not ticket or not str(ticket).isdigit():
+            return None
+
+        def _deal_side(deal) -> str:
+            deal_type = getattr(deal, "type", None)
+            if deal_type == mt5.DEAL_TYPE_BUY:
+                return "BUY"
+            if deal_type == mt5.DEAL_TYPE_SELL:
+                return "SELL"
+            return "UNKNOWN"
+
+        def _pending_meta_for_history(symbol: str, side: str, entry_price: float):
+            try:
+                pending_path = os.getenv(
+                    "GQOS_PENDING_TRADES_PATH",
+                    os.path.join("data", "learning", "pending_trades.json"),
+                )
+                with open(pending_path, "r", encoding="utf-8") as f:
+                    pending = json.load(f)
+            except Exception:
+                return None
+
+            best_meta = None
+            best_score = None
+            for meta in pending.values() if isinstance(pending, dict) else []:
+                if not isinstance(meta, dict):
+                    continue
+                if str(meta.get("symbol") or "") != symbol:
+                    continue
+                if _clean_trade_direction(meta.get("direction")) != side:
+                    continue
+                try:
+                    meta_entry = float(meta.get("fill_price") or meta.get("actual_entry_price") or meta.get("entry_price") or 0.0)
+                    meta_sl = float(meta.get("stop_loss_price") or meta.get("sl_price") or 0.0)
+                except Exception:
+                    continue
+                if meta_entry <= 0 or meta_sl <= 0:
+                    continue
+
+                sl_dist = abs(meta_entry - meta_sl)
+                entry_diff = abs(entry_price - meta_entry)
+                tolerance = max(sl_dist * 0.35, abs(entry_price) * 0.005)
+                if entry_diff > tolerance:
+                    continue
+
+                score = entry_diff / max(sl_dist, 1e-12)
+                if best_score is None or score < best_score:
+                    best_score = score
+                    best_meta = meta
+            return best_meta
+
+        try:
+            position_id = int(ticket)
+            deals = list(mt5.history_deals_get(position=position_id) or [])
+            if not deals:
+                return None
+
+            open_deals = [d for d in deals if getattr(d, "entry", None) == mt5.DEAL_ENTRY_IN]
+            close_deals = [d for d in deals if getattr(d, "entry", None) == mt5.DEAL_ENTRY_OUT]
+            if not open_deals:
+                return None
+
+            open_deal = open_deals[0]
+            close_deal = close_deals[-1] if close_deals else None
+            symbol = str(getattr(open_deal, "symbol", "") or getattr(close_deal, "symbol", "") or "")
+            entry_price = float(getattr(open_deal, "price", 0.0) or 0.0)
+            volume = float(
+                getattr(close_deal, "volume", 0.0)
+                if close_deal is not None
+                else getattr(open_deal, "volume", 0.0)
+                or 0.0
+            )
+            if entry_price <= 0 or volume <= 0 or not symbol:
+                return None
+            side = _deal_side(open_deal)
+
+            sl_price = 0.0
+            try:
+                orders = list(mt5.history_orders_get(position=position_id) or [])
+            except Exception:
+                orders = []
+            for order in orders:
+                candidate = float(getattr(order, "sl", 0.0) or 0.0)
+                if candidate > 0:
+                    sl_price = candidate
+                    break
+            if sl_price <= 0:
+                meta = _pending_meta_for_history(symbol, side, entry_price)
+                if meta:
+                    sl_price = float(meta.get("stop_loss_price") or meta.get("sl_price") or 0.0)
+                    logger.info(
+                        "[Telegram] Matched pending metadata for close R: ticket=%s decision=%s symbol=%s side=%s",
+                        ticket,
+                        meta.get("decision_id"),
+                        symbol,
+                        side,
+                    )
+            if sl_price <= 0:
+                return None
+
+            info = mt5.symbol_info(symbol)
+            if info is None:
+                return None
+            tick_size = float(getattr(info, "trade_tick_size", 0.0) or getattr(info, "point", 0.0) or 0.0)
+            tick_value = float(getattr(info, "trade_tick_value", 0.0) or 0.0)
+            sl_dist = abs(entry_price - sl_price)
+            if tick_size <= 0 or tick_value <= 0 or sl_dist <= 0:
+                return None
+
+            risk_amount = (sl_dist / tick_size) * tick_value * volume
+            if risk_amount <= 0:
+                return None
+            return round(float(realized_pnl) / risk_amount, 3)
+        except Exception as e:
+            logger.warning(f"[Telegram] Could not calculate R from MT5 history for ticket={ticket}: {e}")
+            return None
 
     def on_position_closed(env: MessageEnvelope):
         cmd = env.payload
-        last_closed_dir[cmd.symbol] = (
-            cmd.direction.name if hasattr(cmd.direction, 'name') else str(cmd.direction)
-        )
+        last_closed_dir[cmd.symbol] = _clean_trade_direction(cmd.direction)
         pos_key = f"{cmd.strategy_id}_{cmd.symbol}"
         if pos_key in accounting.state.positions:
             logger.info(
@@ -469,7 +737,7 @@ def main():
         ticket    = getattr(cmd, 'ticket', None)
         exit_price = float(getattr(cmd, 'exit_price', 0.0))
         close_key = str(ticket) if ticket else f"{cmd.symbol}:{cmd.realized_pnl}:{exit_price}"
-        if close_key in processed_realized_close_keys:
+        if close_key in processed_realized_close_keys or _telegram_alert_seen("closed", close_key):
             logger.warning(
                 f"[Learning/Telegram] Duplicate realized close event skipped: "
                 f"{cmd.symbol} ticket={ticket} pnl={cmd.realized_pnl}"
@@ -479,17 +747,15 @@ def main():
 
         acc       = mt5.account_info()
         balance   = acc.balance if acc else 0.0
-        direction = last_closed_dir.get(cmd.symbol, "UNKNOWN")
-
-        notify_trade_closed(
-            ticket=str(ticket) if ticket else "UNKNOWN",
-            symbol=cmd.symbol,
-            direction=direction,
-            profit=float(cmd.realized_pnl),
-            rr=0.0,
-            balance=float(balance)
-        )
         
+        # Use direction from event if available (from retrospective catch-up), else fallback
+        evt_direction = getattr(cmd, "direction", None)
+        direction = _clean_trade_direction(evt_direction)
+        if direction == "UNKNOWN":
+            direction = _position_direction_from_mt5_close(ticket)
+        if direction == "UNKNOWN":
+            direction = last_closed_dir.get(cmd.symbol, "UNKNOWN")
+
         # Log to Database
         try:
             if ticket:
@@ -503,6 +769,7 @@ def main():
             logger.error(f"Failed to log trade close to DB: {e}")
 
         # ─── Learning Loop: บันทึก outcome ───────────────────────────
+        record = None
         try:
             if ticket and str(ticket).isdigit():
                 record = outcome_logger.on_trade_closed(
@@ -531,6 +798,46 @@ def main():
                 )
         except Exception as e:
             logger.warning(f"[Learning] on_trade_closed failed: {e}")
+
+        rr = None
+        duration_seconds = getattr(cmd, "duration_seconds", None)
+        if record:
+            try:
+                actual_r = record.get("actual_r")
+                rr = float(actual_r) if actual_r is not None else None
+            except Exception:
+                rr = None
+            
+            try:
+                if duration_seconds is None and record.get("open_time") and record.get("close_time"):
+                    from datetime import datetime
+                    open_t = datetime.fromisoformat(record["open_time"])
+                    close_t = datetime.fromisoformat(record["close_time"])
+                    duration_seconds = (close_t - open_t).total_seconds()
+            except Exception:
+                pass
+                
+            record_direction = _clean_trade_direction(record.get("direction"))
+            if record_direction != "UNKNOWN":
+                direction = record_direction
+        if rr is None:
+            rr = _actual_r_from_mt5_history(ticket, float(cmd.realized_pnl))
+            if rr is not None:
+                logger.info(f"[Telegram] Calculated close R from MT5 history: ticket={ticket} R={rr:+.3f}")
+
+        sent = notify_trade_closed(
+            ticket=str(ticket) if ticket else "UNKNOWN",
+            symbol=cmd.symbol,
+            direction=direction,
+            profit=float(cmd.realized_pnl),
+            rr=rr,
+            balance=float(balance),
+            duration_seconds=duration_seconds
+        )
+        if sent:
+            _remember_telegram_alert("closed", close_key)
+        else:
+            logger.warning(f"[Telegram] Trade close alert failed: {cmd.symbol} ticket={ticket}")
         # ─────────────────────────────────────────────────────────────
 
         try:
@@ -582,14 +889,17 @@ def main():
     cmd_listener = TelegramCommandListener(alpha_worker=alpha_worker, shutdown_callback=shutdown_bot)
     cmd_listener.start()
 
+    live_engine.start()
     send_telegram(build_startup_summary())
+    notify_resumed_existing_positions()
     if startup_guard_reason:
         logger.warning("[LiveGuard] %s", startup_guard_reason)
         send_telegram(
             f"<b>GQOS Startup Guard</b>\n{startup_guard_reason}\n"
             "Existing positions will still be managed."
         )
-    live_engine.start()
+    position_monitor.start()
+    alpha_worker.start()
     
     logger.info("GQOS Live Engine is completely booted and running. Press Ctrl+C to exit.")
     
