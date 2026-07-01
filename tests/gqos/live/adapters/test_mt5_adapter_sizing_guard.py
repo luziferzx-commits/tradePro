@@ -136,3 +136,24 @@ def test_mt5_adapter_smart_execution_accepts_pending_placed_retcode(monkeypatch)
     assert sent_requests[0]["price"] == 99.95
     assert oms.calls == [("order-1", "ACK", Decimal("0"), Decimal("0"), "MT5 Limit Accepted")]
     assert 999 in adapter._pending_orders
+
+
+def test_mt5_adapter_rejects_high_spread(monkeypatch):
+    sent_requests = []
+    setup_fake_mt5(monkeypatch, sent_requests, multiplier=1.0)
+    # EURUSDm max_spread_points is 15; simulate a 999-point spread.
+    monkeypatch.setattr(mt5_adapter.mt5, "symbol_info", lambda symbol: SimpleNamespace(
+        volume_step=0.01, volume_min=0.01, volume_max=100.0,
+        trade_tick_size=0.01, point=0.01, spread=999,
+    ))
+    oms = MockOMS()
+    adapter = MT5BrokerAdapter(MockEventBus(), oms.callback)
+
+    adapter.submit_order(
+        "order-spread", "EURUSDm", TradeDirection.BUY,
+        Decimal("0.05"), Decimal("100.0"), stop_loss=Decimal("99.0"),
+    )
+
+    # No order should reach the broker, and OMS should hear a spread rejection.
+    assert sent_requests == []
+    assert any("Spread too high" in str(c[4]) for c in oms.calls)
