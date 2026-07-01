@@ -389,7 +389,11 @@ symbols:
     atr_sl_multiplier: 2.0
     contract_size: 1.0
     display_name: Ripple vs US Dollar
-    enabled: true
+    # Disabled: this broker quotes ~2000-point spread (~1% of price), far above
+    # the 500 limit, so it was rejected every scan. Round-trip cost is too high
+    # to trade profitably. Re-enable (and raise max_spread_points) only if the
+    # broker's XRP spread improves.
+    enabled: false
     liquidity_score: 0.9
     lot_step: 10.0
     max_lot: 200000.0
