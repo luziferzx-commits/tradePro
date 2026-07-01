@@ -53,6 +53,13 @@ class Settings:
     # manual review. Default False preserves the auto-sync-and-resume design
     # (broker truth is applied to the ledger and trading continues).
     HALT_ON_RECONCILE_MISMATCH = os.getenv("HALT_ON_RECONCILE_MISMATCH", "False").lower() == "true"
+    # Position hygiene
+    # Close open positions whose symbol has been disabled for live trading.
+    AUTO_CLOSE_DISABLED_SYMBOLS = os.getenv("AUTO_CLOSE_DISABLED_SYMBOLS", "False").lower() == "true"
+    # Close positions open longer than this many hours (0 = disabled).
+    MAX_POSITION_AGE_HOURS = float(os.getenv("MAX_POSITION_AGE_HOURS", 0))
+    # Warn (log + Telegram) when open positions reach this fraction of the max.
+    POSITION_CAPACITY_ALERT_PCT = float(os.getenv("POSITION_CAPACITY_ALERT_PCT", 0.9))
     ENABLE_DEMO_EXPLORATION = os.getenv("ENABLE_DEMO_EXPLORATION", "False").lower() == "true"
     DEMO_EXPLORATION_DAILY_CAP = int(os.getenv("DEMO_EXPLORATION_DAILY_CAP", 20))
     DEMO_EXPLORATION_MAX_PER_SCAN = int(os.getenv("DEMO_EXPLORATION_MAX_PER_SCAN", 2))

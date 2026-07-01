@@ -66,7 +66,38 @@ class PositionMonitor:
         )
         self._emitted_tickets: set = self._load_emitted_close_keys()
 
+        # Position-hygiene features (all opt-in / off by default).
+        try:
+            from config.settings import settings as _s
+            self._auto_close_disabled = bool(getattr(_s, "AUTO_CLOSE_DISABLED_SYMBOLS", False))
+            self._max_position_age_hours = float(getattr(_s, "MAX_POSITION_AGE_HOURS", 0) or 0)
+            self._capacity_alert_pct = float(getattr(_s, "POSITION_CAPACITY_ALERT_PCT", 0.9) or 0.9)
+            self._max_open_positions = int(getattr(_s, "MAX_OPEN_POSITIONS", 0) or 0)
+        except Exception:
+            self._auto_close_disabled = False
+            self._max_position_age_hours = 0.0
+            self._capacity_alert_pct = 0.9
+            self._max_open_positions = 0
+        self._enabled_broker_symbols = self._load_enabled_broker_symbols()
+        self._capacity_alerted = False
+
         logger.info("PositionMonitor initialized.")
+
+    def _load_enabled_broker_symbols(self) -> set:
+        """Broker symbols (e.g. EURUSDm) that are enabled for live trading."""
+        try:
+            import yaml
+            with open("config/symbols.yaml", "r", encoding="utf-8") as f:
+                cfg = yaml.safe_load(f) or {}
+            aliases = cfg.get("symbol_aliases", {})
+            out = set()
+            for logical, meta in (cfg.get("symbols", {}) or {}).items():
+                if meta.get("enabled", False):
+                    out.add(str(aliases.get(logical, logical)))
+            return out
+        except Exception as e:
+            logger.warning(f"[PositionMonitor] Could not load enabled symbols: {e}")
+            return set()
 
     # ─────────────────────────────────────────────────────────────────
     # Public API
@@ -308,7 +339,24 @@ class PositionMonitor:
     def _evaluate_all_positions(self):
         positions = mt5.positions_get() or []
         if not positions:
+            self._capacity_alerted = False
             return
+
+        # ─── Capacity alert: warn when position slots are nearly full ───
+        mine = [p for p in positions if p.magic == self._magic]
+        if self._max_open_positions > 0:
+            threshold = self._capacity_alert_pct * self._max_open_positions
+            if len(mine) >= threshold and not self._capacity_alerted:
+                self._capacity_alerted = True
+                msg = f"Position slots nearly full: {len(mine)}/{self._max_open_positions} — new entries may be blocked."
+                logger.warning(f"[PositionMonitor] {msg}")
+                try:
+                    from notifications.telegram_notifier import send_telegram
+                    send_telegram(f"⚠️ <b>Capacity</b>\n{msg}")
+                except Exception as e:
+                    logger.debug(f"capacity alert telegram failed: {e}")
+            elif len(mine) < threshold:
+                self._capacity_alerted = False
 
         # ─── Weekend Liquidation (Friday >= 22:45 UTC) ───
         from datetime import datetime, timezone
@@ -338,6 +386,22 @@ class PositionMonitor:
         symbol    = pos.symbol
         base_sym  = symbol.replace("m", "").replace(".m", "")
         direction = "BUY" if pos.type == mt5.POSITION_TYPE_BUY else "SELL"
+
+        # #1 Auto-liquidate positions on symbols disabled for live trading.
+        if self._auto_close_disabled and self._enabled_broker_symbols and symbol not in self._enabled_broker_symbols:
+            logger.warning(f"[PositionMonitor] {symbol} is disabled for live trading — closing position.")
+            self._close_position(pos, reason="Symbol disabled")
+            return
+
+        # #3 Close stale positions that have been open too long.
+        if self._max_position_age_hours > 0:
+            opened = getattr(pos, "time", 0) or 0
+            if opened:
+                age_h = (time.time() - float(opened)) / 3600.0
+                if age_h >= self._max_position_age_hours:
+                    logger.warning(f"[PositionMonitor] {symbol} open {age_h:.1f}h >= {self._max_position_age_hours}h — closing stale position.")
+                    self._close_position(pos, reason=f"Stale > {self._max_position_age_hours}h")
+                    return
 
         # ดึงข้อมูลล่าสุด
         df = self._mt5_client.get_historical_data(base_sym, "M15", 250)
