@@ -47,8 +47,12 @@ class PositionMonitor:
         self._running   = False
         self._thread    = None
 
-        # เก็บ edge ตอนเปิด per symbol
-        self._opening_edge: dict = {}   # symbol → edge_score ตอนเปิด
+        # เก็บ edge ตอนเปิด per symbol (persisted so it survives a reboot)
+        self._opening_edge_path = os.getenv(
+            "GQOS_OPENING_EDGE_PATH",
+            os.path.join("data", "learning", "opening_edges.json"),
+        )
+        self._opening_edge: dict = self._load_opening_edges()   # symbol → edge_score ตอนเปิด
 
         # pending flip: symbol → candle count รอ confirm
         self._pending_flip: dict = {}   # symbol → {"direction": str, "count": int}
@@ -71,6 +75,7 @@ class PositionMonitor:
     def register_intent(self, decision_id: str, symbol: str, edge_score: float):
         self._opening_edge[symbol] = edge_score
         self._pending_flip.pop(symbol, None)
+        self._save_opening_edges()
         logger.info(f"[PositionMonitor] Registered {symbol} opening edge={edge_score:.3f}")
 
     def start(self):
@@ -104,10 +109,17 @@ class PositionMonitor:
             except Exception:
                 pass
                 
+            # Prefer the persisted opening edge from before the reboot; only
+            # re-derive from the current signal if we have nothing stored.
+            if symbol in self._opening_edge:
+                logger.info(f"[PositionMonitor Boot] {symbol} using persisted edge: {self._opening_edge[symbol]:.3f}")
+                continue
+
             sig = self._evidence_router.evaluate(df, base_sym, log_events=False)
             if sig:
                 confidence = float(sig.get("confidence", 0.5))
                 self._opening_edge[symbol] = confidence
+                self._save_opening_edges()
                 logger.info(f"[PositionMonitor Boot] {symbol} assigned edge: {confidence:.3f}")
 
     def stop(self):
@@ -138,6 +150,36 @@ class PositionMonitor:
                 json.dump(keys, f)
         except Exception as e:
             logger.warning(f"[PositionMonitor] Could not save emitted close deal store: {e}")
+
+    def _load_opening_edges(self) -> dict:
+        try:
+            with open(self._opening_edge_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                edges = {}
+                for sym, val in data.items():
+                    try:
+                        edges[str(sym)] = float(val)
+                    except (TypeError, ValueError):
+                        continue
+                if edges:
+                    logger.info(f"[PositionMonitor] Loaded {len(edges)} persisted opening edges.")
+                return edges
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            logger.warning(f"[PositionMonitor] Could not load opening edge store: {e}")
+        return {}
+
+    def _save_opening_edges(self):
+        try:
+            directory = os.path.dirname(self._opening_edge_path)
+            if directory:
+                os.makedirs(directory, exist_ok=True)
+            with open(self._opening_edge_path, "w", encoding="utf-8") as f:
+                json.dump({sym: float(edge) for sym, edge in self._opening_edge.items()}, f)
+        except Exception as e:
+            logger.warning(f"[PositionMonitor] Could not save opening edge store: {e}")
 
     def _remember_emitted_close(self, close_key):
         if close_key is None:
@@ -256,6 +298,7 @@ class PositionMonitor:
                 self._evt_bus.publish(MessageEnvelope.create(payload=event, version=1))
                 
                 self._opening_edge.pop(d.symbol, None)
+                self._save_opening_edges()
                 self._news_reduced.pop(d.symbol, None)
 
     # ─────────────────────────────────────────────────────────────────
@@ -336,10 +379,12 @@ class PositionMonitor:
             if sig_now is not None:
                 opening_edge = float(sig_now.get("confidence", 0.5))
                 self._opening_edge[symbol] = opening_edge
+                self._save_opening_edges()
                 logger.info(f"[PositionMonitor] {symbol}: Recovered opening edge as {opening_edge:.3f} on reboot")
             else:
                 opening_edge = 0.5
                 self._opening_edge[symbol] = opening_edge
+                self._save_opening_edges()
                 logger.info(f"[PositionMonitor] {symbol}: No active pattern on reboot, recovered with default opening edge = 0.500")
 
         # Case 1: No active signal
@@ -397,6 +442,7 @@ class PositionMonitor:
             self._reduce_position(pos, ratio=0.5)
             # อัปเดต opening_edge หลัง reduce
             self._opening_edge[symbol] = edge_now
+            self._save_opening_edges()
             return
 
         # Case 4: HOLD
@@ -443,6 +489,7 @@ class PositionMonitor:
         if result and result.retcode == mt5.TRADE_RETCODE_DONE:
             logger.info(f"[PositionMonitor] ✅ Closed {pos.symbol} | {reason}")
             self._opening_edge.pop(pos.symbol, None)
+            self._save_opening_edges()
             self._news_reduced.pop(pos.symbol, None)
             if hasattr(self, '_initial_risk'):
                 self._initial_risk.pop(pos.symbol, None)
@@ -570,6 +617,7 @@ class PositionMonitor:
             )
 
         self._opening_edge[pos.symbol] = edge_score
+        self._save_opening_edges()
 
     def set_cmd_bus(self, cmd_bus):
         """inject cmd_bus สำหรับส่ง flip command"""
