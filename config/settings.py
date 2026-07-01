@@ -60,6 +60,11 @@ class Settings:
     MAX_POSITION_AGE_HOURS = float(os.getenv("MAX_POSITION_AGE_HOURS", 0))
     # Warn (log + Telegram) when open positions reach this fraction of the max.
     POSITION_CAPACITY_ALERT_PCT = float(os.getenv("POSITION_CAPACITY_ALERT_PCT", 0.9))
+    # DynamicScaling drawdown ladder (fraction of peak equity):
+    #   >= DERISK -> trade at half size (keeps recovering, no deadlock)
+    #   >= HALT   -> hard stop (catastrophic circuit breaker)
+    DYNAMIC_DD_DERISK_PCT = float(os.getenv("DYNAMIC_DD_DERISK_PCT", 0.05))
+    DYNAMIC_DD_HALT_PCT = float(os.getenv("DYNAMIC_DD_HALT_PCT", 0.20))
     ENABLE_DEMO_EXPLORATION = os.getenv("ENABLE_DEMO_EXPLORATION", "False").lower() == "true"
     DEMO_EXPLORATION_DAILY_CAP = int(os.getenv("DEMO_EXPLORATION_DAILY_CAP", 20))
     DEMO_EXPLORATION_MAX_PER_SCAN = int(os.getenv("DEMO_EXPLORATION_MAX_PER_SCAN", 2))

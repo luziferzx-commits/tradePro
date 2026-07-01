@@ -335,11 +335,25 @@ import json
 import os
 
 class DynamicScalingPolicy(ISizingPolicy):
-    def __init__(self, base_risk_fraction: Decimal, rounding: RoundingPolicy = RoundingPolicy.ROUND_DOWN):
+    def __init__(self, base_risk_fraction: Decimal, rounding: RoundingPolicy = RoundingPolicy.ROUND_DOWN,
+                 dd_derisk_pct: Decimal = None, dd_halt_pct: Decimal = None):
         if not (Decimal('0') < base_risk_fraction <= Decimal('1')):
             raise ValueError("Risk fraction must be between 0 and 1 exclusive")
         self.base_risk_fraction = base_risk_fraction
         self.rounding = rounding
+        # Drawdown ladder (from peak equity):
+        #   DD >= derisk_pct  -> trade at reduced (half) size, keep recovering
+        #   DD >= halt_pct    -> hard stop (catastrophic circuit breaker)
+        # Between derisk and halt the bot keeps trading small, so a 10% dip no
+        # longer deadlocks it (can't-trade -> can't-recover).
+        def _cfg(name, default):
+            try:
+                from config.settings import settings as _s
+                return Decimal(str(getattr(_s, name, default)))
+            except Exception:
+                return Decimal(str(default))
+        self.dd_derisk_pct = Decimal(str(dd_derisk_pct)) if dd_derisk_pct is not None else _cfg("DYNAMIC_DD_DERISK_PCT", "0.05")
+        self.dd_halt_pct = Decimal(str(dd_halt_pct)) if dd_halt_pct is not None else _cfg("DYNAMIC_DD_HALT_PCT", "0.20")
         self.state_file = "data/learning/dynamic_scaling_state.json"
         self._load_state()
         
@@ -385,10 +399,12 @@ class DynamicScalingPolicy(ISizingPolicy):
         if self.max_equity > 0:
             drawdown = (self.max_equity - current_equity) / self.max_equity
             
-        # Circuit Breaker
-        if drawdown > Decimal('0.10'):
-            raise InvalidSizingRequestError(f"Circuit Breaker Triggered: Drawdown {drawdown*100:.2f}% > 10%")
-            
+        # Circuit Breaker — hard stop only at the catastrophic halt level.
+        if drawdown >= self.dd_halt_pct:
+            raise InvalidSizingRequestError(
+                f"Circuit Breaker Triggered: Drawdown {drawdown*100:.2f}% >= {self.dd_halt_pct*100:.0f}%"
+            )
+
         # 2. Calculate Win Streak
         from gqos.learning.outcome_logger import outcome_logger
         df = outcome_logger.get_outcomes_df()
@@ -400,12 +416,14 @@ class DynamicScalingPolicy(ISizingPolicy):
                     win_streak += 1
                 else:
                     break
-                    
+
         # 3. Determine dynamic risk
-        if win_streak >= 5:
+        if drawdown >= self.dd_derisk_pct:
+            # In drawdown: trade at half size (no win-streak boost) so equity can
+            # still recover instead of deadlocking at a hard stop.
+            dynamic_risk = self.base_risk_fraction / 2
+        elif win_streak >= 5:
             dynamic_risk = Decimal('0.015')
-        elif drawdown > Decimal('0.05'):
-            dynamic_risk = Decimal('0.005')
         else:
             dynamic_risk = self.base_risk_fraction
             
