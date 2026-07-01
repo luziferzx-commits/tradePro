@@ -28,7 +28,8 @@ symbols:
     atr_sl_multiplier: 5.0
     contract_size: 100000.0
     display_name: Australian Dollar vs Canadian Dollar
-    enabled: true
+    # Disabled: live strategy PF ~0.1 (EURGBP WR 7%, NZDUSD/AUDCAD ~0). Low-liquidity cross, spread eats the edge. Re-enable if live stats improve.
+    enabled: false
     liquidity_score: 0.9
     lot_step: 0.01
     max_lot: 200.0
@@ -108,7 +109,8 @@ symbols:
     atr_sl_multiplier: 5.0
     contract_size: 100000.0
     display_name: Euro vs Great Britain Pound
-    enabled: true
+    # Disabled: live strategy PF ~0.1 (EURGBP WR 7%, NZDUSD/AUDCAD ~0). Low-liquidity cross, spread eats the edge. Re-enable if live stats improve.
+    enabled: false
     liquidity_score: 0.9
     lot_step: 0.01
     max_lot: 200.0
@@ -208,7 +210,8 @@ symbols:
     atr_sl_multiplier: 5.0
     contract_size: 100000.0
     display_name: New Zealand Dollar vs US Dollar
-    enabled: true
+    # Disabled: live strategy PF ~0.1 (EURGBP WR 7%, NZDUSD/AUDCAD ~0). Low-liquidity cross, spread eats the edge. Re-enable if live stats improve.
+    enabled: false
     liquidity_score: 0.9
     lot_step: 0.01
     max_lot: 200.0
