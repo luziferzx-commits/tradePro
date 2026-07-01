@@ -23,7 +23,7 @@ HORIZON_BARS = int(os.getenv("GQOS_VIRTUAL_HORIZON_BARS", "240"))
 
 class ContinuousMarketSimulator:
     """
-    Records every new M1 candle for enabled markets and runs neutral BUY/SELL
+    Records every new M1 candle for simulated markets and runs neutral BUY/SELL
     virtual trades. This is intentionally separate from live outcomes so
     simulated data can improve analysis without contaminating real PnL learning.
     """
@@ -43,7 +43,11 @@ class ContinuousMarketSimulator:
         observations = 0
         opened = 0
         for clean_symbol, cfg in self._symbols.items():
-            if not cfg.get("enabled", False):
+            # Simulation is independent of live trading: a symbol can be
+            # disabled for live execution (enabled: false) yet still gather
+            # learning data here. Default is to simulate everything; set
+            # simulate: false in symbols.yaml to opt a symbol out of the sim.
+            if not cfg.get("simulate", True):
                 continue
             symbol = self._aliases.get(clean_symbol, clean_symbol)
             rows = self._latest_closed_bars(symbol, count=60)
