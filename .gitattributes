@@ -1,0 +1,15 @@
+# Normalize text files to LF in the repo; check out native on each platform.
+* text=auto
+
+# Binary assets — never apply line-ending or text conversion (would corrupt).
+*.parquet binary
+*.db       binary
+*.pkl      binary
+*.joblib   binary
+*.pyc      binary
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.svg      binary
