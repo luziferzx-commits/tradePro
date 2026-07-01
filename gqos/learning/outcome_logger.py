@@ -59,6 +59,7 @@ class TradeOutcomeLogger:
         account_id: Optional[str] = None,
         entry_mode: str = "NORMAL",
         probe_reason: Optional[str] = None,
+        extra_metadata: Optional[dict] = None,
     ):
         """เรียกเมื่อ order ถูก fill — บันทึก metadata ไว้รอ outcome"""
         
@@ -73,7 +74,7 @@ class TradeOutcomeLogger:
             else: session = "Dead_Lunch"
             
         with self._lock:
-            self._pending[decision_id] = {
+            record = {
                 "symbol": symbol,
                 "direction": direction,
                 "entry_price": entry_price,
@@ -92,6 +93,11 @@ class TradeOutcomeLogger:
                 "probe_reason": probe_reason or "",
                 "open_time": datetime.utcnow().isoformat(),
             }
+            if extra_metadata:
+                for key, value in extra_metadata.items():
+                    if value is not None and key not in record:
+                        record[key] = value
+            self._pending[decision_id] = record
             self._save_pending()
             
             prefix = f"[{decision_id}] " if decision_id else ""
@@ -103,11 +109,14 @@ class TradeOutcomeLogger:
     # ──────────────────────────────────────────────
     # 2. บันทึกตอนปิด position
     # ──────────────────────────────────────────────
-    def on_trade_opened(self, ticket: int, decision_id: str):
+    def on_trade_opened(self, ticket: int, decision_id: str, **fields):
         with self._lock:
             meta = self._pending.pop(decision_id, None)
             if meta:
                 meta['ticket'] = ticket
+                for key, value in fields.items():
+                    if value is not None:
+                        meta[key] = value
                 self._pending[str(ticket)] = meta
                 self._save_pending()
                 logger.info(f"[{decision_id}] Linked ticket {ticket} to pending trade.")
@@ -117,9 +126,67 @@ class TradeOutcomeLogger:
                 except Exception as exc:
                     logger.warning(f"[{decision_id}] Failed to record pattern cooldown: {exc}")
                 return meta
-            else:
-                logger.warning(f"[{decision_id}] No pending intent found to link ticket {ticket}.")
-                return None
+
+            recovered = self._recover_pending_from_fill(ticket, decision_id, fields)
+            if recovered:
+                self._pending[str(ticket)] = recovered
+                self._save_pending()
+                logger.warning(
+                    "[%s] No pending intent found; recovered ticket %s from broker fill metadata.",
+                    decision_id,
+                    ticket,
+                )
+                return recovered
+
+            logger.warning(f"[{decision_id}] No pending intent found to link ticket {ticket}.")
+            return None
+
+    def _recover_pending_from_fill(self, ticket: int, decision_id: str, fields: dict) -> Optional[dict]:
+        symbol = fields.get("symbol")
+        direction = fields.get("direction")
+        entry_price = (
+            fields.get("fill_price")
+            or fields.get("actual_entry_price")
+            or fields.get("expected_entry_price")
+            or fields.get("entry_price")
+        )
+        sl_price = fields.get("stop_loss_price") or fields.get("sl_price")
+
+        if not symbol or not direction or entry_price is None or sl_price is None:
+            return None
+
+        try:
+            entry_price = float(entry_price)
+            sl_price = float(sl_price)
+        except (TypeError, ValueError):
+            return None
+        if entry_price <= 0 or sl_price <= 0:
+            return None
+
+        record = {
+            "symbol": symbol,
+            "direction": direction,
+            "entry_price": entry_price,
+            "sl_price": sl_price,
+            "tp_price": fields.get("take_profit_price") or fields.get("tp_price"),
+            "pattern_id": fields.get("pattern_id"),
+            "pattern_pf": fields.get("pattern_pf", 0.0),
+            "pattern_similarity": fields.get("pattern_similarity", 0.0),
+            "session": fields.get("session") or "UNKNOWN",
+            "strategy_id": fields.get("strategy_id") or "gqos_alpha_v1",
+            "decision_id": decision_id,
+            "source": fields.get("source") or os.getenv("LEARNING_SOURCE", "LIVE"),
+            "run_id": fields.get("run_id") or os.getenv("GQOS_RUN_ID", ""),
+            "account_id": fields.get("account_id") or os.getenv("GQOS_ACCOUNT_ID", ""),
+            "entry_mode": fields.get("entry_mode") or "FILL_RECOVERED",
+            "probe_reason": fields.get("probe_reason") or "recovered from broker fill",
+            "open_time": datetime.utcnow().isoformat(),
+            "ticket": ticket,
+        }
+        for key, value in fields.items():
+            if value is not None and key not in record:
+                record[key] = value
+        return record
 
     def _discard_stale_unlinked_intents(self, max_age_minutes: int = 30):
         now = datetime.utcnow()
@@ -263,13 +330,7 @@ class TradeOutcomeLogger:
         realized_pnl: float,
         close_time: Optional[datetime] = None,
     ):
-        entry = meta["entry_price"]
-        sl = meta["sl_price"]
-        sl_dist = abs(entry - sl) if sl and sl != 0 else None
-
-        actual_r = None
-        if sl_dist and sl_dist > 0:
-            actual_r = round(realized_pnl / (sl_dist * 100), 3)
+        actual_r = self._calculate_actual_r(meta, realized_pnl)
 
         outcome = "WIN" if realized_pnl > 0 else "LOSS"
 
@@ -315,7 +376,74 @@ class TradeOutcomeLogger:
         except Exception as e:
             logger.warning(f"[{decision_id}] Failed to emit structured log: {e}")
 
+        try:
+            from gqos.learning.post_trade_review import write_post_trade_review
+            write_post_trade_review(record)
+        except Exception as e:
+            logger.warning(f"[{decision_id}] Failed to write post-trade review: {e}")
+
         return record
+
+    def _first_number(self, meta: dict, *keys: str) -> Optional[float]:
+        for key in keys:
+            value = meta.get(key)
+            if value is None or value == "":
+                continue
+            try:
+                number = float(value)
+            except (TypeError, ValueError):
+                continue
+            if number == number:
+                return number
+        return None
+
+    def _symbol_trade_specs(self, symbol: str) -> dict:
+        try:
+            import MetaTrader5 as mt5
+
+            info = mt5.symbol_info(symbol)
+            if info is None:
+                return {}
+            return {
+                "tick_size": float(getattr(info, "trade_tick_size", 0) or getattr(info, "point", 0) or 0),
+                "tick_value": float(getattr(info, "trade_tick_value", 0) or 0),
+                "contract_size": float(getattr(info, "trade_contract_size", 0) or 0),
+            }
+        except Exception:
+            return {}
+
+    def _calculate_actual_r(self, meta: dict, realized_pnl: float) -> Optional[float]:
+        entry = self._first_number(meta, "fill_price", "actual_entry_price", "entry_price")
+        sl = self._first_number(meta, "stop_loss_price", "sl_price")
+        volume = self._first_number(meta, "volume", "filled_volume", "quantity", "lot")
+
+        if entry is None or sl is None or volume is None or volume <= 0:
+            return None
+
+        sl_dist = abs(entry - sl)
+        if sl_dist <= 0:
+            return None
+
+        tick_size = self._first_number(meta, "tick_size", "trade_tick_size")
+        tick_value = self._first_number(meta, "tick_value", "trade_tick_value")
+        if not tick_size or not tick_value:
+            specs = self._symbol_trade_specs(str(meta.get("symbol") or ""))
+            tick_size = tick_size or specs.get("tick_size")
+            tick_value = tick_value or specs.get("tick_value")
+
+        if not tick_size or not tick_value or tick_size <= 0 or tick_value <= 0:
+            logger.warning(
+                "[OutcomeLogger] Cannot calculate actual R for ticket=%s symbol=%s: "
+                "missing tick_size/tick_value/volume metadata",
+                meta.get("ticket"),
+                meta.get("symbol"),
+            )
+            return None
+
+        risk_amount = (sl_dist / tick_size) * tick_value * volume
+        if risk_amount <= 0:
+            return None
+        return round(float(realized_pnl) / risk_amount, 3)
 
     def get_outcomes_df(self, allowed_sources: Optional[set[str] | list[str] | tuple[str, ...]] = None) -> pd.DataFrame:
         """โหลด live outcomes ทั้งหมด"""

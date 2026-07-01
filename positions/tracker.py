@@ -43,7 +43,16 @@ class PositionTracker:
                             rr = close_deal.profit / risk_usd if risk_usd > 0 else 0
                         except Exception:
                             rr = 0
-                        notify_trade_closed(db_trade.ticket, db_trade.symbol, db_trade.direction, close_deal.profit, rr)
+                        
+                        duration_seconds = None
+                        try:
+                            if db_trade.open_time:
+                                close_time_dt = datetime.fromtimestamp(close_deal.time)
+                                duration_seconds = (close_time_dt - db_trade.open_time).total_seconds()
+                        except Exception:
+                            pass
+                            
+                        notify_trade_closed(db_trade.ticket, db_trade.symbol, db_trade.direction, close_deal.profit, rr, 0.0, duration_seconds)
 
     @staticmethod
     def manage_trailing_stops():

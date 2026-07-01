@@ -100,6 +100,12 @@ def get_entry_block_reason(balance: float) -> str | None:
     return None
 
 
+def is_bad_start_hard_block(daily_pnl: float) -> bool:
+    if not settings.BAD_START_HARD_PAUSE_REQUIRES_NEGATIVE_PNL:
+        return True
+    return daily_pnl < 0
+
+
 def _entry_guard_action_text() -> str:
     if settings.LIVE_GUARD_ENTRY_ACTION == "PROBE":
         return (
@@ -144,6 +150,7 @@ def read_recent_signal_events(limit: int = 500) -> list[dict[str, Any]]:
         if item.get("event_type") in {
             "SIGNAL_EVALUATED",
             "SIGNAL_REJECTED",
+            "SIGNAL_SKIPPED",
             "RISK_CHECK_BLOCKED",
             "ORDER_REJECTED",
             "ORDER_FILLED",
@@ -313,10 +320,12 @@ def build_health_report() -> tuple[bool, str]:
         and trades >= settings.AUTO_PAUSE_BAD_START_TRADES
         and losses >= settings.AUTO_PAUSE_BAD_START_LOSSES
     ):
-        ok = False
+        hard_block = is_bad_start_hard_block(daily_pnl)
+        ok = ok and not hard_block
+        prefix = "FAIL" if hard_block else "WARN"
         lines.append(
-            f"FAIL bad-start guard: {losses} losses from {trades} trades today. "
-            f"{_entry_guard_action_text()}"
+            f"{prefix} bad-start guard: {losses} losses from {trades} trades today; "
+            f"daily PnL={daily_pnl:+.2f}. {_entry_guard_action_text()}"
         )
     daily_loss_limit = -float(acc.balance) * settings.MAX_DAILY_LOSS_PCT
     if daily_pnl <= daily_loss_limit:
@@ -376,7 +385,9 @@ class LiveSessionGuard:
                 f"Bad-start guard active after {len(self.closed_pnls)} closed trades: "
                 f"{sum(1 for x in self.closed_pnls[:settings.AUTO_PAUSE_BAD_START_TRADES] if x < 0)} losses."
             )
-            self._trip("BAD_START_GUARD", reason)
+            daily_pnl, _, _, _ = get_daily_pnl()
+            if is_bad_start_hard_block(daily_pnl):
+                self._trip("BAD_START_GUARD", reason)
             return self._apply_entry_guard(reason)
 
         daily_pnl, _, _, _ = get_daily_pnl()
@@ -398,7 +409,8 @@ class LiveSessionGuard:
             first = self.closed_pnls[:n]
             losses = sum(1 for x in first if x < 0)
             if losses >= settings.AUTO_PAUSE_BAD_START_LOSSES:
-                return True
+                daily_pnl, _, _, _ = get_daily_pnl()
+                return True if not settings.BAD_START_HARD_PAUSE_REQUIRES_NEGATIVE_PNL else daily_pnl < 0
         if equity is not None and balance > 0:
             floating_dd = max(0.0, (balance - equity) / balance)
             if floating_dd >= settings.AUTO_PAUSE_FLOATING_DD_PCT:

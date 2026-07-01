@@ -38,6 +38,8 @@ class RealizedPnLEmittedEvent(Event):
     realized_pnl: Decimal
     ticket: Optional[str] = None
     exit_price: Decimal = Decimal('0')
+    direction: Optional[str] = None
+    duration_seconds: Optional[float] = None
 
 @dataclass(frozen=True)
 class FeeChargedEvent(Event):

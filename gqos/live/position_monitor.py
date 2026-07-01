@@ -338,14 +338,13 @@ class PositionMonitor:
                 self._opening_edge[symbol] = opening_edge
                 logger.info(f"[PositionMonitor] {symbol}: Recovered opening edge as {opening_edge:.3f} on reboot")
             else:
-                logger.info(f"[PositionMonitor] {symbol}: No edge (Recovery) → CLOSE")
-                self._close_position(pos, reason="No edge (Reboot)")
-                return
+                opening_edge = 0.5
+                self._opening_edge[symbol] = opening_edge
+                logger.info(f"[PositionMonitor] {symbol}: No active pattern on reboot, recovered with default opening edge = 0.500")
 
-        # Case 1: หมด edge
+        # Case 1: No active signal
         if sig_now is None:
-            logger.info(f"[PositionMonitor] {symbol}: No edge → CLOSE")
-            self._close_position(pos, reason="No edge")
+            logger.debug(f"[PositionMonitor] {symbol} {direction}: HOLD (No new signal)")
             return
 
         edge_now  = float(sig_now.get("confidence", 0.5))

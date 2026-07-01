@@ -7,6 +7,7 @@ import pandas as pd
 import json
 from datetime import datetime
 import os
+import html
 
 from config.settings import settings
 from execution.mt5_direction import closing_deal_position_direction
@@ -56,9 +57,10 @@ class TelegramCommandListener:
                             
                         if text.startswith("/"):
                             self._handle_command(text.strip().lower())
-            except Exception as e:
-                # Suppress timeout errors
+            except requests.exceptions.Timeout:
                 pass
+            except Exception as e:
+                logger.warning(f"Telegram polling failed: {e}")
             
             if self.poll_closed_positions:
                 self._check_closed_positions()
@@ -100,48 +102,69 @@ class TelegramCommandListener:
                             profit = close_deal.profit
                             symbol = close_deal.symbol
                             direction = closing_deal_position_direction(close_deal.type)
-                            notify_trade_closed(t, symbol, direction, profit, 0.0)
+                            notify_trade_closed(t, symbol, direction, profit, None)
             
             self.known_tickets = current_tickets
         except Exception as e:
             logger.error(f"Error checking closed positions: {e}")
 
     def _handle_command(self, cmd_text):
-        if cmd_text == "/status":
+        parts = cmd_text.strip().split()
+        if not parts: return
+        cmd = parts[0].lower()
+        args = parts[1:]
+
+        if cmd == "/status":
             self._cmd_status()
-        elif cmd_text == "/positions":
+        elif cmd == "/positions":
             self._cmd_positions()
-        elif cmd_text == "/pause":
-            self._cmd_pause()
-        elif cmd_text == "/resume":
-            self._cmd_resume()
-        elif cmd_text == "/stop":
+        elif cmd == "/closeall":
+            self._cmd_closeall()
+        elif cmd == "/pause":
+            self._cmd_pause(args[0] if args else None)
+        elif cmd == "/resume":
+            self._cmd_resume(args[0] if args else None)
+        elif cmd == "/stop":
             self._cmd_stop()
-        elif cmd_text == "/stats":
+        elif cmd == "/stats":
             self._cmd_stats()
-        elif cmd_text == "/report":
+        elif cmd == "/report":
             self._cmd_report()
-        elif cmd_text == "/risk":
+        elif cmd == "/risk":
             self._cmd_risk()
-        elif cmd_text == "/top":
+        elif cmd == "/top":
             self._cmd_top()
-        elif cmd_text == "/health":
+        elif cmd == "/health":
             self._cmd_health()
-        elif cmd_text == "/scoreboard":
+        elif cmd == "/scoreboard":
             self._cmd_scoreboard()
-        elif cmd_text == "/learning":
+        elif cmd == "/learning":
             self._cmd_learning()
-        elif cmd_text == "/missed":
+        elif cmd == "/insights":
+            self._cmd_insights()
+        elif cmd == "/ready":
+            self._cmd_ready()
+        elif cmd == "/spreadmem":
+            self._cmd_spreadmem()
+        elif cmd == "/review":
+            self._cmd_review()
+        elif cmd == "/pa":
+            self._cmd_pa()
+        elif cmd == "/missed":
             self._cmd_missed()
-        elif cmd_text == "/sim":
+        elif cmd == "/sim":
             self._cmd_sim()
-        elif cmd_text == "/monitor":
+        elif cmd == "/simtop":
+            self._cmd_sim_context("top")
+        elif cmd == "/simbad":
+            self._cmd_sim_context("bad")
+        elif cmd == "/monitor":
             self._cmd_monitor()
-        elif cmd_text.startswith("/promote "):
-            pattern_id = cmd_text.split(" ", 1)[1].strip()
-            self._cmd_promote(pattern_id)
+        elif cmd == "/promote" and args:
+            self._cmd_promote(args[0])
         else:
-            send_telegram("❌ Unknown command.\nAvailable: /status, /positions, /pause, /resume, /stop, /stats, /report, /risk, /top, /health, /scoreboard, /learning, /missed, /sim, /monitor")
+            send_telegram("❌ Unknown command.")
+            send_telegram("❌ Unknown command.\nAvailable: /status, /positions, /pause, /resume, /stop, /stats, /report, /risk, /top, /health, /scoreboard, /learning, /insights, /ready, /spreadmem, /review, /pa, /missed, /sim, /simtop, /simbad, /monitor")
 
     def _cmd_status(self):
         acc = mt5.account_info()
@@ -170,11 +193,52 @@ class TelegramCommandListener:
             msg += f"  Entry: {p.price_open:.5f} | PnL: {p.profit:.2f}\n"
         send_telegram(msg)
 
-    def _cmd_pause(self):
-        self.alpha_worker.is_paused = True
-        send_telegram("⏸️ <b>Bot PAUSED</b>\nNo new trades will be opened. Existing trades are still managed.")
+    def _cmd_closeall(self):
+        try:
+            pos = mt5.positions_get() or []
+            if not pos:
+                send_telegram("0️⃣ No open positions to close.")
+                return
+            count = 0
+            for p in pos:
+                # Force close by emitting an intent with 0 quantity? Or use MT5 API directly?
+                close_type = mt5.ORDER_TYPE_SELL if p.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
+                tick = mt5.symbol_info_tick(p.symbol)
+                if tick:
+                    price = tick.bid if close_type == mt5.ORDER_TYPE_SELL else tick.ask
+                    request = {
+                        "action": mt5.TRADE_ACTION_DEAL,
+                        "symbol": p.symbol,
+                        "volume": p.volume,
+                        "type": close_type,
+                        "position": p.ticket,
+                        "price": price,
+                        "deviation": 20,
+                        "type_time": mt5.ORDER_TIME_GTC,
+                        "type_filling": mt5.ORDER_FILLING_IOC,
+                    }
+                    res = mt5.order_send(request)
+                    if res and res.retcode == mt5.TRADE_RETCODE_DONE:
+                        count += 1
+            send_telegram(f"✅ <b>Closed {count}/{len(pos)} positions.</b>")
+        except Exception as e:
+            send_telegram(f"❌ Error closing all: {e}")
 
-    def _cmd_resume(self):
+    def _cmd_pause(self, symbol=None):
+        if symbol:
+            self.alpha_worker.manual_paused_symbols.add(symbol)
+            send_telegram(f"⏸️ <b>{symbol} PAUSED</b>\nNo new trades will be opened for {symbol}.")
+        else:
+            self.alpha_worker.is_paused = True
+            send_telegram("⏸️ <b>Bot PAUSED</b>\nNo new trades will be opened for ALL symbols.")
+
+    def _cmd_resume(self, symbol=None):
+        if symbol:
+            if symbol in self.alpha_worker.manual_paused_symbols:
+                self.alpha_worker.manual_paused_symbols.remove(symbol)
+            send_telegram(f"▶️ <b>{symbol} RESUMED</b>\nTrading logic will resume for {symbol}.")
+            return
+        
         try:
             from gqos.ops.live_guard import get_entry_block_reason
             acc = mt5.account_info()
@@ -350,6 +414,41 @@ class TelegramCommandListener:
         except Exception as e:
             send_telegram(f"❌ Learning health failed: {e}")
 
+    def _cmd_insights(self):
+        try:
+            from gqos.ops.learning_insights import build_learning_insights_report
+            send_telegram(f"<b>Learning Insights</b>\n<pre>{html.escape(build_learning_insights_report()[:3500])}</pre>")
+        except Exception as e:
+            send_telegram(f"❌ Learning insights failed: {e}")
+
+    def _cmd_ready(self):
+        try:
+            from gqos.ops.recovery_readiness import build_recovery_readiness_report
+            send_telegram(f"<b>Recovery Readiness</b>\n<pre>{html.escape(build_recovery_readiness_report())}</pre>")
+        except Exception as e:
+            send_telegram(f"❌ Recovery readiness failed: {e}")
+
+    def _cmd_spreadmem(self):
+        try:
+            from gqos.ops.spread_regime_memory import build_spread_regime_report
+            send_telegram(f"<b>Spread Regime Memory</b>\n<pre>{html.escape(build_spread_regime_report())}</pre>")
+        except Exception as e:
+            send_telegram(f"❌ Spread memory failed: {e}")
+
+    def _cmd_review(self):
+        try:
+            from gqos.learning.post_trade_review import build_post_trade_review_report
+            send_telegram(f"<b>Post-Trade Review</b>\n<pre>{html.escape(build_post_trade_review_report())}</pre>")
+        except Exception as e:
+            send_telegram(f"❌ Post-trade review failed: {e}")
+
+    def _cmd_pa(self):
+        try:
+            from gqos.ops.pa_filter_analytics import build_pa_filter_report
+            send_telegram(f"<b>Price Action Filter Analytics</b>\n<pre>{html.escape(build_pa_filter_report()[:3500])}</pre>")
+        except Exception as e:
+            send_telegram(f"❌ PA analytics failed: {e}")
+
     def _cmd_missed(self):
         try:
             from gqos.learning.missed_opportunity_tracker import missed_opportunity_tracker
@@ -370,6 +469,7 @@ class TelegramCommandListener:
             for key, rec in list(recs.items())[:8]:
                 rec_lines.append(
                     f"- {key}: {rec.get('action')} AvgR={float(rec.get('avg_r', 0.0)):+.2f} "
+                    f"Conf={float(rec.get('confidence', 0.0)):.0%} "
                     f"PFadj={float(rec.get('pf_threshold_adjust', 0.0)):+.3f}"
                 )
             report = build_continuous_market_sim_report()
@@ -378,6 +478,16 @@ class TelegramCommandListener:
             send_telegram(f"<b>Continuous Market Simulation</b>\n<pre>{html.escape(report)}</pre>")
         except Exception as e:
             send_telegram(f"❌ Continuous simulation report failed: {e}")
+
+    def _cmd_sim_context(self, kind: str):
+        try:
+            from gqos.learning.simulation_analyzer import build_simulation_recommendations
+            from gqos.ops.continuous_market_sim_report import build_sim_context_report
+            build_simulation_recommendations()
+            title = "Simulation Top Contexts" if kind == "top" else "Simulation Bottom Contexts"
+            send_telegram(f"<b>{title}</b>\n<pre>{html.escape(build_sim_context_report(kind=kind, limit=12))}</pre>")
+        except Exception as e:
+            send_telegram(f"❌ Simulation context report failed: {e}")
 
     def _cmd_monitor(self):
         try:

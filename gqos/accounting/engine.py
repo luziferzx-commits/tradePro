@@ -108,7 +108,8 @@ class AccountingEngine:
                     symbol=trade.symbol,
                     realized_pnl=realized_pnl,
                     ticket=trade.ticket,
-                    exit_price=trade.execution_price
+                    exit_price=trade.execution_price,
+                    direction=pos.direction.name
                 ))
                 
             if trade.quantity < pos.quantity:
@@ -144,7 +145,8 @@ class AccountingEngine:
                 symbol=trade.symbol,
                 realized_pnl=realized_pnl,
                 ticket=trade.ticket,
-                exit_price=trade.execution_price
+                exit_price=trade.execution_price,
+                direction=pos.direction.name
             ))
             
         opened_qty = trade.quantity - closed_qty

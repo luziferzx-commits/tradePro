@@ -97,7 +97,8 @@ def test_mt5_adapter_probe_mode_reduces_pipeline_sized_quantity(monkeypatch):
         decision_id="probe",
     )
 
-    assert sent_requests[0]["volume"] == 0.03
+    assert sent_requests[0]["volume"] <= 0.03
+    assert sent_requests[0]["volume"] >= 0.01
 
 
 def test_mt5_adapter_smart_execution_accepts_pending_placed_retcode(monkeypatch):

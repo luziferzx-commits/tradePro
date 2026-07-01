@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import MetaTrader5 as mt5
 
 from dashboard.utils.data_loader import get_trade_history
-from execution.mt5_direction import closing_deal_position_direction
+from execution.mt5_direction import closing_deal_position_direction, position_direction_from_type
 
 
 def test_closing_deal_direction_is_original_position_side():
@@ -12,6 +12,11 @@ def test_closing_deal_direction_is_original_position_side():
 
     assert closing_deal_position_direction(mt5.DEAL_TYPE_SELL) == "BUY"
     assert closing_deal_position_direction(mt5.DEAL_TYPE_BUY) == "SELL"
+
+
+def test_unknown_mt5_direction_is_not_guessed():
+    assert closing_deal_position_direction(None) == "UNKNOWN"
+    assert position_direction_from_type(None) == "UNKNOWN"
 
 
 def test_dashboard_trade_history_uses_position_direction(monkeypatch):

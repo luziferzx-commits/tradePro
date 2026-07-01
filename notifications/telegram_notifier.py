@@ -11,23 +11,42 @@ load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID", "")
+
+
+def _clean_direction(direction) -> str:
+    text = getattr(direction, "name", direction)
+    text = str(text or "UNKNOWN").upper()
+    if "BUY" in text or "LONG" in text:
+        return "BUY"
+    if "SELL" in text or "SHORT" in text:
+        return "SELL"
+    return "UNKNOWN"
  
-def send_telegram(message: str):
+def send_telegram(message: str) -> bool:
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         logger.warning("Telegram credentials missing in .env")
-        return
+        return False
     try:
         url     = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "HTML"}
         resp = requests.post(url, json=payload, timeout=5)
         resp.raise_for_status()
+        return True
     except Exception as e:
-        logger.warning(f"Telegram notification failed: {e}")
+        body = ""
+        try:
+            body = f" body={resp.text[:300]}"
+        except Exception:
+            pass
+        logger.warning(f"Telegram notification failed: {e}{body}")
+        return False
  
-def notify_trade_executed(symbol, direction, lot, entry, sl, tp, ticket, probability):
+def notify_trade_executed(symbol, direction, lot, entry, sl, tp, ticket, probability=0.0):
+    direction = _clean_direction(direction)
     emoji = "🟢" if direction == "BUY" else "🔴"
+    prob_text = f"ML Prob   : {probability:.3f}\n" if probability > 0 else ""
     msg = (
-        f"{emoji} <b>TRADE EXECUTED</b>\n"
+        f"{emoji} <b>TRADE OPENED</b>\n"
         f"─────────────────\n"
         f"Symbol    : <b>{symbol}</b>\n"
         f"Direction : {direction}\n"
@@ -36,29 +55,41 @@ def notify_trade_executed(symbol, direction, lot, entry, sl, tp, ticket, probabi
         f"SL        : {sl}\n"
         f"TP        : {tp}\n"
         f"Ticket    : #{ticket}\n"
-        f"ML Prob   : {probability:.3f}\n"
+        f"{prob_text}"
         f"─────────────────\n"
-        f"⏳ Waiting for result..."
+        f"⏳ Managing position..."
     )
-    send_telegram(msg)
+    return send_telegram(msg)
  
-def notify_trade_closed(ticket, symbol, direction, profit, rr, balance=0.0):
-    emoji = "✅" if profit > 0 else "❌"
+def notify_trade_closed(ticket, symbol, direction, profit, rr=None, balance=0.0, duration_seconds=None):
+    direction = _clean_direction(direction)
+    
+    if duration_seconds is not None and duration_seconds < 60 and profit < 0:
+        emoji = "⚡"
+        title = "<b>INSTANT CUT LOSS</b>"
+    else:
+        emoji = "✅" if profit > 0 else "❌"
+        title = "<b>TRADE CLOSED</b>"
+        
     balance_text = f"\nBalance : {balance:.2f} USD" if balance > 0 else ""
+    try:
+        rr_text = f"{float(rr):+.2f}R" if rr is not None else "N/A"
+    except Exception:
+        rr_text = "N/A"
     msg = (
-        f"{emoji} <b>TRADE CLOSED</b>\n"
+        f"{emoji} {title}\n"
         f"─────────────────\n"
         f"Symbol   : <b>{symbol}</b>\n"
         f"Ticket   : #{ticket}\n"
         f"Direction: {direction}\n"
         f"Profit   : {profit:.2f} USD\n"
-        f"R:R      : {rr:.2f}{balance_text}\n"
+        f"R        : {rr_text}{balance_text}\n"
         f"─────────────────"
     )
-    send_telegram(msg)
+    return send_telegram(msg)
  
 def notify_bot_started():
-    send_telegram(
+    return send_telegram(
         "🤖 <b>GQOS Live Engine Started</b>\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "Market Memory      ✅\n"

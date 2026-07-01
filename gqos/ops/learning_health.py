@@ -41,7 +41,16 @@ def build_learning_health() -> tuple[bool, str]:
     pending_values = [v for v in pending.values()] if isinstance(pending, dict) else []
     pending_with_pattern = sum(1 for v in pending_values if isinstance(v, dict) and v.get("pattern_id"))
     outcomes_with_pattern = sum(1 for row in outcomes if row.get("pattern_id"))
+    required_fields = ["pattern_id", "session", "strategy_id", "decision_id", "entry_mode"]
+    field_coverage = {
+        field: sum(1 for row in outcomes if row.get(field))
+        for field in required_fields
+    }
     backfilled = sum(1 for row in outcomes if row.get("sync_source") == "mt5_history_backfill")
+    new_outcomes = [row for row in outcomes if row.get("sync_source") != "mt5_history_backfill"]
+    new_total = len(new_outcomes)
+    new_with_pattern = sum(1 for row in new_outcomes if row.get("pattern_id"))
+    new_pattern_ratio = (new_with_pattern / new_total) if new_total else 0.0
     wins = sum(1 for row in outcomes if row.get("outcome") == "WIN")
     losses = sum(1 for row in outcomes if row.get("outcome") == "LOSS")
     pnl = sum(float(row.get("realized_pnl") or 0.0) for row in outcomes)
@@ -57,6 +66,8 @@ def build_learning_health() -> tuple[bool, str]:
         issues.append("No closed outcomes recorded yet.")
     if total and pattern_ratio < 0.5:
         issues.append("Most closed outcomes are missing pattern_id; old MT5 backfills cannot fully train pattern-level edge.")
+    if new_total and new_pattern_ratio < 0.7:
+        issues.append("New non-backfilled outcomes are still below 70% pattern coverage.")
     if pending_values and pending_with_pattern < len(pending_values):
         issues.append("Some pending trades are missing pattern metadata.")
     if pending_with_pattern == 0:
@@ -68,6 +79,12 @@ def build_learning_health() -> tuple[bool, str]:
         f"Status: {'PASS' if ok else 'CHECK'}",
         f"Closed outcomes: {total}",
         f"Outcomes with pattern: {outcomes_with_pattern}/{total} ({pattern_ratio:.0%})",
+        f"New tagged outcomes: {new_with_pattern}/{new_total} ({new_pattern_ratio:.0%})",
+        "Field coverage: "
+        + ", ".join(
+            f"{field}={field_coverage[field]}/{total}"
+            for field in required_fields
+        ),
         f"MT5 backfilled outcomes: {backfilled}",
         f"Pending trades with pattern: {pending_with_pattern}/{len(pending_values)}",
         f"Normal/probe outcomes: {normal}/{probes}",

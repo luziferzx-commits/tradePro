@@ -48,7 +48,7 @@ class AlphaWorker:
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
         self.run_id = os.getenv("GQOS_RUN_ID") or f"live-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}"
         self.learning_source = settings.LEARNING_SOURCE
-        self.evidence_router = EvidenceRouter(base_dir=base_dir, mode="LIVE")
+        self.evidence_router = EvidenceRouter(base_dir=base_dir, mode="LIVE", mt5_client=self.mt5_client)
         
         self.abc_router = EnsembleRouter(trading_cost_r=0.1, min_ev_threshold=0.0)
         
@@ -96,7 +96,11 @@ class AlphaWorker:
                         now_str = datetime.utcnow().strftime("%Y%m%d")
                         decision_id = f"GQOS-{now_str}-{str(uuid.uuid4().hex[:8].upper())}"
                         df = self.mt5_client.get_historical_data(symbol, "M15", 250)
-                        if df is None or df.empty: continue
+                        if df is None or len(df) < 2: continue
+                        
+                        # ตัดแท่งที่กำลังวิ่งออก ป้องกัน repaint
+                        df = df.iloc[:-1]
+                        
                         df = IndicatorCalculator.add_indicators(df)
                         
                         sig = self.evidence_router.evaluate(df, symbol, decision_id)
@@ -114,7 +118,7 @@ class AlphaWorker:
                             })
                             logger.info(
                                 f"💡 EvidenceRouter Signal: {symbol} {sig['direction']} "
-                                f"(Sim: {sig.get('metadata', {}).get('similarity', 0):.2f})"
+                                f"(Sim: {(sig.get('metadata') or {}).get('similarity', 0):.2f})"
                             )
                 except Exception as e:
                     logger.error(f"AlphaWorker EvidenceRouter scan failed: {e}", exc_info=True)
@@ -123,9 +127,14 @@ class AlphaWorker:
                 abc_signals = []
                 try:
                     from market.regime_detector import RegimeDetector
+                    from strategy.indicators import IndicatorCalculator
                     for symbol in symbols_to_scan:
                         df = self.mt5_client.get_historical_data(symbol, "M15", 250)
-                        if df is None or df.empty: continue
+                        if df is None or len(df) < 2: continue
+                        
+                        # ตัดแท่งที่กำลังวิ่งออก ป้องกัน repaint
+                        df = df.iloc[:-1]
+                        
                         df = IndicatorCalculator.add_indicators(df)
                         regime = RegimeDetector.detect(df)
                         registry = StrategyRegistry(symbol, "M15")
@@ -186,6 +195,18 @@ class AlphaWorker:
                 except Exception as e:
                     logger.warning(f"Failed to apply Crypto Sentiment: {e}")
                 # ------------------------------------------------------------
+
+                try:
+                    from gqos.ops.demo_exploration import build_demo_exploration_candidates
+                    exploration_signals = build_demo_exploration_candidates(self.registry, self.mt5_client, approved)
+                    if exploration_signals:
+                        approved.extend(exploration_signals)
+                        logger.warning(
+                            "AlphaWorker: Added %s DEMO_EXPLORATION probe signals for live learning.",
+                            len(exploration_signals),
+                        )
+                except Exception as e:
+                    logger.warning(f"[DemoExplore] Candidate build failed: {e}")
                 
                 logger.info(
                     f"AlphaWorker: Scan complete. {len(approved)} signals approved "
@@ -193,6 +214,16 @@ class AlphaWorker:
                 )
 
                 guard_probe_active = bool(getattr(self, "guard_probe_reason", ""))
+                
+                # Deduplicate signals by symbol to prevent duplicate limit orders
+                unique_approved = {}
+                for sig in approved:
+                    sym = sig['symbol']
+                    conf = float(sig.get('model_probability', 0.5))
+                    if sym not in unique_approved or conf > float(unique_approved[sym].get('model_probability', 0.5)):
+                        unique_approved[sym] = sig
+                approved = list(unique_approved.values())
+
                 for sig in approved:
                     if paused_scan_only:
                         logger.info(
@@ -245,7 +276,8 @@ class AlphaWorker:
                     # Apply Dynamic Target ML with Clamping
                     try:
                         from ml.dynamic_targets import dynamic_targets
-                        pattern_sim = float(sig.get('metadata', {}).get('similarity', sig.get('metadata', {}).get('similarity_score', 0.5)))
+                        meta = sig.get('metadata') or {}
+                        pattern_sim = float(meta.get('similarity', meta.get('similarity_score', 0.5)))
                         pred_sl, pred_tp = dynamic_targets.predict(pattern_sim, float(base_sl_buffer))
                         
                         # Clamp to safety bounds (0.5x to 2.0x of static ATR buffer)
@@ -271,8 +303,9 @@ class AlphaWorker:
                     meta = sig.get('metadata') or {}
                     account = mt5.account_info()
                     account_id = str(getattr(account, "login", "") or "")
-                    entry_mode = "GUARDED_PROBE" if guard_probe_active else "NORMAL"
-                    probe_reason = self.guard_probe_reason if guard_probe_active else ""
+                    entry_mode = str(meta.get("entry_mode_override") or ("GUARDED_PROBE" if guard_probe_active else "NORMAL"))
+                    probe_reason = str(meta.get("probe_reason") or (self.guard_probe_reason if guard_probe_active else ""))
+                    sim_rec = meta.get("simulation_recommendation") or {}
                     try:
                         outcome_logger.register_intent(
                             decision_id=decision_id,
@@ -291,6 +324,26 @@ class AlphaWorker:
                             account_id=account_id,
                             entry_mode=entry_mode,
                             probe_reason=probe_reason,
+                            extra_metadata={
+                                "promotion_status": meta.get("promotion_status"),
+                                "regime": meta.get("regime"),
+                                "atr_bucket": meta.get("atr_bucket"),
+                                "expectancy_r": meta.get("expectancy_r"),
+                                "occurrences": meta.get("occurrences"),
+                                "simulation_action": sim_rec.get("action"),
+                                "simulation_soft_rule": sim_rec.get("soft_rule"),
+                                "simulation_confidence": sim_rec.get("confidence"),
+                                "simulation_avg_r": sim_rec.get("avg_r"),
+                                "simulation_win_rate": sim_rec.get("win_rate"),
+                                "simulation_samples": sim_rec.get("samples"),
+                                "pa_h4_trend": meta.get("pa_h4_trend"),
+                                "pa_h4_divergence": meta.get("pa_h4_divergence"),
+                                "pa_liquidity_sweep": meta.get("pa_liquidity_sweep"),
+                                "pa_fvg_aligned": meta.get("pa_fvg_aligned"),
+                                "pa_h1_chop": meta.get("pa_h1_chop"),
+                                "pa_killzone": meta.get("pa_killzone"),
+                                "pa_usd_basket_trend": meta.get("pa_usd_basket_trend"),
+                            },
                         )
                     except Exception as e:
                         logger.warning(f"[Learning] on_trade_opened failed: {e}")
@@ -351,6 +404,22 @@ class AlphaWorker:
                             )
                         except Exception as e:
                             logger.warning(f"[GuardedProbe] Could not mark {resolved_symbol} as probe: {e}")
+
+                    if entry_mode == "EXPLORE":
+                        try:
+                            from strategy.cooldown_manager import cooldown_manager
+                            cooldown_manager.set_probe(decision_id, True)
+                            outcome_logger.update_intent(
+                                decision_id,
+                                entry_mode="EXPLORE",
+                                probe_reason=probe_reason or "demo exploration",
+                            )
+                            logger.warning(
+                                f"[DemoExplore] {resolved_symbol} {direction.name} marked as EXPLORE probe; "
+                                f"reason={probe_reason or 'demo exploration'}"
+                            )
+                        except Exception as e:
+                            logger.warning(f"[DemoExplore] Could not mark {resolved_symbol} as explore probe: {e}")
 
                     cmd = SizePositionCommand(
                         strategy_id="gqos_alpha_v1",

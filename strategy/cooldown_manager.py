@@ -14,7 +14,7 @@ class PatternCooldownManager:
     Self-heals only from real opened/closed trades, not approved-but-unfilled
     signals.
     """
-    def __init__(self, cooldown_hours=6.0, state_file="data/learning/pattern_cooldown.json"):
+    def __init__(self, cooldown_hours=2.0, state_file="data/learning/pattern_cooldown.json"):
         self.cooldown_hours = timedelta(hours=cooldown_hours)
         self.state_file = state_file
         self.last_approved = {}

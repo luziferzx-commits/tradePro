@@ -1,4 +1,5 @@
 import threading
+import os
 from typing import Tuple, List
 from types import MappingProxyType
 from decimal import Decimal
@@ -12,6 +13,21 @@ class ExposureEngine:
         self._limits = limits
         self._lock = threading.RLock()
         self._snapshot = ExposureSnapshot(version=1, parent_version=0)
+
+    def _asset_multiplier(self, asset) -> Decimal:
+        defaults = {
+            "FOREX": Decimal("1.0"),
+            "METALS": Decimal("0.35"),
+            "INDICES": Decimal("0.25"),
+            "CRYPTO": Decimal("0.20"),
+            "COMMODITIES": Decimal("0.35"),
+        }
+        asset_class = str(getattr(asset, "asset_class", "") or "").upper()
+        env_key = f"GQOS_EXPOSURE_MULTIPLIER_{asset_class}"
+        try:
+            return Decimal(str(os.getenv(env_key, defaults.get(asset_class, Decimal("1.0")))))
+        except Exception:
+            return defaults.get(asset_class, Decimal("1.0"))
         
     def evaluate_trade(self, cmd: ExecuteTradeCommand) -> Tuple[bool, str, str]:
         """
@@ -26,7 +42,8 @@ class ExposureEngine:
             
         with self._lock:
             # Price estimate
-            price = cmd.estimated_value / cmd.quantity
+            multiplier = self._asset_multiplier(asset)
+            price = (cmd.estimated_value / cmd.quantity) * multiplier
             signed_trade_qty = cmd.quantity * Decimal(cmd.direction.value)
             
             old_pos = self._snapshot.positions.get(cmd.symbol)
@@ -54,7 +71,7 @@ class ExposureEngine:
                 return False, "NET_EXPOSURE", f"Projected Net magnitude: {abs(proj_net)} > Limit: {self._limits.max_net_exposure}"
                 
             if proj_sym_gross > self._limits.max_symbol_exposure:
-                return False, "SYMBOL_EXPOSURE", f"Projected {cmd.symbol} exposure: {proj_sym_gross} > Limit: {self._limits.max_symbol_exposure}"
+                return False, "SYMBOL_EXPOSURE", f"Projected {cmd.symbol} normalized exposure: {proj_sym_gross} > Limit: {self._limits.max_symbol_exposure}"
                 
             if proj_sec_gross > self._limits.max_sector_exposure:
                 return False, "SECTOR_EXPOSURE", f"Projected Sector '{asset.sector}' exposure: {proj_sec_gross} > Limit: {self._limits.max_sector_exposure}"
@@ -83,7 +100,7 @@ class ExposureEngine:
         old_avg = old_pos.average_entry_price if old_pos else Decimal('0')
         
         trade_qty = event.quantity * Decimal(event.direction.value)
-        price = event.execution_price
+        price = event.execution_price * self._asset_multiplier(asset)
         new_qty = old_qty + trade_qty
         
         # Calculate new average entry price

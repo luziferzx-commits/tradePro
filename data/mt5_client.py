@@ -70,6 +70,7 @@ class MT5Client:
             "M5": mt5.TIMEFRAME_M5,
             "M15": mt5.TIMEFRAME_M15,
             "H1": mt5.TIMEFRAME_H1,
+            "H4": mt5.TIMEFRAME_H4,
             "D1": mt5.TIMEFRAME_D1
         }
         mt5_tf = tf_map.get(timeframe, mt5.TIMEFRAME_M5)
@@ -100,11 +101,11 @@ class MT5Client:
         resolved_symbol = self.resolve_symbol(symbol)
         if not mt5.symbol_select(resolved_symbol, True):
             return None
-        rates = mt5.copy_rates_from_pos(resolved_symbol, mt5.TIMEFRAME_H4, 0, count)
+        rates = mt5.copy_rates_from_pos(resolved_symbol, mt5.TIMEFRAME_H4, 0, count + 1)
         if rates is None:
             return None
         df = pd.DataFrame(rates)
         df['time'] = pd.to_datetime(df['time'], unit='s')
-        return df
+        return df.iloc[:-1].copy()
 
 mt5_client = MT5Client()

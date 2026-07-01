@@ -134,8 +134,12 @@ class MT5BrokerAdapter(IBrokerAdapter):
         try:
             from strategy.cooldown_manager import cooldown_manager
             if cooldown_manager.is_probe(decision_id):
-                multiplier = float(settings.LIVE_GUARD_PROBE_MULTIPLIER)
-                logger.info(f"[PortfolioBudget] {resolved_symbol} PROBE MODE active, forcing multiplier={multiplier:.2f}x")
+                try:
+                    from gqos.ops.recovery_readiness import current_probe_multiplier
+                    multiplier = min(1.0, max(float(settings.LIVE_GUARD_PROBE_MULTIPLIER), current_probe_multiplier()))
+                except Exception:
+                    multiplier = float(settings.LIVE_GUARD_PROBE_MULTIPLIER)
+                logger.info(f"[PortfolioBudget] {resolved_symbol} PROBE MODE active, dynamic multiplier={multiplier:.2f}x")
             else:
                 from gqos.risk.portfolio_budget import portfolio_budget
                 multiplier = portfolio_budget.get_multiplier(resolved_symbol)
@@ -156,13 +160,14 @@ class MT5BrokerAdapter(IBrokerAdapter):
 
         symbol_config = _symbol_config_for_broker_symbol(resolved_symbol)
         max_spread = symbol_config.get("max_spread_points")
-        if max_spread is not None and sym_info.spread > float(max_spread):
+        current_spread = getattr(sym_info, "spread", None)
+        if max_spread is not None and current_spread is not None and float(current_spread) > float(max_spread):
             self._oms_callback(
                 order_id,
                 OrderStatus.REJECTED.value,
                 Decimal('0'),
                 Decimal('0'),
-                f"Spread too high for {resolved_symbol}: {sym_info.spread} > {max_spread}",
+                f"Spread too high for {resolved_symbol}: {current_spread} > {max_spread}",
             )
             return
             
@@ -177,22 +182,26 @@ class MT5BrokerAdapter(IBrokerAdapter):
 
         volume = math.floor(raw_volume / vol_step) * vol_step
         volume = round(volume, 8)
+        
+        min_vol = float(sym_info.volume_min)
 
-        if volume < sym_info.volume_min:
+        if volume < min_vol:
             if getattr(settings, "LIVE_MICRO_MODE", False):
-                logger.warning(f"LIVE_MICRO_MODE: Forcing volume from {volume} to {sym_info.volume_min}")
-                volume = sym_info.volume_min
+                logger.warning(f"LIVE_MICRO_MODE: Forcing volume from {volume} to {min_vol}")
+                volume = min_vol
             else:
+                msg = f"Requested volume {raw_volume:.8f} (broker_vol={volume:.4f}) below broker minimum {min_vol}"
+                logger.warning(f"[SizingGuard] REJECTED {resolved_symbol}: {msg}")
                 self._oms_callback(
                     order_id,
                     OrderStatus.REJECTED.value,
                     Decimal('0'),
                     Decimal('0'),
-                    f"Requested volume {raw_volume:.8f} below broker minimum {sym_info.volume_min}",
+                    msg,
                 )
                 return
 
-        volume = min(sym_info.volume_max, volume)
+        volume = min(float(sym_info.volume_max), volume)
         
         logger.info(
             f"[SizingGuard] {resolved_symbol} requested_volume={requested_volume:.4f} "
@@ -203,7 +212,7 @@ class MT5BrokerAdapter(IBrokerAdapter):
         is_entry = bool(decision_id)
         
         # Resolve filling mode dynamically
-        allowed_modes = sym_info.filling_mode
+        allowed_modes = getattr(sym_info, "filling_mode", 2)
         if allowed_modes & 1:
             best_filling = mt5.ORDER_FILLING_FOK
         elif allowed_modes & 2:
@@ -258,7 +267,7 @@ class MT5BrokerAdapter(IBrokerAdapter):
                 if current_risk > max_risk:
                     capped_volume = math.floor(float(max_risk / risk_per_lot) / vol_step) * vol_step
                     capped_volume = round(capped_volume, 8)
-                    if capped_volume < sym_info.volume_min:
+                    if capped_volume < min_vol:
                         self._oms_callback(
                             order_id,
                             OrderStatus.REJECTED.value,
@@ -266,7 +275,7 @@ class MT5BrokerAdapter(IBrokerAdapter):
                             Decimal('0'),
                             (
                                 f"Risk cap would require volume {capped_volume:.8f}, "
-                                f"below broker minimum {sym_info.volume_min}"
+                                f"below broker minimum {min_vol}"
                             ),
                         )
                         return
@@ -289,6 +298,19 @@ class MT5BrokerAdapter(IBrokerAdapter):
             "magic": settings.MAGIC_NUMBER,
             "comment": (f"GQOS-{decision_id.split('-')[-1]}" if decision_id else order_id[:10]),
             "type_time": type_time,
+        }
+        outcome_fill_metadata = {
+            "symbol": resolved_symbol,
+            "direction": direction.name if hasattr(direction, "name") else str(direction),
+            "volume": float(volume),
+            "quantity": float(volume),
+            "intended_price": float(price),
+            "expected_entry_price": float(exec_price),
+            "stop_loss_price": float(stop_loss) if stop_loss else None,
+            "take_profit_price": float(take_profit) if take_profit else None,
+            "tick_size": float(getattr(sym_info, "trade_tick_size", 0) or getattr(sym_info, "point", 0) or 0),
+            "tick_value": float(getattr(sym_info, "trade_tick_value", 0) or 0),
+            "contract_size": float(getattr(sym_info, "trade_contract_size", 0) or 0),
         }
         
         if trade_action == mt5.TRADE_ACTION_DEAL:
@@ -339,14 +361,27 @@ class MT5BrokerAdapter(IBrokerAdapter):
                 "expiration": expiration,
                 "decision_id": decision_id,
                 "intended_price": Decimal(str(exec_price)),
+                "outcome_fill_metadata": outcome_fill_metadata,
             }
             self._oms_callback(order_id, OrderStatus.ACK.value, Decimal('0'), Decimal('0'), "MT5 Limit Accepted")
             return
 
+        filled_qty = Decimal(str(result.volume))
+        filled_price = Decimal(str(result.price))
         if decision_id:
             try:
                 from gqos.learning.outcome_logger import outcome_logger
-                outcome_logger.on_trade_opened(ticket=result.order, decision_id=decision_id)
+                outcome_logger.on_trade_opened(
+                    ticket=result.order,
+                    decision_id=decision_id,
+                    **{
+                        **outcome_fill_metadata,
+                        "volume": float(filled_qty),
+                        "quantity": float(filled_qty),
+                        "fill_price": float(filled_price),
+                        "actual_entry_price": float(filled_price),
+                    },
+                )
             except Exception as e:
                 logger.warning(f"Failed to link ticket for outcome_logger: {e}")
             try:
@@ -356,9 +391,6 @@ class MT5BrokerAdapter(IBrokerAdapter):
                 pass
             except Exception:
                 pass
-        filled_qty = Decimal(str(result.volume))
-        filled_price = Decimal(str(result.price))
-        
         try:
             from gqos.common.structured_logger import log_structured_event
             log_structured_event(
@@ -453,7 +485,18 @@ class MT5BrokerAdapter(IBrokerAdapter):
                                     try:
                                         from gqos.learning.outcome_logger import outcome_logger
                                         if data.get("decision_id"):
-                                            outcome_logger.on_trade_opened(ticket=ticket, decision_id=data["decision_id"])
+                                            metadata = dict(data.get("outcome_fill_metadata") or {})
+                                            outcome_logger.on_trade_opened(
+                                                ticket=ticket,
+                                                decision_id=data["decision_id"],
+                                                **{
+                                                    **metadata,
+                                                    "volume": float(filled_qty),
+                                                    "quantity": float(filled_qty),
+                                                    "fill_price": float(fill_price),
+                                                    "actual_entry_price": float(fill_price),
+                                                },
+                                            )
                                     except Exception as e:
                                         logger.warning(f"Failed to link limit ticket for outcome_logger: {e}")
                                     try:

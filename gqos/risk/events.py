@@ -103,6 +103,8 @@ class TradeExecutedEvent(Event):
     intended_price: Optional[Decimal] = None
     slippage_amount: Optional[Decimal] = None
     ticket: Optional[str] = None
+    stop_loss: Optional[Decimal] = None
+    take_profit: Optional[Decimal] = None
 @dataclass(frozen=True)
 class TradeRejectedByExposureLimit(Event):
     strategy_id: str

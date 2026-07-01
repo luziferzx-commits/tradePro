@@ -15,6 +15,7 @@ def main() -> int:
         print(
             f"{key}: {rec['action']} samples={rec['samples']} "
             f"WR={rec['win_rate']:.1%} AvgR={rec['avg_r']:+.2f} "
+            f"Conf={rec.get('confidence', 0.0):.0%} {rec.get('soft_rule', 'NEUTRAL')} "
             f"PFadj={rec['pf_threshold_adjust']:+.3f} ExpAdj={rec['expectancy_threshold_adjust']:+.3f}"
         )
     context = payload.get("context_recommendations", {})
@@ -22,7 +23,8 @@ def main() -> int:
     for key, rec in list(context.items())[:20]:
         print(
             f"{key}: {rec['action']} samples={rec['samples']} "
-            f"WR={rec['win_rate']:.1%} AvgR={rec['avg_r']:+.2f}"
+            f"WR={rec['win_rate']:.1%} AvgR={rec['avg_r']:+.2f} "
+            f"Conf={rec.get('confidence', 0.0):.0%} {rec.get('soft_rule', 'NEUTRAL')}"
         )
     return 0
 

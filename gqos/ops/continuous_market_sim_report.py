@@ -7,6 +7,8 @@ from pathlib import Path
 OBS_PATH = Path(os.getenv("GQOS_MARKET_OBSERVATIONS_PATH", "data/learning/market_observations.jsonl"))
 PENDING_PATH = Path(os.getenv("GQOS_VIRTUAL_PENDING_PATH", "data/learning/virtual_trades.json"))
 OUTCOMES_PATH = Path(os.getenv("GQOS_VIRTUAL_OUTCOMES_PATH", "data/learning/virtual_trade_outcomes.jsonl"))
+RECOMMENDATIONS_PATH = Path(os.getenv("GQOS_SIM_RECOMMENDATIONS_PATH", "data/learning/simulation_recommendations.json"))
+MIN_SAMPLES = int(os.getenv("GQOS_SIM_RECOMMEND_MIN_SAMPLES", "20"))
 
 
 def _jsonl_count(path: Path) -> int:
@@ -22,6 +24,89 @@ def _read_json(path: Path, default):
         return json.loads(path.read_text(encoding="utf-8", errors="ignore"))
     except Exception:
         return default
+
+
+def _load_recommendations() -> dict:
+    payload = _read_json(RECOMMENDATIONS_PATH, {})
+    return payload if isinstance(payload, dict) else {}
+
+
+def _has_known_context(row: dict) -> bool:
+    fields = (
+        row.get("session"),
+        row.get("market_session"),
+        row.get("spread_bucket"),
+        row.get("volatility_bucket"),
+    )
+    return any(str(value or "UNKNOWN").upper() != "UNKNOWN" for value in fields)
+
+
+def _soft_rule(row: dict) -> str:
+    existing = row.get("soft_rule")
+    if existing:
+        return str(existing)
+    action = str(row.get("action") or "NEUTRAL")
+    if action == "RELAX_SLIGHTLY":
+        return "WATCH_POSITIVE"
+    if action == "TIGHTEN_SLIGHTLY":
+        return "WATCH_NEGATIVE"
+    return "NEUTRAL"
+
+
+def _confidence(row: dict) -> float:
+    value = row.get("confidence")
+    try:
+        if value is not None:
+            return float(value)
+    except Exception:
+        pass
+    samples = int(row.get("samples", 0) or 0)
+    # Compatibility for recommendation files written before confidence existed.
+    return min(1.0, samples / max(MIN_SAMPLES * 3, 1))
+
+
+def sorted_context_recommendations(kind: str = "top", limit: int = 10) -> list[dict]:
+    payload = _load_recommendations()
+    all_rows = list((payload.get("context_recommendations") or {}).values())
+    rows = [row for row in all_rows if _has_known_context(row)] or all_rows
+    if kind == "bad":
+        rows = [r for r in rows if str(r.get("soft_rule", "")).endswith("BLACKLIST") or float(r.get("avg_r", 0.0) or 0.0) < 0]
+        return sorted(
+            rows,
+            key=lambda r: (
+                float(r.get("avg_r", 0.0) or 0.0),
+                -float(r.get("confidence", 0.0) or 0.0),
+                -int(r.get("samples", 0) or 0),
+            ),
+        )[:limit]
+    rows = [r for r in rows if str(r.get("soft_rule", "")).endswith("WHITELIST") or float(r.get("avg_r", 0.0) or 0.0) > 0]
+    return sorted(
+        rows,
+        key=lambda r: (
+            float(r.get("avg_r", 0.0) or 0.0),
+            float(r.get("confidence", 0.0) or 0.0),
+            int(r.get("samples", 0) or 0),
+        ),
+        reverse=True,
+    )[:limit]
+
+
+def build_sim_context_report(kind: str = "top", limit: int = 10) -> str:
+    rows = sorted_context_recommendations(kind=kind, limit=limit)
+    title = "Top simulation contexts" if kind != "bad" else "Bottom simulation contexts"
+    if not rows:
+        return f"{title}\nNo qualified context recommendations yet."
+    lines = [title]
+    for r in rows:
+        lines.append(
+            f"- {r.get('symbol')} {r.get('side')} {r.get('market_session') or r.get('session')} "
+            f"spread={r.get('spread_bucket')} vol={r.get('volatility_bucket')} "
+            f"AvgR={float(r.get('avg_r', 0.0) or 0.0):+.2f} "
+            f"WR={float(r.get('win_rate', 0.0) or 0.0):.0%} "
+            f"Conf={_confidence(r):.0%} "
+            f"N={int(r.get('samples', 0) or 0)} {_soft_rule(r)}"
+        )
+    return "\n".join(lines)
 
 
 def _read_outcomes(limit: int = 20000) -> list[dict]:

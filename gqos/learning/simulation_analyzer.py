@@ -2,8 +2,8 @@ import json
 import logging
 import os
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
-from statistics import mean
 from typing import Any
 
 logger = logging.getLogger("GQOS.SimulationAnalyzer")
@@ -15,6 +15,10 @@ RECOMMENDATIONS_PATH = Path(os.getenv("GQOS_SIM_RECOMMENDATIONS_PATH", "data/lea
 MIN_SAMPLES = int(os.getenv("GQOS_SIM_RECOMMEND_MIN_SAMPLES", "20"))
 MAX_PF_ADJUST = float(os.getenv("GQOS_SIM_MAX_PF_ADJUST", "0.05"))
 MAX_EXPR_ADJUST = float(os.getenv("GQOS_SIM_MAX_EXPR_ADJUST", "0.02"))
+ROLLING_WINDOW = int(os.getenv("GQOS_SIM_ROLLING_WINDOW", "300"))
+DECAY_HALFLIFE_HOURS = float(os.getenv("GQOS_SIM_DECAY_HALFLIFE_HOURS", "24"))
+SOFT_WHITELIST_CONFIDENCE = float(os.getenv("GQOS_SIM_SOFT_WHITELIST_CONFIDENCE", "0.65"))
+SOFT_BLACKLIST_CONFIDENCE = float(os.getenv("GQOS_SIM_SOFT_BLACKLIST_CONFIDENCE", "0.70"))
 
 
 def _read_jsonl(path: Path, limit: int = 50000) -> list[dict[str, Any]]:
@@ -62,6 +66,61 @@ def _is_win(outcome: str) -> bool:
 
 def _bounded(value: float, max_abs: float) -> float:
     return max(-max_abs, min(max_abs, value))
+
+
+def _parse_dt(value: Any) -> datetime | None:
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+
+def _row_time(row: dict[str, Any]) -> datetime | None:
+    return _parse_dt(row.get("close_time") or row.get("entry_time") or row.get("ts"))
+
+
+def _rolling_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    ordered = sorted(rows, key=lambda row: _row_time(row) or datetime.min.replace(tzinfo=timezone.utc))
+    if ROLLING_WINDOW > 0:
+        return ordered[-ROLLING_WINDOW:]
+    return ordered
+
+
+def _row_weight(row: dict[str, Any], now: datetime) -> float:
+    if DECAY_HALFLIFE_HOURS <= 0:
+        return 1.0
+    dt = _row_time(row)
+    if not dt:
+        return 0.5
+    age_hours = max(0.0, (now - dt).total_seconds() / 3600.0)
+    return 0.5 ** (age_hours / DECAY_HALFLIFE_HOURS)
+
+
+def _weighted_mean(values: list[float], weights: list[float]) -> float:
+    total_w = sum(weights)
+    if total_w <= 0:
+        return sum(values) / len(values) if values else 0.0
+    return sum(v * w for v, w in zip(values, weights)) / total_w
+
+
+def _weighted_stability(values: list[float], weights: list[float], avg: float) -> float:
+    if not values:
+        return 0.0
+    total_w = sum(weights) or len(values)
+    variance = sum(w * ((v - avg) ** 2) for v, w in zip(values, weights)) / total_w
+    # 1.0 means very stable around the mean, 0.0 means highly noisy.
+    return max(0.0, min(1.0, 1.0 - (variance ** 0.5 / 2.0)))
+
+
+def _confidence(sample_count: int, effective_samples: float, stability: float) -> float:
+    sample_score = min(1.0, sample_count / max(MIN_SAMPLES * 3, 1))
+    effective_score = min(1.0, effective_samples / max(MIN_SAMPLES, 1))
+    return round((sample_score * 0.40) + (effective_score * 0.35) + (stability * 0.25), 4)
 
 
 def build_simulation_recommendations() -> dict[str, Any]:
@@ -113,6 +172,8 @@ def build_simulation_recommendations() -> dict[str, Any]:
     payload = {
         "min_samples": MIN_SAMPLES,
         "context_min_samples": context_min_samples,
+        "rolling_window": ROLLING_WINDOW,
+        "decay_halflife_hours": DECAY_HALFLIFE_HOURS,
         "virtual_rows": len(virtual),
         "missed_rows": len(missed),
         "recommendations": recommendations,
@@ -126,36 +187,50 @@ def build_simulation_recommendations() -> dict[str, Any]:
 
 def _make_recommendation(symbol: str, side: str, rows: list[dict[str, Any]], min_samples: int | None = None) -> dict[str, Any] | None:
     required_samples = min_samples or MIN_SAMPLES
+    rows = _rolling_rows(rows)
     if len(rows) < required_samples:
         return None
+    now = datetime.now(timezone.utc)
     actual_rs = [float(r.get("actual_r") or 0.0) for r in rows]
-    avg_r = mean(actual_rs)
-    win_rate = sum(1 for r in rows if _is_win(str(r.get("outcome")))) / len(rows)
+    weights = [_row_weight(r, now) for r in rows]
+    effective_samples = sum(weights)
+    avg_r = _weighted_mean(actual_rs, weights)
+    win_values = [1.0 if _is_win(str(r.get("outcome"))) else 0.0 for r in rows]
+    win_rate = _weighted_mean(win_values, weights)
+    stability = _weighted_stability(actual_rs, weights, avg_r)
+    confidence = _confidence(len(rows), effective_samples, stability)
     missed_count = sum(1 for r in rows if r.get("_source") == "missed")
 
     if avg_r >= 0.15 and win_rate >= 0.52:
         pf_adjust = -min(MAX_PF_ADJUST, 0.02 + avg_r * 0.03)
         expr_adjust = -min(MAX_EXPR_ADJUST, avg_r * 0.01)
         action = "RELAX_SLIGHTLY"
+        soft_rule = "SOFT_WHITELIST" if confidence >= SOFT_WHITELIST_CONFIDENCE else "WATCH_POSITIVE"
     elif avg_r <= -0.15 or win_rate <= 0.45:
         pf_adjust = min(MAX_PF_ADJUST, 0.02 + abs(avg_r) * 0.03)
         expr_adjust = min(MAX_EXPR_ADJUST, abs(avg_r) * 0.01)
         action = "TIGHTEN_SLIGHTLY"
+        soft_rule = "SOFT_BLACKLIST" if confidence >= SOFT_BLACKLIST_CONFIDENCE else "WATCH_NEGATIVE"
     else:
         pf_adjust = 0.0
         expr_adjust = 0.0
         action = "NEUTRAL"
+        soft_rule = "NEUTRAL"
 
     return {
         "symbol": symbol,
         "side": side,
         "samples": len(rows),
+        "effective_samples": round(effective_samples, 2),
         "missed_samples": missed_count,
         "win_rate": round(win_rate, 4),
         "avg_r": round(avg_r, 4),
+        "confidence": confidence,
+        "stability": round(stability, 4),
         "pf_threshold_adjust": round(_bounded(pf_adjust, MAX_PF_ADJUST), 4),
         "expectancy_threshold_adjust": round(_bounded(expr_adjust, MAX_EXPR_ADJUST), 4),
         "action": action,
+        "soft_rule": soft_rule,
     }
 
 

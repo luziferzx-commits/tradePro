@@ -120,7 +120,7 @@ def load_slippage():
     if not os.path.exists(SLIPPAGE_PATH):
         return pd.DataFrame()
     rows = []
-    with open(SLIPPAGE_PATH) as f:
+    with open(SLIPPAGE_PATH, encoding="utf-8-sig") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -138,7 +138,7 @@ def load_outcomes():
     if not os.path.exists(OUTCOMES_PATH):
         return pd.DataFrame()
     rows = []
-    with open(OUTCOMES_PATH) as f:
+    with open(OUTCOMES_PATH, encoding="utf-8-sig") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -259,6 +259,70 @@ def load_sim_recommendations():
         return payload.get("recommendations", {}), payload.get("context_recommendations", {})
     except Exception:
         return {}, {}
+
+@st.cache_data(ttl=20)
+def load_learning_insights():
+    try:
+        from gqos.ops.learning_insights import (
+            build_learning_coverage,
+            build_live_sim_agreement,
+            build_session_scores,
+            build_why_table,
+        )
+        return {
+            "coverage": build_learning_coverage(),
+            "agreement": build_live_sim_agreement(),
+            "sessions": build_session_scores(),
+            "why": build_why_table(),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "coverage": {}, "agreement": {}, "sessions": [], "why": []}
+
+@st.cache_data(ttl=20)
+def load_recovery_ops():
+    try:
+        from gqos.ops.recovery_readiness import build_recovery_readiness
+        from gqos.ops.spread_regime_memory import spread_regime_summary
+        return {
+            "readiness": build_recovery_readiness(),
+            "spread_memory": spread_regime_summary(),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "readiness": {}, "spread_memory": []}
+
+@st.cache_data(ttl=30)
+def load_post_trade_reviews():
+    path = "data/learning/post_trade_reviews.jsonl"
+    rows = []
+    if not os.path.exists(path):
+        return pd.DataFrame()
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return pd.DataFrame(rows)
+
+@st.cache_data(ttl=30)
+def load_pa_filter_analytics():
+    try:
+        from gqos.ops.pa_filter_analytics import (
+            build_pa_counterfactual_scores,
+            build_pa_outcome_scores,
+            build_pa_rejection_summary,
+        )
+        from gqos.ops.pa_filter_calibrator import build_pa_filter_scorecard
+        return {
+            "rejections": build_pa_rejection_summary(),
+            "outcomes": build_pa_outcome_scores(),
+            "counterfactual": build_pa_counterfactual_scores(),
+            "scorecard": build_pa_filter_scorecard(),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "rejections": [], "outcomes": [], "counterfactual": [], "scorecard": []}
 
 def build_live_trade_history(df_out, pos, df_pending):
     rows = []
@@ -571,19 +635,178 @@ if page == "📊 Overview":
     with s4: st.metric("Virtual Avg R", f"{sim_avg_r:+.2f}R", delta=f"{len(sim_recs)} sim recs")
 
     if sim_context_recs:
-        rec_rows = sorted(
-            sim_context_recs.values(),
-            key=lambda row: abs(float(row.get("avg_r", 0.0) or 0.0)),
+        all_context_rows = list(sim_context_recs.values())
+        for row in all_context_rows:
+            if not row.get("soft_rule"):
+                action = str(row.get("action") or "NEUTRAL")
+                row["soft_rule"] = "WATCH_POSITIVE" if action == "RELAX_SLIGHTLY" else ("WATCH_NEGATIVE" if action == "TIGHTEN_SLIGHTLY" else "NEUTRAL")
+            if row.get("confidence") is None:
+                try:
+                    row["confidence"] = min(1.0, int(row.get("samples", 0) or 0) / max(20 * 3, 1))
+                except Exception:
+                    row["confidence"] = 0.0
+            row.setdefault("stability", 0.0)
+            row.setdefault("effective_samples", row.get("samples", 0))
+        context_rows = [
+            row for row in all_context_rows
+            if any(
+                str(row.get(field) or "UNKNOWN").upper() != "UNKNOWN"
+                for field in ("session", "market_session", "spread_bucket", "volatility_bucket")
+            )
+        ] or all_context_rows
+        top_rows = sorted(
+            [
+                row for row in context_rows
+                if str(row.get("soft_rule", "")).endswith("WHITELIST") or float(row.get("avg_r", 0.0) or 0.0) > 0
+            ],
+            key=lambda row: (
+                float(row.get("avg_r", 0.0) or 0.0),
+                float(row.get("confidence", 0.0) or 0.0),
+                int(row.get("samples", 0) or 0),
+            ),
             reverse=True,
         )[:8]
+        bottom_rows = sorted(
+            [
+                row for row in context_rows
+                if str(row.get("soft_rule", "")).endswith("BLACKLIST") or float(row.get("avg_r", 0.0) or 0.0) < 0
+            ],
+            key=lambda row: (
+                float(row.get("avg_r", 0.0) or 0.0),
+                -float(row.get("confidence", 0.0) or 0.0),
+                -int(row.get("samples", 0) or 0),
+            ),
+        )[:8]
+        display_cols = [
+            "symbol", "side", "session", "market_session", "spread_bucket", "volatility_bucket",
+            "samples", "effective_samples", "win_rate", "avg_r", "confidence", "stability", "soft_rule", "action",
+        ]
+        st.markdown("### Simulation Context Recommendations")
+        col_top, col_bad = st.columns(2)
+        with col_top:
+            st.markdown("#### Top Contexts")
+            if top_rows:
+                df_top_ctx = pd.DataFrame(top_rows)
+                st.dataframe(df_top_ctx[[c for c in display_cols if c in df_top_ctx.columns]], use_container_width=True, hide_index=True)
+            else:
+                st.caption("No positive simulation contexts qualified yet.")
+        with col_bad:
+            st.markdown("#### Bottom Contexts")
+            if bottom_rows:
+                df_bad_ctx = pd.DataFrame(bottom_rows)
+                st.dataframe(df_bad_ctx[[c for c in display_cols if c in df_bad_ctx.columns]], use_container_width=True, hide_index=True)
+            else:
+                st.caption("No negative simulation contexts qualified yet.")
+
+    insights = load_learning_insights()
+    agreement = insights.get("agreement", {})
+    coverage = insights.get("coverage", {})
+    sessions = insights.get("sessions", [])
+    st.markdown("### Live vs Simulation Agreement")
+    a1, a2, a3, a4, a5 = st.columns(5)
+    with a1: st.metric("Agreement", f"{float(agreement.get('agreement_rate', 0.0)):.0f}%")
+    with a2: st.metric("Agree", int(agreement.get("agree", 0) or 0))
+    with a3: st.metric("Disagree", int(agreement.get("disagree", 0) or 0))
+    with a4: st.metric("Neutral", int(agreement.get("neutral", 0) or 0))
+    with a5: st.metric("New Tagged Quality", f"{float(coverage.get('new_quality', 0.0)):.0f}%", delta=f"{coverage.get('new_tagged', 0)}/{coverage.get('new_total', 0)}")
+    if agreement.get("rows"):
+        agree_df = pd.DataFrame(agreement["rows"])
         st.dataframe(
-            pd.DataFrame(rec_rows)[[
-                "symbol", "side", "session", "market_session", "spread_bucket", "volatility_bucket",
-                "samples", "win_rate", "avg_r", "action",
+            agree_df.tail(12)[[
+                c for c in [
+                    "symbol", "side", "outcome", "actual_r", "sim_action", "soft_rule",
+                    "sim_confidence", "sim_avg_r", "verdict",
+                ] if c in agree_df.columns
             ]],
             use_container_width=True,
             hide_index=True,
         )
+    if agreement.get("context_rows"):
+        ctx_agree_df = pd.DataFrame(agreement["context_rows"])
+        st.markdown("#### Context-Level Agreement")
+        st.dataframe(
+            ctx_agree_df[["symbol", "side", "session", "samples", "agreement_rate", "agree", "disagree", "neutral"]].head(12),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    recovery_ops = load_recovery_ops()
+    readiness = recovery_ops.get("readiness", {})
+    st.markdown("### Recovery Readiness")
+    r1, r2, r3, r4, r5 = st.columns(5)
+    with r1: st.metric("Readiness", f"{float(readiness.get('score', 0.0)):.0%}")
+    with r2: st.metric("Tier", readiness.get("tier", "NA"))
+    with r3: st.metric("Probe Multiplier", f"{float(readiness.get('probe_multiplier', 0.0)):.2f}x")
+    with r4: st.metric("Spread OK", f"{readiness.get('spread_ok', 0)}/{readiness.get('symbols', 0)}")
+    with r5: st.metric("Paused Symbols", readiness.get("portfolio_paused", 0))
+
+    spread_memory = recovery_ops.get("spread_memory", [])
+    if spread_memory:
+        st.markdown("#### Spread Regime Memory")
+        spread_df = pd.DataFrame(spread_memory)
+        st.dataframe(
+            spread_df[["symbol", "session", "samples", "blocked", "block_rate", "avg_spread_ratio", "label"]].head(12),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    reviews_df = load_post_trade_reviews()
+    if not reviews_df.empty:
+        st.markdown("### Post-Trade Reviews")
+        review_cols = [
+            "ts", "symbol", "direction", "session", "entry_mode", "outcome", "actual_r",
+            "simulation_soft_rule", "simulation_confidence", "pa_h4_trend", "pa_h4_divergence",
+            "pa_liquidity_sweep", "pa_fvg_aligned", "pa_killzone", "review_verdict",
+        ]
+        st.dataframe(
+            reviews_df.tail(12)[[c for c in review_cols if c in reviews_df.columns]],
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    pa = load_pa_filter_analytics()
+    st.markdown("### Price Action Filter Analytics")
+    pa_cols = st.columns(3)
+    with pa_cols[0]:
+        st.markdown("#### Filter Pressure")
+        if pa.get("rejections"):
+            st.dataframe(pd.DataFrame(pa["rejections"]).head(8), use_container_width=True, hide_index=True)
+        else:
+            st.caption("No PA-specific rejections yet.")
+    with pa_cols[1]:
+        st.markdown("#### Live Outcome Score")
+        if pa.get("outcomes"):
+            st.dataframe(pd.DataFrame(pa["outcomes"]).head(8), use_container_width=True, hide_index=True)
+        else:
+            st.caption("No closed trades with PA tags yet.")
+    with pa_cols[2]:
+        st.markdown("#### Counterfactual")
+        if pa.get("counterfactual"):
+            st.dataframe(pd.DataFrame(pa["counterfactual"]).head(8), use_container_width=True, hide_index=True)
+        else:
+            st.caption("Waiting for missed-opportunity outcomes.")
+    st.markdown("#### Auto-Calibration Scorecard")
+    if pa.get("scorecard"):
+        score_cols = [
+            "category", "recommended_action", "confidence", "reason", "rejections",
+            "live_samples", "live_win_rate", "live_avg_r",
+            "counterfactual_samples", "counterfactual_win_rate", "counterfactual_avg_r",
+        ]
+        score_df = pd.DataFrame(pa["scorecard"])
+        st.dataframe(score_df[[c for c in score_cols if c in score_df.columns]].head(12), use_container_width=True, hide_index=True)
+    else:
+        st.caption("PA calibration scorecard is waiting for more data.")
+
+    st.markdown("### Session Scores")
+    if sessions:
+        sess_df = pd.DataFrame(sessions)
+        st.dataframe(
+            sess_df[["symbol", "side", "session", "samples", "win_rate", "avg_r", "pnl", "score", "label"]].head(12),
+            use_container_width=True,
+            hide_index=True,
+        )
+    else:
+        st.caption("Need more live outcomes per session before scoring.")
 
     st.markdown("---")
     col_left, col_right = st.columns([2, 1])
@@ -751,6 +974,23 @@ elif page == "🚫 Rejection Analytics":
             col2.metric("Approved", total_approved)
             col3.metric("Skipped (State/Risk)", total_skipped)
             col4.metric("Rejected (Edge)", total_rejected)
+
+            insights = load_learning_insights()
+            why_rows = insights.get("why", [])
+            st.markdown("### Why Blocked / Why Allowed")
+            if why_rows:
+                why_df = pd.DataFrame(why_rows)
+                why_cols = [
+                    "symbol", "side", "status", "reason", "pf", "expectancy_r", "similarity",
+                    "sim_action", "soft_rule", "sim_confidence", "sim_avg_r", "ts",
+                ]
+                st.dataframe(
+                    why_df[[c for c in why_cols if c in why_df.columns]].sort_values("ts", ascending=False),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            else:
+                st.info("No recent decision reasons available yet.")
             
             st.markdown("---")
             
