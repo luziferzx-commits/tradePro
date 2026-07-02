@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from ta.momentum import RSIIndicator
 from ta.trend import MACD, EMAIndicator, ADXIndicator
-from ta.volatility import AverageTrueRange
+from ta.volatility import AverageTrueRange, BollingerBands
 
 class IndicatorCalculator:
     @staticmethod
@@ -21,6 +21,9 @@ class IndicatorCalculator:
         df['macd_hist'] = macd.macd_diff()
         
         # EMAs
+        ema20 = EMAIndicator(close=df['close'], window=20)
+        df['ema20'] = ema20.ema_indicator()
+        
         ema50 = EMAIndicator(close=df['close'], window=50)
         df['ema50'] = ema50.ema_indicator()
         
@@ -37,12 +40,21 @@ class IndicatorCalculator:
         df['plus_di'] = adx_ind.adx_pos()
         df['minus_di'] = adx_ind.adx_neg()
 
-        # EMA Slope (normalized per ATR over 5 candles to make it scale-independent)
+        # Bollinger Bands
+        indicator_bb = BollingerBands(close=df['close'], window=20, window_dev=2)
+        df['bb_upper'] = indicator_bb.bollinger_hband()
+        df['bb_lower'] = indicator_bb.bollinger_lband()
+
+        # EMA Slopes (normalized per ATR over 5 candles to make it scale-independent)
+        df['ema20_slope'] = (df['ema20'].diff(5) / df['atr']) * 10
         df['ema50_slope'] = (df['ema50'].diff(5) / df['atr']) * 10
+        df['ema200_slope'] = (df['ema200'].diff(5) / df['atr']) * 10
 
         # Structural Extremes (20-period for breakout detection)
         df['recent_high_20'] = df['high'].rolling(20).max()
         df['recent_low_20'] = df['low'].rolling(20).min()
+        df['recent_high_distance'] = (df['recent_high_20'] - df['close']) / df['atr']
+        df['recent_low_distance'] = (df['close'] - df['recent_low_20']) / df['atr']
         
         return df
 
@@ -69,5 +81,7 @@ class IndicatorCalculator:
             'minus_di': safe_val(latest['minus_di']),
             'ema50_slope': safe_val(latest['ema50_slope']),
             'recent_high_20': safe_val(latest['recent_high_20']),
-            'recent_low_20': safe_val(latest['recent_low_20'])
+            'recent_low_20': safe_val(latest['recent_low_20']),
+            'bb_upper': safe_val(latest.get('bb_upper', 0)),
+            'bb_lower': safe_val(latest.get('bb_lower', 0))
         }

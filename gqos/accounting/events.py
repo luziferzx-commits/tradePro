@@ -11,6 +11,7 @@ class PositionOpenedEvent(Event):
     direction: TradeDirection
     quantity: Decimal
     average_price: Decimal
+    ticket: Optional[str] = None
 
 @dataclass(frozen=True)
 class PositionAdjustedEvent(Event):
@@ -28,12 +29,17 @@ class PositionClosedEvent(Event):
     direction: TradeDirection
     quantity_closed: Decimal
     exit_price: Decimal
+    ticket: Optional[str] = None
 
 @dataclass(frozen=True)
 class RealizedPnLEmittedEvent(Event):
     strategy_id: str
     symbol: str
     realized_pnl: Decimal
+    ticket: Optional[str] = None
+    exit_price: Decimal = Decimal('0')
+    direction: Optional[str] = None
+    duration_seconds: Optional[float] = None
 
 @dataclass(frozen=True)
 class FeeChargedEvent(Event):

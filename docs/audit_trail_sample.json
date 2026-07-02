@@ -1,0 +1,42 @@
+[
+    {
+        "timestamp_ns": 1782316869947496500,
+        "phase_id": "PHASE_13",
+        "decision_type": "SIGNAL_GENERATED",
+        "input_state_hash": "f11f1b4e803a3828bbedce529c2c7ace297b430ea59a9369b97a6e112c11142a",
+        "model_version": "v1.5.0",
+        "regime_state": "NORMAL",
+        "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "current_hash": "7381bbe134bc4bc352b84a1063dba89aabfa585567ed0b6778a9fbae3a39e98c"
+    },
+    {
+        "timestamp_ns": 1782316869947496500,
+        "phase_id": "PHASE_15",
+        "decision_type": "COMPLIANCE_CHECK",
+        "input_state_hash": "ebf7bd24b726513a6355b572be931929bcbe7d21f5c8bf64e6eb571ce3cb2a27",
+        "model_version": "v1.5.0",
+        "regime_state": "NORMAL",
+        "previous_hash": "7381bbe134bc4bc352b84a1063dba89aabfa585567ed0b6778a9fbae3a39e98c",
+        "current_hash": "65eb95c4ea6845770e64e1ddd41d3509b5e19ccf6d7237c056687ccbe58dbb95"
+    },
+    {
+        "timestamp_ns": 1782316869947496500,
+        "phase_id": "PHASE_15",
+        "decision_type": "DR_HEALTH_CHECK",
+        "input_state_hash": "ed581769b5fabb679fa1a5817d642566d34eaa7f9ae78ef940a886edce509be9",
+        "model_version": "v1.5.0",
+        "regime_state": "NORMAL",
+        "previous_hash": "65eb95c4ea6845770e64e1ddd41d3509b5e19ccf6d7237c056687ccbe58dbb95",
+        "current_hash": "734128a61ccf6108ea02bf78f309c5480e102efd5e4ea584dcb02f268553b56b"
+    },
+    {
+        "timestamp_ns": 1782316869947496500,
+        "phase_id": "PHASE_15",
+        "decision_type": "DR_HEALTH_CHECK_CRITICAL",
+        "input_state_hash": "37be1557fd778dd96c5dfebddc10f2db3895d072267d803f8288c72fe554ce06",
+        "model_version": "v1.5.0",
+        "regime_state": "NORMAL",
+        "previous_hash": "734128a61ccf6108ea02bf78f309c5480e102efd5e4ea584dcb02f268553b56b",
+        "current_hash": "153db8b280f1184f5c548464fa37a59e1ff40520e3430c62b3f3c32aed2c5321"
+    }
+]

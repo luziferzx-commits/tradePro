@@ -15,6 +15,11 @@ class ExecuteTradeCommand(Command):
     quantity: Decimal
     estimated_value: Decimal
     strategy_id: str
+    stop_loss: Optional[Decimal] = None
+    take_profit: Optional[Decimal] = None
+    decision_id: str = ""
+    risk_allocation_id: str = ""
+    portfolio_allocation_id: str = ""
 
 @dataclass(frozen=True)
 class RiskBudgetAllocated(Event):
@@ -97,6 +102,9 @@ class TradeExecutedEvent(Event):
     execution_price: Decimal
     intended_price: Optional[Decimal] = None
     slippage_amount: Optional[Decimal] = None
+    ticket: Optional[str] = None
+    stop_loss: Optional[Decimal] = None
+    take_profit: Optional[Decimal] = None
 @dataclass(frozen=True)
 class TradeRejectedByExposureLimit(Event):
     strategy_id: str

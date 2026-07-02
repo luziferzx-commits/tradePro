@@ -1,8 +1,6 @@
 import os
 import sys
 
-# Add root directory to python path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import logging
 from unittest.mock import patch, MagicMock
@@ -59,38 +57,20 @@ def test_circuit_breaker_equity():
         logger.info(f"Is safe to trade with $50 equity? {is_safe}")
         assert is_safe == False
 
-def test_ai_strict_json():
-    logger.info("--- Testing AI JSON Strictness ---")
-    
-    filter = GeminiFilter()
-    
-    # Mock the gemini generate_content response
-    class MockResponse:
-        def __init__(self, text):
-            self.text = text
-            
-    # Test valid
-    filter.model = MagicMock()
-    dummy_score = {
-        "final_direction": "BUY",
-        "final_score": 90.0,
-        "trend_score": 50.0,
-        "breakout_score": 20.0,
-        "pullback_score": 10.0,
-        "reversal_score": 0.0,
-        "session_score": 10.0
-    }
-    
-    res = filter.evaluate_signal("XAUUSD", dummy_score, {}, {})
-    logging.info(f"Valid AI Response: {res}")
-    
-    # We don't assert res['approve'] == True because empty dummy dicts {} 
-    # will legitimately cause Gemini to reject the trade as unsafe.
-    assert 'approve' in res
-    assert 'confidence' in res
+def test_gemini_filter_is_deprecated_noop():
+    logger.info("--- Testing GeminiFilter deprecation stub ---")
+
+    # GeminiFilter was removed in V6.1 and replaced by the Quant+ML Consensus
+    # Engine. The remaining stub must stay a harmless no-op so legacy references
+    # never affect trade decisions.
+    gf = GeminiFilter()
+    assert gf.filter("anything") is True
+    result = gf.analyze({"whatever": 1})
+    assert result["approved"] is True
+    assert result["confidence"] == 0.0
 
 if __name__ == "__main__":
     test_risk_rounding()
     test_circuit_breaker_equity()
-    test_ai_strict_json()
+    test_gemini_filter_is_deprecated_noop()
     logger.info("All hardening tests executed successfully.")

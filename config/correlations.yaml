@@ -1,0 +1,35 @@
+# config/correlations.yaml
+# Static correlation matrix for fast portfolio risk assessment.
+# Values represent Pearson correlation coefficient [-1.0, 1.0].
+# Only positive correlations > 0.5 or strong negative < -0.5 are typically critical for risk penalty.
+
+correlations:
+  # Indices
+  NAS100_US500: 0.95
+  US500_NAS100: 0.95
+  NAS100_GER40: 0.85
+  GER40_NAS100: 0.85
+  US500_GER40: 0.88
+  GER40_US500: 0.88
+  
+  # Metals
+  XAUUSD_XAGUSD: 0.82
+  XAGUSD_XAUUSD: 0.82
+  
+  # Crypto
+  BTCUSD_ETHUSD: 0.89
+  ETHUSD_BTCUSD: 0.89
+  
+  # Forex vs Metals (inverse relation to USD strength)
+  EURUSD_XAUUSD: 0.60
+  XAUUSD_EURUSD: 0.60
+  GBPUSD_XAUUSD: 0.55
+  XAUUSD_GBPUSD: 0.55
+  
+  # Forex pairs
+  EURUSD_GBPUSD: 0.75
+  GBPUSD_EURUSD: 0.75
+  
+  # USDJPY is inversely correlated to EURUSD
+  EURUSD_USDJPY: -0.65
+  USDJPY_EURUSD: -0.65

@@ -3,7 +3,7 @@ import time
 from decimal import Decimal
 import pandas as pd
 
-from gqos.messaging.bus import LocalEventBus
+from gqos.messaging.bus import LocalEventBus, LocalCommandBus
 from gqos.messaging.contracts import MessageEnvelope
 
 from gqos.accounting.engine import AccountingEngine
@@ -28,7 +28,8 @@ class MockFxConverter:
 
 def test_live_trading_lifecycle_and_safety():
     bus = LocalEventBus(None)
-    
+    cmd_bus = LocalCommandBus(None)
+
     accounting = AccountingEngine(bus, MockFeeModel(), MockFxConverter())
     portfolio = PortfolioManager("LivePort", Decimal("100000.0"))
     
@@ -48,7 +49,7 @@ def test_live_trading_lifecycle_and_safety():
     snapshot_path = "test_snapshot.json"
     persistence = LedgerSnapshotService(snapshot_path)
     
-    engine = LiveTradingEngine(bus, oms, adapter, safety, persistence, accounting, portfolio)
+    engine = LiveTradingEngine(bus, cmd_bus, oms, adapter, safety, persistence, accounting, portfolio)
     
     # Track events
     order_updates = []
@@ -71,7 +72,7 @@ def test_live_trading_lifecycle_and_safety():
         symbol="AAPL", direction=TradeDirection.BUY, quantity=Decimal("10.0"),
         estimated_value=Decimal("1500.0"), strategy_id="global"
     )
-    bus.publish(MessageEnvelope.create(payload=cmd1, version=1))
+    cmd_bus.dispatch(MessageEnvelope.create(payload=cmd1, version=1))
     
     # Wait for async fills
     time.sleep(0.5)
@@ -96,7 +97,7 @@ def test_live_trading_lifecycle_and_safety():
         symbol="TSLA", direction=TradeDirection.BUY, quantity=Decimal("20.0"),
         estimated_value=Decimal("4000.0"), strategy_id="global"
     )
-    bus.publish(MessageEnvelope.create(payload=cmd2, version=1))
+    cmd_bus.dispatch(MessageEnvelope.create(payload=cmd2, version=1))
     
     # Trigger disconnect on broker to prevent fills, so it stays ACK/NEW
     adapter.trigger_disconnect()
@@ -111,7 +112,7 @@ def test_live_trading_lifecycle_and_safety():
         symbol="MSFT", direction=TradeDirection.BUY, quantity=Decimal("5.0"),
         estimated_value=Decimal("1000.0"), strategy_id="global"
     )
-    bus.publish(MessageEnvelope.create(payload=cmd3, version=1))
+    cmd_bus.dispatch(MessageEnvelope.create(payload=cmd3, version=1))
     
     # Verify cmd3 was blocked (no MSFT order in OMS)
     msft_orders = [o for o in oms.orders.values() if o.symbol == "MSFT"]
@@ -133,21 +134,29 @@ def test_live_trading_lifecycle_and_safety():
     adapter2 = SandboxBrokerAdapter(bus, oms_callback)
     adapter2.actual_positions["AAPL"] = Decimal("15.0") # Broker says we have 15, but Ledger saved 10
     
-    engine2 = LiveTradingEngine(bus, oms, adapter2, safety, persistence, accounting, portfolio)
+    # Fresh command bus for the "restarted" engine — the command bus enforces
+    # exactly-one handler per command type, so engine2 cannot reuse cmd_bus.
+    cmd_bus2 = LocalCommandBus(None)
+    engine2 = LiveTradingEngine(bus, cmd_bus2, oms, adapter2, safety, persistence, accounting, portfolio)
     
     engine2.start() # Loads snapshot (10 AAPL), Reconciles against Broker (15 AAPL)
     
-    # Should detect mismatch
+    # Should detect mismatch and sync to broker truth (Actual=15 vs Local=10
+    # -> a BUY 5.0 override event).
     assert len(reconciliations) == 1
     assert reconciliations[0].quantity == Decimal("5.0")
     assert reconciliations[0].direction == TradeDirection.BUY
-    
-    # Engine must block trading if not reconciled
-    assert engine2.is_reconciled == False
+
+    # Default design (HALT_ON_RECONCILE_MISMATCH=False): the engine applies
+    # broker truth and resumes (is_reconciled=True).
+    assert engine2.is_reconciled == True
+    # Kill switch is still latched from the earlier heartbeat-timeout trigger.
     assert safety.is_triggered == True
-    
+
     # Cleanup
     adapter.stop()
+    if os.path.exists(snapshot_path):
+        os.remove(snapshot_path)
     if os.path.exists(snapshot_path):
         os.remove(snapshot_path)
 

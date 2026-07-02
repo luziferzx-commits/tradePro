@@ -61,10 +61,17 @@ def test_binance_status_mapping(event_bus, secrets_provider):
 def test_binance_precision_adjustment(event_bus, secrets_provider):
     oms = MockOMS()
     adapter = BinanceAdapter(event_bus, oms.oms_callback, secrets_provider, testnet=True)
-    
+
+    # MetadataCache is empty until refresh() hits the network; seed the BTCUSDT
+    # exchange filters directly so this stays a hermetic unit test.
+    adapter._metadata.rules["BTCUSDT"] = {
+        "tick_size": Decimal("0.10"),
+        "step_size": Decimal("0.001"),
+    }
+
     adjusted_events = []
     event_bus.subscribe(OrderAdjustedEvent, lambda env: adjusted_events.append(env.payload))
-    
+
     # BTCUSDT tick_size is 0.10, step_size is 0.001
     adapter.submit_order("ORD-1", "BTCUSDT", TradeDirection.BUY, Decimal("1.2345"), Decimal("50000.123"))
     

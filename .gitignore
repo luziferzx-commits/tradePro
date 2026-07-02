@@ -159,10 +159,31 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-# Custom GQOS Ignores
+# ── Custom GQOS Ignores ──────────────────────────────────────────────
+# Databases / logs
 *.db
 *.log
+
+# Plain-text scratch/report dumps at repo root (keep a few known-good ones)
 *.txt
 !requirements.txt
+!requirements-dev.txt
 !baseline_hash.txt
+
+# Notebooks / ML artifacts
 .gqos_notebooks/
+datasets/
+models/
+frontend/node_modules/
+
+# Runtime learning / execution state (regenerated at runtime)
+data/learning/*.json
+data/learning/*.jsonl
+data/pattern_store/*.parquet
+data/execution/
+
+# Backups & transient snapshots
+*.BACKUP.*
+*.BACKUP.json
+*.BACKUP.parquet
+test_snapshot.json

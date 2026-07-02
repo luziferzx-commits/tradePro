@@ -1,4 +1,5 @@
 from decimal import Decimal
+from types import SimpleNamespace
 from gqos.common.enums import TradeDirection
 from gqos.messaging.contracts import MessageEnvelope, Command, Event
 from gqos.messaging.bus import ICommandBus, IEventBus
@@ -33,6 +34,16 @@ class MockEventBus(IEventBus):
         pass
 
 def setup_m9c_pipeline(failing_execution=False):
+    from gqos.execution import stages as execution_stages
+    execution_stages.mt5.positions_get = lambda: []
+    execution_stages.mt5.account_info = lambda: SimpleNamespace(balance=100000.0)
+    execution_stages.mt5.symbol_info_tick = lambda symbol: SimpleNamespace(ask=100.0, bid=100.0)
+    try:
+        from data.mt5_client import mt5_client
+        mt5_client.resolve_symbol = lambda symbol: symbol
+    except Exception:
+        pass
+
     engine = PositionSizingEngine()
     policy = FixedFractionalPolicy(fraction=Decimal('0.10'))
     
@@ -60,7 +71,7 @@ def setup_m9c_pipeline(failing_execution=False):
         PortfolioSnapshotStage(manager),
         SizingStage(engine, policy),
         CircuitBreakerStage(cb),
-        ExposureStage(exposure),
+        ExposureStage(exposure, max_portfolio_risk_pct=1.0),
         RiskBudgetStage(budget),
         PortfolioReservationStage(manager),
         ExecutionStage(execution_bus, manager)
@@ -133,8 +144,51 @@ def test_execution_failure_releases_cash():
     assert "CashReservedEvent" in event_types
     assert "CashReleasedEvent" in event_types
 
+def test_portfolio_reservation_stage_releases_cash_on_close():
+    from gqos.execution.pipeline import PipelineContext
+    from gqos.risk.events import ExecuteTradeCommand
+
+    manager = PortfolioManager("p1", Decimal('100000.0'))
+    manager.allocate_capital("s1", Decimal('50000.0'))
+    stage = PortfolioReservationStage(manager)
+    cmd = ExecuteTradeCommand("AAPL", TradeDirection.BUY, Decimal('50'), Decimal('5000.0'), "s1")
+    env = MessageEnvelope.create(cmd, version=1, correlation_id="c4")
+
+    result = stage.process(env, PipelineContext())
+    assert result.continue_pipeline is True
+
+    alloc = manager.state.allocations["s1"]
+    assert alloc.reserved_cash == Decimal('5000.0')
+
+    released = stage.release_for_symbol("AAPL")
+    assert released is True
+    assert alloc.reserved_cash == Decimal('0.0')
+    assert alloc.buying_power == Decimal('50000.0')
+
+def test_portfolio_reservation_stage_release_event_for_allocation():
+    from gqos.execution.pipeline import PipelineContext
+    from gqos.risk.events import ExecuteTradeCommand
+
+    manager = PortfolioManager("p1", Decimal('100000.0'))
+    manager.allocate_capital("s1", Decimal('50000.0'))
+    stage = PortfolioReservationStage(manager)
+    cmd = ExecuteTradeCommand("AAPL", TradeDirection.BUY, Decimal('50'), Decimal('5000.0'), "s1")
+    env = MessageEnvelope.create(cmd, version=1, correlation_id="c5")
+
+    result = stage.process(env, PipelineContext())
+    allocation_id = result.envelope.payload.portfolio_allocation_id
+
+    release_event = stage.release_event_for_allocation_id(allocation_id, "Order Rejected Without Fill")
+    assert release_event is not None
+    assert release_event.allocation_id == allocation_id
+    assert release_event.amount == Decimal('5000.0')
+    assert release_event.new_reserved_cash == Decimal('0.0')
+    assert release_event.new_buying_power == Decimal('50000.0')
+
 if __name__ == "__main__":
     test_successful_reservation()
     test_over_reservation_rejected()
     test_execution_failure_releases_cash()
+    test_portfolio_reservation_stage_releases_cash_on_close()
+    test_portfolio_reservation_stage_release_event_for_allocation()
     print("M9C Portfolio Allocation tests passed!")

@@ -44,7 +44,9 @@ class LocalEventBus(IEventBus):
             try:
                 handler(envelope)
             except Exception as e:
-                # ADR-0003: Log and continue
+                # ADR-0003: Log and continue. Use the ILogger.log(level, msg)
+                # contract — ILogger has no .error() shortcut, so calling it
+                # here would itself raise and defeat the exception isolation.
                 self._logger.log("ERROR", f"Subscriber {handler.__name__} failed on Event {payload_type.__name__}: {str(e)}")
 
 

@@ -1,0 +1,571 @@
+BTCUSD:
+  ASIA:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Extreme
+    adx_bucket: Strong (25-40)
+    historical_pf: 2.084545073658067
+    expectancy_r: 0.14457831325301612
+    trade_count: 83
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - &id001 !!python/object/apply:numpy.dtype
+      args:
+      - f8
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - !!binary |
+      XI/C9Shc7z8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:00.205143'
+  LONDON:
+    preferred_strategy: London Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Medium
+    adx_bucket: Rising (20-25)
+    historical_pf: 1.4631383374072633
+    expectancy_r: 0.14130434782609183
+    trade_count: 92
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      XI/C9Shc7z8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:00.399421'
+  LONDON_NY_OVERLAP:
+    preferred_strategy: NY Breakout
+    allowed_regimes:
+    - TREND
+    atr_bucket: Low
+    adx_bucket: Weak (<20)
+    historical_pf: 1.85897760511687
+    expectancy_r: 0.14754098360656148
+    trade_count: 61
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      ZmZmZmZm7j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:00.934876'
+  NEW_YORK:
+    preferred_strategy: NY Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Extreme
+    adx_bucket: Strong (25-40)
+    historical_pf: 1.8072629683872554
+    expectancy_r: 0.36363636363636415
+    trade_count: 44
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      uB6F61G47j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:01.477284'
+ETHUSD:
+  ASIA:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: High
+    adx_bucket: Strong (25-40)
+    historical_pf: 1.9804268440143686
+    expectancy_r: 0.1507936507936494
+    trade_count: 63
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      ZmZmZmZm7j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:01.987684'
+  LONDON:
+    preferred_strategy: London Breakout
+    allowed_regimes:
+    - TREND
+    atr_bucket: Medium
+    adx_bucket: Weak (<20)
+    historical_pf: 1.562825689156668
+    expectancy_r: 0.3084112149532725
+    trade_count: 107
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      uB6F61G47j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:02.384781'
+  LONDON_NY_OVERLAP:
+    preferred_strategy: NY Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Extreme
+    adx_bucket: Weak (<20)
+    historical_pf: 2.0445753307373087
+    expectancy_r: 0.25000000000000083
+    trade_count: 50
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      CtejcD0K7z8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:02.946814'
+  NEW_YORK:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Extreme
+    adx_bucket: Strong (25-40)
+    historical_pf: 2.3153818025889907
+    expectancy_r: 0.3372093023255821
+    trade_count: 43
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      XI/C9Shc7z8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:03.444478'
+EURUSD:
+  ASIA:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Medium
+    adx_bucket: Extreme (>40)
+    historical_pf: 2.9506402206828115
+    expectancy_r: 0.3349514563106928
+    trade_count: 103
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      CtejcD0K7z8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:04.034100'
+  LONDON:
+    preferred_strategy: London Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: High
+    adx_bucket: Weak (<20)
+    historical_pf: 1.5325049452680395
+    expectancy_r: 0.1904761904761969
+    trade_count: 63
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      CtejcD0K7z8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:04.326135'
+  LONDON_NY_OVERLAP:
+    preferred_strategy: NY Breakout
+    allowed_regimes:
+    - TREND
+    atr_bucket: Extreme
+    adx_bucket: Extreme (>40)
+    historical_pf: 1.3177818222888091
+    expectancy_r: 0.1274509803921638
+    trade_count: 51
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      uB6F61G47j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:05.057077'
+  NEW_YORK:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: High
+    adx_bucket: Strong (25-40)
+    historical_pf: 1.8232239801651784
+    expectancy_r: 0.1250000000000282
+    trade_count: 40
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      FK5H4XoU7j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:05.599566'
+  OFF_SESSION:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - TREND
+    atr_bucket: Low
+    adx_bucket: Strong (25-40)
+    historical_pf: 1.4105233612689936
+    expectancy_r: 0.04166666666660443
+    trade_count: 36
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      CtejcD0K7z8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:05.812755'
+GBPUSD:
+  ASIA:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Medium
+    adx_bucket: Strong (25-40)
+    historical_pf: 1.3777429749636052
+    expectancy_r: 0.18421052631579587
+    trade_count: 57
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      uB6F61G47j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:06.025981'
+  LONDON:
+    preferred_strategy: London Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Low
+    adx_bucket: Rising (20-25)
+    historical_pf: 1.6493052612315802
+    expectancy_r: 0.3414634146341307
+    trade_count: 41
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      ZmZmZmZm7j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:06.199541'
+  LONDON_NY_OVERLAP:
+    preferred_strategy: NY Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: High
+    adx_bucket: Weak (<20)
+    historical_pf: 2.043689730804407
+    expectancy_r: 0.21951219512195486
+    trade_count: 41
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      XI/C9Shc7z8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:06.823697'
+NAS100:
+  ASIA:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Medium
+    adx_bucket: Extreme (>40)
+    historical_pf: 2.4349913235748395
+    expectancy_r: 0.2686567164179202
+    trade_count: 67
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      CtejcD0K7z8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:07.807667'
+  LONDON:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: High
+    adx_bucket: Strong (25-40)
+    historical_pf: 1.4317315485691102
+    expectancy_r: 0.2062937062937125
+    trade_count: 143
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      FK5H4XoU7j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:08.019229'
+  LONDON_NY_OVERLAP:
+    preferred_strategy: NY Breakout
+    allowed_regimes:
+    - TREND
+    atr_bucket: High
+    adx_bucket: Strong (25-40)
+    historical_pf: 1.6127185226808087
+    expectancy_r: 0.13636363636362764
+    trade_count: 55
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      CtejcD0K7z8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:08.656444'
+  NEW_YORK:
+    preferred_strategy: NY Breakout
+    allowed_regimes:
+    - TREND
+    atr_bucket: Extreme
+    adx_bucket: Strong (25-40)
+    historical_pf: 2.259557713917214
+    expectancy_r: 0.04166666666666726
+    trade_count: 48
+    stability_verdict: HIGH_VARIANCE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      uB6F61G47j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:09.136417'
+USDJPY:
+  ASIA:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Medium
+    adx_bucket: Extreme (>40)
+    historical_pf: 1.522282881053981
+    expectancy_r: 0.2921348314606863
+    trade_count: 89
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      XI/C9Shc7z8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:09.881758'
+  LONDON:
+    preferred_strategy: London Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Extreme
+    adx_bucket: Strong (25-40)
+    historical_pf: 2.867246074706635
+    expectancy_r: 0.1702127659574126
+    trade_count: 47
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      CtejcD0K7z8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:10.091103'
+  LONDON_NY_OVERLAP:
+    preferred_strategy: NY Breakout
+    allowed_regimes:
+    - TREND
+    atr_bucket: High
+    adx_bucket: Strong (25-40)
+    historical_pf: 1.59230309612928
+    expectancy_r: 0.18217054263565566
+    trade_count: 129
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      uB6F61G47j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:10.813694'
+  NEW_YORK:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Medium
+    adx_bucket: Strong (25-40)
+    historical_pf: 1.29798101625314
+    expectancy_r: 0.12903225806455712
+    trade_count: 31
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      w/UoXI/C7T8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:11.414583'
+XAUUSD:
+  ASIA:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Medium
+    adx_bucket: Strong (25-40)
+    historical_pf: 1.8704134936823262
+    expectancy_r: 0.14457831325302267
+    trade_count: 83
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      uB6F61G47j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:11.904701'
+  LONDON:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - TREND
+    atr_bucket: Low
+    adx_bucket: Strong (25-40)
+    historical_pf: 2.1060188133455573
+    expectancy_r: 0.2650602409638537
+    trade_count: 83
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      ZmZmZmZm7j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:12.261757'
+  LONDON_NY_OVERLAP:
+    preferred_strategy: NY Breakout
+    allowed_regimes:
+    - RANGE
+    atr_bucket: Medium
+    adx_bucket: Rising (20-25)
+    historical_pf: 1.8051283524252286
+    expectancy_r: 0.375
+    trade_count: 40
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      ZmZmZmZm7j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:12.815557'
+  NEW_YORK:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - TREND
+    atr_bucket: Low
+    adx_bucket: Strong (25-40)
+    historical_pf: 1.2728353727339228
+    expectancy_r: 0.10169491525423643
+    trade_count: 59
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      uB6F61G47j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:13.595748'
+  OFF_SESSION:
+    preferred_strategy: Volatility Expansion Breakout
+    allowed_regimes:
+    - TREND
+    atr_bucket: Extreme
+    adx_bucket: Strong (25-40)
+    historical_pf: 2.428028051397374
+    expectancy_r: 0.3333333333333176
+    trade_count: 45
+    stability_verdict: STABLE
+    confidence_score: !!python/object/apply:numpy._core.multiarray.scalar
+    - *id001
+    - !!binary |
+      ZmZmZmZm7j8=
+    promotion_status: RESEARCH_VALIDATED
+    shadow_passed: false
+    live_passed: false
+    source_report: MARKET_INTELLIGENCE_REPORT_V2
+    generated_at: '2026-06-25T10:41:13.783211'

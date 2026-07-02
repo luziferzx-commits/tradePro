@@ -3,20 +3,23 @@ from datetime import datetime
 import MetaTrader5 as mt5
 from database.repository import repository
 from database.models import ShadowTrade
+from data.mt5_client import mt5_client
 
 logger = logging.getLogger("GoldBot.ShadowExecutor")
 
 class ShadowExecutor:
     @staticmethod
-    def execute_trade(signal_id, symbol, direction, volume, sl_points):
+    def execute_trade(signal_id, symbol, direction, volume, sl_points, tp_points=None):
         """
         Executes a virtual trade in SHADOW_MODE. 
         Never calls MT5 order_send.
         """
         logger.info(f"SHADOW_MODE: Executing virtual {direction} trade for {volume} lots on {symbol}.")
         
+        resolved_symbol = mt5_client.resolve_symbol(symbol)
+        
         # 1. Fetch real-time tick for realistic execution price
-        tick = mt5.symbol_info_tick(symbol)
+        tick = mt5.symbol_info_tick(resolved_symbol)
         if not tick:
             logger.error("Failed to get live tick for shadow trade. Using 0.0.")
             entry_price = 0.0
@@ -27,11 +30,11 @@ class ShadowExecutor:
             logger.warning("Entry price is 0.0, shadow trade will be inaccurate.")
             
         # 2. Calculate SL and TP
-        sym_info = mt5.symbol_info(symbol)
+        sym_info = mt5.symbol_info(resolved_symbol)
         point = sym_info.point if sym_info else 0.01
         
         sl_diff = sl_points * point
-        tp_diff = sl_diff * 2.5 # RR = 2.5
+        tp_diff = (tp_points * point) if tp_points is not None else sl_diff * 2.5
         
         if direction == "BUY":
             sl = entry_price - sl_diff

@@ -1,0 +1,41 @@
+{
+    "StrategyABreakout": {
+        "strategy_id": "StrategyABreakout",
+        "health_score": 20.0,
+        "status": "INSUFFICIENT_SAMPLE",
+        "risk_multiplier": 0.25,
+        "rolling_pf": 0.0,
+        "rolling_expectancy_r": 0.0,
+        "rolling_win_rate": 0.0,
+        "rolling_max_dd": 0.0,
+        "average_rr": 0.0,
+        "trade_count": 0,
+        "updated_at": "2026-06-25T09:59:24.598793"
+    },
+    "StrategyBTrendPullback": {
+        "strategy_id": "StrategyBTrendPullback",
+        "health_score": 20.0,
+        "status": "INSUFFICIENT_SAMPLE",
+        "risk_multiplier": 0.25,
+        "rolling_pf": 0.0,
+        "rolling_expectancy_r": 0.0,
+        "rolling_win_rate": 0.0,
+        "rolling_max_dd": 0.0,
+        "average_rr": 0.0,
+        "trade_count": 0,
+        "updated_at": "2026-06-25T09:59:24.599330"
+    },
+    "StrategyCMeanReversion": {
+        "strategy_id": "StrategyCMeanReversion",
+        "health_score": 20.0,
+        "status": "INSUFFICIENT_SAMPLE",
+        "risk_multiplier": 0.25,
+        "rolling_pf": 0.0,
+        "rolling_expectancy_r": 0.0,
+        "rolling_win_rate": 0.0,
+        "rolling_max_dd": 0.0,
+        "average_rr": 0.0,
+        "trade_count": 0,
+        "updated_at": "2026-06-25T09:59:24.599856"
+    }
+}

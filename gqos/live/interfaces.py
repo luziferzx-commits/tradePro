@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Dict, Optional
 from decimal import Decimal
 from gqos.common.enums import TradeDirection
 
@@ -15,7 +15,7 @@ class IBrokerAdapter(ABC):
         pass
         
     @abstractmethod
-    def submit_order(self, order_id: str, symbol: str, direction: TradeDirection, quantity: Decimal, price: Decimal):
+    def submit_order(self, order_id: str, symbol: str, direction: TradeDirection, quantity: Decimal, price: Decimal, stop_loss: Optional[Decimal] = None, take_profit: Optional[Decimal] = None, decision_id: str = ""):
         """Submits an order to the exchange, handling any lot/tick size adjustments internally."""
         pass
         

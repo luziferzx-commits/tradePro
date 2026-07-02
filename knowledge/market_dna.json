@@ -1,0 +1,44 @@
+{
+  "XAUUSD": {
+    "best_session": "OFF_SESSION",
+    "core_strategy": "Volatility Expansion Breakout",
+    "preferred_regime": "RANGE",
+    "optimal_volatility": "Low"
+  },
+  "BTCUSD": {
+    "best_session": "ASIA",
+    "core_strategy": "Volatility Expansion Breakout",
+    "preferred_regime": "RANGE",
+    "optimal_volatility": "Extreme"
+  },
+  "EURUSD": {
+    "best_session": "OFF_SESSION",
+    "core_strategy": "RSI Exhaustion Reversal",
+    "preferred_regime": "TREND",
+    "optimal_volatility": "High"
+  },
+  "GBPUSD": {
+    "best_session": "ASIA",
+    "core_strategy": "RSI Exhaustion Reversal",
+    "preferred_regime": "RANGE",
+    "optimal_volatility": "High"
+  },
+  "NAS100": {
+    "best_session": "ASIA",
+    "core_strategy": "Volatility Expansion Breakout",
+    "preferred_regime": "RANGE",
+    "optimal_volatility": "High"
+  },
+  "USDJPY": {
+    "best_session": "LONDON",
+    "core_strategy": "London Breakout",
+    "preferred_regime": "RANGE",
+    "optimal_volatility": "Extreme"
+  },
+  "ETHUSD": {
+    "best_session": "LONDON_NY_OVERLAP",
+    "core_strategy": "NY Breakout",
+    "preferred_regime": "RANGE",
+    "optimal_volatility": "Extreme"
+  }
+}

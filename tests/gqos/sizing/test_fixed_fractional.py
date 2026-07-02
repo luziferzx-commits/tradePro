@@ -26,15 +26,17 @@ def test_fixed_fractional_rounding():
     
     req = SizingRequest("s1", "AAPL", TradeDirection.BUY, Decimal('300.0'))
     res_down = engine.size_trade(req, policy_down, portfolio)
-    
-    assert res_down.quantity == Decimal('16')
-    assert res_down.estimated_value == Decimal('4800.0')
-    
+
+    # Sizing rounds to 0.01 lot granularity (MT5 lot model); the broker adapter
+    # applies the final volume_step rounding downstream.
+    assert res_down.quantity == Decimal('16.66')
+    assert res_down.estimated_value == Decimal('4998.00')
+
     policy_up = FixedFractionalPolicy(fraction=Decimal('0.05'), rounding=RoundingPolicy.ROUND_UP)
     res_up = engine.size_trade(req, policy_up, portfolio)
-    
-    assert res_up.quantity == Decimal('17')
-    assert res_up.estimated_value == Decimal('5100.0')
+
+    assert res_up.quantity == Decimal('16.67')
+    assert res_up.estimated_value == Decimal('5001.00')
 
 def test_fixed_fractional_max_value():
     policy = FixedFractionalPolicy(fraction=Decimal('0.05'), max_position_value=Decimal('2000.0'))
