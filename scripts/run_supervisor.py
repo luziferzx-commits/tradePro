@@ -17,7 +17,8 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - SUPERVISOR - %(message)s")
 logger = logging.getLogger("Supervisor")
 
-CHILD_CMD = [sys.executable, "-m", "scripts.run_gqos_live"]
+_ENGINE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run_gqos_live.py")
+CHILD_CMD = [sys.executable, _ENGINE]
 # A run shorter than this counts as an early crash.
 MIN_HEALTHY_RUNTIME_SEC = 60
 # Stop after this many consecutive early crashes.

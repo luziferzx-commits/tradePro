@@ -889,10 +889,21 @@ def main():
     alpha_worker.start()
     
     logger.info("GQOS Live Engine is completely booted and running. Press Ctrl+C to exit.")
-    
+
+    restart_flag = os.getenv("GQOS_RESTART_FLAG", os.path.join("data", "execution", "restart.flag"))
     try:
         while True:
             time.sleep(1)
+            # Restart trigger: a supervisor can relaunch us after a structural
+            # config change (e.g. symbol enable/disable) without touching the
+            # terminal — just drop the flag file and we exit gracefully.
+            if os.path.exists(restart_flag):
+                logger.warning("[Restart] flag detected — restarting engine (supervisor will relaunch).")
+                try:
+                    os.remove(restart_flag)
+                except OSError:
+                    pass
+                raise KeyboardInterrupt
     except KeyboardInterrupt:
         logger.info("Shutting down GQOS...")
         scheduler.stop()

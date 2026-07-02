@@ -60,3 +60,12 @@ def test_hot_reload_noop_when_unchanged(monkeypatch):
     settings_mod.settings.PATTERN_PF_CEILING = 1.5
     changes = settings_mod.reload_tunable_settings()
     assert "PATTERN_PF_CEILING" not in changes
+
+
+def test_request_restart_writes_flag(tmp_path):
+    from scripts import request_restart
+    flag = tmp_path / "restart.flag"
+    path = request_restart.request_restart(str(flag))
+    assert os.path.exists(path)
+    with open(path) as f:
+        assert "restart" in f.read().lower()
