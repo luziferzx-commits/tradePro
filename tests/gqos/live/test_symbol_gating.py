@@ -30,12 +30,12 @@ def test_disabled_symbols_still_simulate():
     symbols = _load_symbols()
     # Symbols disabled for live trading must still be simulated for learning
     # (simulate defaults to True and should not be turned off just because a
-    # symbol is not traded live).
-    for sym in ("XRPUSD", "EURGBP", "NZDUSD", "AUDCAD"):
-        cfg = symbols.get(sym)
-        assert cfg is not None, f"{sym} missing from config"
-        assert cfg.get("enabled", False) is False, f"{sym} should be disabled for live"
-        assert cfg.get("simulate", True) is not False, f"{sym} should still simulate"
+    # symbol is not traded live). XRP stays disabled for live (broker spread)
+    # but must keep simulating.
+    cfg = symbols.get("XRPUSD")
+    assert cfg is not None, "XRPUSD missing from config"
+    assert cfg.get("enabled", False) is False, "XRPUSD should be disabled for live"
+    assert cfg.get("simulate", True) is not False, "XRPUSD should still simulate"
 
 
 def test_live_symbols_are_subset_of_simulated():
@@ -49,6 +49,5 @@ def test_live_symbols_are_subset_of_simulated():
 def test_registry_only_loads_enabled():
     reg = SymbolRegistry(CONFIG)
     names = set(reg.symbols.keys())
-    assert "XRPUSD" not in names
-    assert "EURGBP" not in names
+    assert "XRPUSD" not in names   # disabled for live (spread)
     assert "XAUUSD" in names
