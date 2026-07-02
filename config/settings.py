@@ -167,11 +167,14 @@ settings = Settings()
 # Settings that are read on the hot path (per scan / per signal) and so can be
 # changed at runtime without a restart. name -> caster.
 _HOT_RELOADABLE = {
+    # Read on the hot path (per signal) — safe to change live.
     "PATTERN_PF_CEILING": float,
     "MIN_EVIDENCE_EXPECTANCY_R": float,
-    "DAILY_FLAT_CLOSE_HOUR_UTC": int,
     "PA_H4_TREND_CONFLICT_ACTION": lambda v: str(v).upper(),
     "PA_TREND_CONFLICT_PENALTY": float,
+    # NOTE: DAILY_FLAT_CLOSE_HOUR_UTC is intentionally NOT here — PositionMonitor
+    # caches the close hour at init, so changing it needs a restart to stay
+    # consistent between the entry cutoff and the close.
 }
 
 
