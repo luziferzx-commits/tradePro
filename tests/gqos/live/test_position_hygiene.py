@@ -67,3 +67,39 @@ def test_fresh_position_not_stale_closed():
 
     m._evaluate_single(_pos("EURUSDm", opened_ts=time.time()))  # just opened
     assert closed == []
+
+
+def test_open_alert_fires_once_for_new_position(tmp_path, monkeypatch):
+    import notifications.telegram_notifier as tn
+    sent = []
+    monkeypatch.setattr(tn, "notify_trade_executed", lambda **k: (sent.append(k), True)[1])
+
+    m = _monitor()
+    m._alerted_opens_path = str(tmp_path / "alerted.json")
+    m._alerted_opens = set()
+
+    pos = SimpleNamespace(
+        symbol="EURUSDm", type=mt5.POSITION_TYPE_BUY, magic=234000,
+        ticket=999, volume=0.01, price_open=1.1000, sl=1.0950, tp=1.1200,
+    )
+    m._alert_new_opens([pos])
+    assert len(sent) == 1 and sent[0]["ticket"] == "999" and sent[0]["symbol"] == "EURUSDm"
+
+    # Same position again -> no duplicate alert.
+    m._alert_new_opens([pos])
+    assert len(sent) == 1
+
+
+def test_open_alert_skips_other_magic(tmp_path, monkeypatch):
+    import notifications.telegram_notifier as tn
+    sent = []
+    monkeypatch.setattr(tn, "notify_trade_executed", lambda **k: (sent.append(k), True)[1])
+
+    m = _monitor()
+    m._alerted_opens_path = str(tmp_path / "alerted.json")
+    m._alerted_opens = set()
+
+    other = SimpleNamespace(symbol="EURUSDm", type=mt5.POSITION_TYPE_BUY, magic=999999,
+                            ticket=1, volume=0.01, price_open=1.1, sl=1.0, tp=1.2)
+    m._alert_new_opens([other])
+    assert sent == []  # not our magic -> ignored

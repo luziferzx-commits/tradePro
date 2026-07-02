@@ -81,7 +81,78 @@ class PositionMonitor:
         self._enabled_broker_symbols = self._load_enabled_broker_symbols()
         self._capacity_alerted = False
 
+        # Reliable, poll-based trade-open Telegram alerts (the event-driven path
+        # fires unreliably). Tracks tickets we've already alerted on.
+        self._alerted_opens_path = os.getenv(
+            "GQOS_ALERTED_OPENS_PATH",
+            os.path.join("data", "learning", "alerted_opens.json"),
+        )
+        self._alerted_opens = self._load_alerted_opens()
+
         logger.info("PositionMonitor initialized.")
+
+    def _load_alerted_opens(self) -> set:
+        try:
+            with open(self._alerted_opens_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                return {str(x) for x in data}
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            logger.warning(f"[PositionMonitor] Could not load alerted-opens store: {e}")
+        return set()
+
+    def _save_alerted_opens(self):
+        try:
+            directory = os.path.dirname(self._alerted_opens_path)
+            if directory:
+                os.makedirs(directory, exist_ok=True)
+            with open(self._alerted_opens_path, "w", encoding="utf-8") as f:
+                json.dump(sorted(self._alerted_opens)[-3000:], f)
+        except Exception as e:
+            logger.warning(f"[PositionMonitor] Could not save alerted-opens store: {e}")
+
+    def _alert_new_opens(self, positions):
+        """Send a Telegram TRADE OPENED alert for positions not yet alerted."""
+        changed = False
+        for pos in positions:
+            if getattr(pos, "magic", None) != self._magic:
+                continue
+            ticket = str(getattr(pos, "ticket", "") or "")
+            if not ticket or ticket in self._alerted_opens:
+                continue
+            try:
+                from notifications.telegram_notifier import notify_trade_executed
+                side = "BUY" if pos.type == mt5.POSITION_TYPE_BUY else "SELL"
+                notify_trade_executed(
+                    symbol=str(getattr(pos, "symbol", "")),
+                    direction=side,
+                    lot=float(getattr(pos, "volume", 0.0) or 0.0),
+                    entry=float(getattr(pos, "price_open", 0.0) or 0.0),
+                    sl=float(getattr(pos, "sl", 0.0) or 0.0),
+                    tp=float(getattr(pos, "tp", 0.0) or 0.0),
+                    ticket=ticket,
+                )
+                logger.info(f"[PositionMonitor] Open alert sent for {pos.symbol} #{ticket}")
+            except Exception as e:
+                logger.warning(f"[PositionMonitor] Open alert failed for {ticket}: {e}")
+            # Mark as handled even if the send failed, to avoid alert spam loops.
+            self._alerted_opens.add(ticket)
+            changed = True
+        if changed:
+            self._save_alerted_opens()
+
+    def _seed_alerted_opens(self):
+        """Mark already-open positions as alerted at startup so a restart does
+        not re-announce positions that opened before the bot came up."""
+        try:
+            for pos in (mt5.positions_get() or []):
+                if getattr(pos, "magic", None) == self._magic:
+                    self._alerted_opens.add(str(getattr(pos, "ticket", "") or ""))
+            self._save_alerted_opens()
+        except Exception as e:
+            logger.warning(f"[PositionMonitor] Could not seed alerted-opens: {e}")
 
     def _load_enabled_broker_symbols(self) -> set:
         """Broker symbols (e.g. EURUSDm) that are enabled for live trading."""
@@ -111,6 +182,7 @@ class PositionMonitor:
 
     def start(self):
         self._seed_recent_closed_deals()
+        self._seed_alerted_opens()
         self._re_evaluate_existing_positions()
         self._running = True
         self._thread  = threading.Thread(target=self._run_loop, daemon=True)
@@ -341,6 +413,9 @@ class PositionMonitor:
         if not positions:
             self._capacity_alerted = False
             return
+
+        # Reliable trade-open alerts (poll-based, mirrors the close path).
+        self._alert_new_opens(positions)
 
         # ─── Capacity alert: warn when position slots are nearly full ───
         mine = [p for p in positions if p.magic == self._magic]

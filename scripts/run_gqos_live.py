@@ -460,24 +460,9 @@ def main():
             cmd.quantity,
             cmd.execution_price,
         )
-        if _telegram_alert_seen("opened", open_key):
-            logger.warning(f"[Telegram] Duplicate open alert skipped: {open_key}")
-        else:
-            sent = notify_trade_executed(
-                symbol=cmd.symbol,
-                direction=cmd.direction.name if hasattr(cmd.direction, 'name') else str(cmd.direction),
-                lot=float(cmd.quantity),
-                entry=float(cmd.execution_price),
-                sl=float(getattr(cmd, "stop_loss", None) or 0.0),
-                tp=float(getattr(cmd, "take_profit", None) or 0.0),
-                ticket=ticket_str,
-                probability=0.0
-            )
-            if sent:
-                _remember_telegram_alert("opened", open_key)
-                logger.info(f"[Telegram] Trade open alert sent: {cmd.symbol} ticket={ticket_str}")
-            else:
-                logger.warning(f"[Telegram] Trade open alert failed: {cmd.symbol} ticket={ticket_str}")
+        # NOTE: The TRADE OPENED Telegram alert is now sent by PositionMonitor,
+        # which polls MT5 positions every cycle (reliable), because this
+        # TradeExecutedEvent path fired inconsistently. Kept here for DB logging.
         # Log to Database
         try:
             db_ticket = str(ticket_val) if ticket_val else str(uuid.uuid4())
