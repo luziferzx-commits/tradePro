@@ -103,3 +103,14 @@ def test_open_alert_skips_other_magic(tmp_path, monkeypatch):
                             ticket=1, volume=0.01, price_open=1.1, sl=1.0, tp=1.2)
     m._alert_new_opens([other])
     assert sent == []  # not our magic -> ignored
+
+
+def test_eod_close_hour_config_wiring(monkeypatch):
+    from config import settings as settings_mod
+    monkeypatch.setattr(settings_mod.settings, "DAILY_FLAT_CLOSE_HOUR_UTC", 20, raising=False)
+    m = PositionMonitor(None, None, None, magic_number=234000)
+    assert m._eod_close_hour == 20
+
+    monkeypatch.setattr(settings_mod.settings, "DAILY_FLAT_CLOSE_HOUR_UTC", -1, raising=False)
+    m2 = PositionMonitor(None, None, None, magic_number=234000)
+    assert m2._eod_close_hour is None

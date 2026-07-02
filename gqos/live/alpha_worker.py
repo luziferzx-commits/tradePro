@@ -82,11 +82,20 @@ class AlphaWorker:
                     except Exception as _e:
                         logger.debug(f"guard reevaluate failed: {_e}")
 
+                # Intraday cutoff: stop opening new trades at/after the EOD flat
+                # close hour so nothing is opened just to be liquidated overnight.
+                _eod = getattr(settings, "DAILY_FLAT_CLOSE_HOUR_UTC", -1)
+                if _eod is not None and int(_eod) >= 0:
+                    from datetime import datetime, timezone
+                    if datetime.now(timezone.utc).hour >= int(_eod):
+                        time.sleep(5)
+                        continue
+
                 paused_scan_only = self.is_paused and settings.ENABLE_PAUSED_SIGNAL_LOGGING
                 if self.is_paused and not paused_scan_only:
                     time.sleep(1)
                     continue
-                    
+
                 if not self.mt5_client.is_new_candle():
                     time.sleep(1)
                     continue

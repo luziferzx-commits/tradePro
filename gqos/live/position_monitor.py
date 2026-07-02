@@ -73,11 +73,15 @@ class PositionMonitor:
             self._max_position_age_hours = float(getattr(_s, "MAX_POSITION_AGE_HOURS", 0) or 0)
             self._capacity_alert_pct = float(getattr(_s, "POSITION_CAPACITY_ALERT_PCT", 0.9) or 0.9)
             self._max_open_positions = int(getattr(_s, "MAX_OPEN_POSITIONS", 0) or 0)
+            _eod = getattr(_s, "DAILY_FLAT_CLOSE_HOUR_UTC", -1)
+            self._eod_close_hour = int(_eod) if _eod is not None and int(_eod) >= 0 else None
         except Exception:
             self._auto_close_disabled = False
             self._max_position_age_hours = 0.0
             self._capacity_alert_pct = 0.9
             self._max_open_positions = 0
+            self._eod_close_hour = None
+        self._last_eod_close_date = None
         self._enabled_broker_symbols = self._load_enabled_broker_symbols()
         self._capacity_alerted = False
 
@@ -447,6 +451,31 @@ class PositionMonitor:
                 if pos.magic == self._magic:
                     self._close_position(pos, reason="Weekend Close")
             return
+        # ────────────────────────────────────────────────
+
+        # ─── End-of-Day flat close (intraday-only, no overnight hold) ───
+        # Regime/trend flips overnight, so close everything at a configured UTC
+        # hour and re-assess the next day. Fires once per day.
+        if self._eod_close_hour is not None and now_utc.hour >= self._eod_close_hour:
+            mine_now = [p for p in positions if p.magic == self._magic]
+            if mine_now:
+                today = now_utc.strftime("%Y-%m-%d")
+                if self._last_eod_close_date != today:
+                    # Alert once per day; keep closing every cycle so nothing
+                    # opened after the cutoff survives into the next session.
+                    self._last_eod_close_date = today
+                    logger.warning(
+                        f"[PositionMonitor] End-of-Day flat close ({self._eod_close_hour:02d}:00 UTC): "
+                        f"closing {len(mine_now)} positions (no overnight hold)."
+                    )
+                    try:
+                        from notifications.telegram_notifier import send_telegram
+                        send_telegram(f"🌙 <b>End-of-Day Close</b>\nClosing {len(mine_now)} positions — no overnight hold.")
+                    except Exception as e:
+                        logger.debug(f"EOD close telegram failed: {e}")
+                for pos in mine_now:
+                    self._close_position(pos, reason="End-of-Day Close")
+                return
         # ────────────────────────────────────────────────
 
         for pos in positions:
