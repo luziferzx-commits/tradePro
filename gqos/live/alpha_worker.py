@@ -70,8 +70,21 @@ class AlphaWorker:
         logger.info("AlphaWorker stopped.")
 
     def _run_loop(self):
+        _last_settings_reload = 0.0
         while self._running:
             try:
+                # Hot-reload tunable settings (~every 60s) so the optimizer /
+                # manual .env edits take effect without a restart.
+                if time.time() - _last_settings_reload > 60:
+                    _last_settings_reload = time.time()
+                    try:
+                        from config.settings import reload_tunable_settings
+                        _changed = reload_tunable_settings()
+                        if _changed:
+                            logger.warning("[HotReload] settings changed: %s", _changed)
+                    except Exception as _e:
+                        logger.debug(f"settings hot-reload failed: {_e}")
+
                 # Auto-clear daily guard pauses (e.g. at day rollover) so the
                 # bot resumes trading without a manual restart.
                 if self._guard_reevaluate is not None:

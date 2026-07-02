@@ -162,3 +162,37 @@ class Settings:
     FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "")
 
 settings = Settings()
+
+
+# Settings that are read on the hot path (per scan / per signal) and so can be
+# changed at runtime without a restart. name -> caster.
+_HOT_RELOADABLE = {
+    "PATTERN_PF_CEILING": float,
+    "MIN_EVIDENCE_EXPECTANCY_R": float,
+    "DAILY_FLAT_CLOSE_HOUR_UTC": int,
+    "PA_H4_TREND_CONFLICT_ACTION": lambda v: str(v).upper(),
+    "PA_TREND_CONFLICT_PENALTY": float,
+}
+
+
+def reload_tunable_settings() -> dict:
+    """Re-read .env and apply changed hot-reloadable settings to the singleton.
+
+    Returns {name: (old, new)} for values that changed. Structural settings
+    (symbols, credentials, thresholds cached at init) still require a restart.
+    """
+    load_dotenv(override=True)
+    changes = {}
+    for name, cast in _HOT_RELOADABLE.items():
+        raw = os.getenv(name, None)
+        if raw is None:
+            continue
+        try:
+            new_val = cast(raw)
+        except (TypeError, ValueError):
+            continue
+        old_val = getattr(settings, name, None)
+        if old_val != new_val:
+            setattr(settings, name, new_val)
+            changes[name] = (old_val, new_val)
+    return changes
